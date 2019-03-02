@@ -1,0 +1,6 @@
+{
+    "text_dir" : "test/", 
+    "prefix" : "test/sample_text",
+    "vocab_size" : 100,
+    "ctl_symbols" : "[PAD],[CLS],[SEP],[MASK]"
+}

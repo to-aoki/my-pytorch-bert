@@ -1,0 +1,6 @@
+{
+    "text_dir" : "data/text/", 
+    "prefix" : "data/livedoor/",
+    "vocab_size" : 32000,
+    "ctl_symbols" : "[PAD],[CLS],[SEP],[MASK]"
+}
