@@ -45,13 +45,6 @@ def get_one_hot(x, depth):
     return one_hot
 
 
-# https://stackoverflow.com/questions/845058/how-to-get-line-count-cheaply-in-python
-def rawincount(filename):
-    with open(filename, 'rb') as f:
-        bufgen = takewhile(lambda x: x, (f.raw.read(1024*1024) for _ in repeat(None)))
-    return sum( buf.count(b'\n') for buf in bufgen )
-
-
 def get_device():
     """get pytorch device"""
     return 'cuda' if torch.cuda.is_available() else 'cpu'

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Training and evaluate helper."""
 
 import os
 import torch
@@ -84,7 +85,7 @@ class Helper(object):
                 global_step += 1
 
             if per_save_epoc is not -1 and (e + 1) % per_save_epoc is 0:
-                output_model_file = os.path.join(save_dir, "pretrain_task_model_" + str(e) + "_" + str(global_step) + ".pt")
+                output_model_file = os.path.join(save_dir, "train_model_" + str(e) + "_" + str(global_step) + ".pt")
                 save(model, output_model_file, optimizer)
 
     def evaluate(
@@ -120,7 +121,8 @@ class Helper(object):
             for step, batch in enumerate(iter_bar):
                 batch = tuple(t.to(self.device) for t in batch)
 
-                loss, example = process(batch, model, iter_bar, e, step)
+                with torch.no_grad():
+                    loss, example = process(batch, model, iter_bar, e, step)
                 examples.append(example)
 
                 if self.num_gpu > 1:

@@ -1,5 +1,6 @@
 # This file is based on https://github.com/yoheikikuta/bert-japanese/blob/master/src/train-sentencepiece.py.
 # Fix to read the json-file to make the setting method same as other code.
+"""Bert pre-training."""
 
 import json
 import glob
@@ -30,11 +31,17 @@ def train(text_dir, prefix, vocab_size, ctl_symbols):
     sp.SentencePieceTrainer.Train(command)
 
 
-def main(sp_cfg="config/test_sp.json"):
-    cfg = Config.from_json(sp_cfg)
-    print(cfg)
-    train(cfg.text_dir, cfg.prefix, cfg.vocab_size, cfg.ctl_symbols)
+def main(config_poth="config/test_sp.json"):
+    config = Config.from_json(config_poth)
+    print(config)
+    train(config.text_dir, config.prefix, config.vocab_size, config.ctl_symbols)
 
 
 if __name__ == '__main__':
-    main()
+    import argparse
+    parser = argparse.ArgumentParser(description='SentencePiece training.', usage='%(prog)s [options]')
+    parser.add_argument('--config_path', help='JSON file path for defines training.', nargs='?',
+                        type=str, default='config/sentensepiece.json')
+    args = parser.parse_args()
+    main(args.config_path)
+

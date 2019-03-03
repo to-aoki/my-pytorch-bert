@@ -13,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Convert TensorFlow Bert Model to my-torch-bert."""
 
 import tensorflow as tf
 import torch
@@ -67,13 +68,32 @@ def load_from_google_bert_model(model: BertModel, f):
     copy_tf_tensor(f, s+"dense/bias",   d.bias)
 
 
-def main(
-        tf_model_path="multi_cased_L-12_H-768_A-12/bert_model.ckpt",  # Bert-BASE vocab = 32000, pos_len = 512
-        pyt_mode_path="collections/multi_caused_L-12_H-768_A-12.pt",
-        pyt_model_cfg='config/bert_base.json'):
-    model_cfg = Config.from_json(pyt_model_cfg, 119547, 512)
-    model = BertModel(model_cfg)
-    load_from_google_bert_model(model, tf_model_path)
-    torch.save(model.state_dict(), pyt_mode_path)
+def load_tf_bert(
+    config_path='config/bert_base.json',
+    tfmodel_path="multi_cased_L-12_H-768_A-12/bert_model.ckpt",
+    vocab_num=119547,
+    max_pos=512,
+    output_path = "multi_caused_L-12_H-768_A-12.pt"
+):
+    config = Config.from_json(config_path, vocab_num, max_pos)
+    model = BertModel(config)
+    load_from_google_bert_model(model, tfmodel_path)
+    torch.save(model.state_dict(), output_path)
 
-main()
+
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description='Convert from TensorFlow BERT to my-pytorch-bert model.',
+                                     usage='%(prog)s [options]')
+    parser.add_argument('--config_path', help='JSON file path for defines networks.', nargs='?',
+                        type=str, default='config/bert_base.json')
+    parser.add_argument('--tfmodel_path', help='TensorFlow model path.', required=True,
+                        type=str)
+    parser.add_argument('--vocab_num', help='Vocabulary numbers.', required=True,
+                        type=int)
+    parser.add_argument('--max_pos', help='The maximum sequence length for BERT (slow as big).', nargs='?',
+                        type=int, default=512)
+    parser.add_argument('--output_path', help='Output model path.', required=True,
+                        type=str)
+    args = parser.parse_args()
+    load_tf_bert(args.config_path, args.tfmodel_path, args.vocab_num, args.max_pos, args.output_path)

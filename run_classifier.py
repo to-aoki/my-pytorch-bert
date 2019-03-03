@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Bert classifier."""
 
 import os
 from collections import namedtuple
@@ -26,32 +27,33 @@ from helper import Helper
 from utils import save, load, get_logger
 
 
-def main(
-    model_cfg='config/bert_base.json',
-    file_path='livedoor/livedoor_train_class.tsv',
-    pretrain_file='pretrrain/multi_caused_L-12_H-768_A-12.pt',
-    model_file=None,
-    vocab_file='tests/sample_text.vocab',
-    sp_model_file='tests/sample_text.model',
+def classification(
+    config_path='config/bert_base.json',
+    dataset_path='data/livedoor_train_class.tsv',
+    pretrain_path='collections/bert-wiki-ja.pt',
+    model_path=None,
+    vocab_path='collections/wiki-ja.vocab',
+    sp_model_path='collections/wiki-ja.model',
     save_dir='classifier/',
     log_dir='logs/',
     batch_size=2,
-    max_len=128,
+    max_pos=512,
     lr=2e-5,
     warmup_proportion=0.1,  # warmup_steps = len(dataset) / batch_size * epoch * warmup_proportion
     epoch=5,
     per_save_epoc=1,
-    label_num=9,
-    mode='train'):
+    mode='train',
+    label_num=None
+):
 
-    if sp_model_file is not None:
+    if sp_model_path is not None:
         tokenizer = tokenization_sentencepiece.FullTokenizer(
-            sp_model_file, vocab_file, do_lower_case=True)
+            sp_model_path, vocab_path, do_lower_case=True)
     else:
-        tokenizer = tokenization.FullTokenizer(vocab_file, do_lower_case=True)
+        tokenizer = tokenization.FullTokenizer(vocab_path, do_lower_case=True)
 
-    config = models.Config.from_json(model_cfg, len(tokenizer), max_len)
-    dataset = BertCsvDataset(file_path, tokenizer, max_len, label_num)
+    config = models.Config.from_json(config_path, len(tokenizer), max_pos)
+    dataset = BertCsvDataset(dataset_path, tokenizer, max_pos, label_num)
 
     model = Classifier(config, label_num)
 
@@ -60,8 +62,8 @@ def main(
 
     if mode is 'train':
         logger = get_logger('eval', log_dir, True)
-        if pretrain_file is not None:
-            load(model.bert, pretrain_file)
+        if pretrain_path is not None:
+            load(model.bert, pretrain_path)
 
         warmup_steps = int(len(dataset) / batch_size * epoch * warmup_proportion)
         optimizer = optimization.get_optimizer(model, lr, warmup_steps)
@@ -72,10 +74,10 @@ def main(
             logits = model(input_ids, segment_ids, input_mask)
             return criterion(logits, label_id)
 
-        helper.training(process, model, dataset, optimizer, batch_size, epoch, model_file, save_dir, per_save_epoc)
+        helper.training(process, model, dataset, optimizer, batch_size, epoch, model_path, save_dir, per_save_epoc)
 
-        output_model_file = os.path.join(save_dir, "classifier.pt")
-        save(model, output_model_file)
+        output_model_path = os.path.join(save_dir, "classifier.pt")
+        save(model, output_model_path)
 
     elif mode is 'eval':
         logger = get_logger('eval', log_dir, False)
@@ -110,12 +112,56 @@ def main(
                     y_preds.append(p)
                 for t in trues:
                     y_trues.append(t)
+            if log_dir is not None or log_dir is not '':
+                classify_reports = classification_report(y_trues, y_preds, output_dict=True)
+                for k, v in classify_reports.items():
+                    for ck, cv in v.items():
+                        logger.info(str(k) + "," + str(ck) + "," + str(cv))
+            else:
+                classification_report(y_trues, y_preds)
 
-            classify_reports = classification_report(y_trues, y_preds, output_dict=True)
-            for k, v in classify_reports.items():
-                for ck, cv in v.items():
-                    logger.info(str(k) + "," + str(ck) + "," + str(cv))
+        helper.evaluate(process, model, dataset, batch_size, epoch, model_path, example_reports)
 
-        helper.evaluate(process, model, dataset, batch_size, epoch, model_file, example_reports)
 
-main()
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description='BERT classification.', usage='%(prog)s [options]')
+    parser.add_argument('--config_path', help='JSON file path for defines networks.', nargs='?',
+                        type=str, default='config/bert_base.json')
+    parser.add_argument('--dataset_path', help='Dataset file path for classification.', required=True,
+                        type=str)
+    parser.add_argument('--pretrain_path', help='Pre-training PyTorch model path.', nargs='?',
+                        type=str, default='bert-wiki-ja/bert-wiki-ja.pt')
+    parser.add_argument('--model_path', help='Classifier PyTorch model path.', nargs='?',
+                        type=str, default=None)
+    parser.add_argument('--vocab_path', help='Vocabulary file path for BERT to pre-training.', nargs='?',
+                        type=str, default='bert-wiki-ja/wiki-ja.vocab')
+    parser.add_argument('--sp_model_path', help='Trained SentencePiece model path.', nargs='?',
+                        type=str, default='bert-wiki-ja/wiki-ja.model')
+    parser.add_argument('--save_dir', help='Classification model saving directory path.', nargs='?',
+                        type=str, default='classifier/')
+    parser.add_argument('--log_dir', help='Logging file path.', nargs='?',
+                        type = str, default='logs/')
+    parser.add_argument('--batch_size',  help='Batch size', nargs='?',
+                        type=int, default=4)
+    parser.add_argument('--max_pos', help='The maximum sequence length for BERT (slow as big).', nargs='?',
+                        type=int, default=512)
+    parser.add_argument('--lr', help='Learning rate', nargs='?',
+                        type=float, default=2e-5)
+    parser.add_argument('--warmup_steps', help='Warm-up steps proportion.', nargs='?',
+                        type=float, default=0.1)
+    parser.add_argument('--epoch', help='Epoch', nargs='?',
+                        type=int, default=10)
+    parser.add_argument('--per_save_epoc', help=
+                        'Saving training model timing is the number divided by the epoch number', nargs='?',
+                        type=int, default=1)
+    parser.add_argument('--mode', help='train or eval', nargs='?',
+                        type=str, default='train')
+    parser.add_argument('--label_num', help='labels number', required=True,
+                        type=int)
+#    parser.add_argument('--labels', nargs='+', help='<Required> labels', required=True)
+
+    args = parser.parse_args()
+    classification(args.config_path, args.dataset_path, args.pretrain_path, args.model_path, args.vocab_path,
+                   args.sp_model_path, args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr,
+                   args.warmup_steps, args.epoch, args.per_save_epoc, args.mode, args.label_num)

@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Bert fine-tuning models."""
 
 import torch
 import torch.nn as nn
@@ -20,7 +21,7 @@ from models import BertModel
 
 
 class Classifier(nn.Module):
-    """Bert Fine-tuning usecase classifier"""
+    """Bert fine-tuning classifier"""
 
     def __init__(self, config, label_len):
         super().__init__()
@@ -30,7 +31,11 @@ class Classifier(nn.Module):
         self.classifier.weight.data = torch.fmod(
             torch.randn(self.classifier.weight.size()), config.initializer_range)
         self.classifier.bias = nn.Parameter(torch.zeros(label_len))
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
     def forward(self, input_ids, segment_ids, input_mask):
-        _, pooled_output = self.bert(input_ids, segment_ids, input_mask)
-        return self.classifier(pooled_output)
+        flatten_input_ids = input_ids.view(-1, input_ids.size(-1))
+        flatten_segment_ids = segment_ids.view(-1, segment_ids.size(-1))
+        flatten_input_mask = input_mask.view(-1, input_mask.size(-1))
+        _, pooled_output = self.bert(flatten_input_ids, flatten_segment_ids, flatten_input_mask)
+        return self.classifier(self.dropout(pooled_output))

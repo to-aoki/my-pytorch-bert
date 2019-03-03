@@ -11,20 +11,36 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Extract Bert Model."""
 
 from models import Config
 from pretrain_tasks import BertPretrainingTasks
 from utils import load, save, get_device
 
 
-def main(
-    pretrain_model_path="pretrain/oops_google_colab_session_timeout.pt",
-    bert_mode_path="collections//bert_only_model.pt",
-    pyt_model_cfg='config/bert_base.json'
+def extract_model(
+    config_path='config/bert_base.json',
+    model_path="pretrain/oops_google_colab_session_timeout.pt",
+    output_path="collections//bert_only_model.pt",
+    only_bert=True
 ):
-    model_cfg = Config.from_json(pyt_model_cfg)
-    model = BertPretrainingTasks(model_cfg)
-    load(model, pretrain_model_path, get_device())
-    save(model.bert, bert_mode_path)
+    config = Config.from_json(config_path)
+    model = BertPretrainingTasks(config)
+    load(model, model_path, get_device())
+    if only_bert:
+        model = model.bert
+    save(model, output_path)
 
-main()
+
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description='Extract my-pytorch-bert model.', usage='%(prog)s [options]')
+    parser.add_argument('--config_path', help='JSON file path for defines networks.', nargs='?',
+                        type=str, default='config/bert_base.json')
+    parser.add_argument('--model_path', help='my-pytorch-bert model path (include optimizer).', required=True,
+                        type=str)
+    parser.add_argument('--output_path', help='Output model path.', required=True,
+                        type=str)
+    parser.add_argument('--bert', action='store_true')
+    args = parser.parse_args()
+    extract_model(args.config_path, args.model_path, args.output_path, args.bert)

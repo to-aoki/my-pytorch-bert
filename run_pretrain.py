@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Bert pre-training."""
 
 import os
 from collections import namedtuple
@@ -27,49 +28,50 @@ from helper import Helper
 from utils import save, get_logger
 
 
-def main(model_cfg='config/bert_base.json',
-         data_file='tests/sample_text.txt',
-         model_file=None,
-         vocab_file='tests/sample_text.vocab',
-         sp_model_file='tests/sample_text.model',
-         save_dir='pretrain/',
-         log_dir='logs/',
-         batch_size=2,
-         max_len=128,
-         lr=5e-5,
-         warmup_proportion=0.1,  # warmup_steps = len(dataset) / batch_size * epoch * warmup_proportion
-         epoch=5,
-         per_save_epoc=1,
-         mode='train'):
+def bert_pretraining(
+        config_path='config/bert_base.json',
+        dataset_path='tests/sample_text.txt',
+        model_path=None,
+        vocal_path='tests/sample_text.vocab',
+        sp_model_path='tests/sample_text.model',
+        save_dir='pretrain/',
+        log_dir='logs/',
+        batch_size=2,
+        max_pos=128,
+        lr=5e-5,
+        warmup_proportion=0.1,  # warmup_steps = len(dataset) / batch_size * epoch * warmup_proportion
+        epoch=5,
+        per_save_epoc=1,
+        mode='train'):
 
     assert mode is not None and (mode is 'train' or mode is 'eval'), 'support mode train or eval.'
 
-    if sp_model_file is not None:
+    if sp_model_path is not None:
         tokenizer = tokenization_sentencepiece.FullTokenizer(
-            sp_model_file, vocab_file, do_lower_case=True)
+            sp_model_path, vocal_path, do_lower_case=True)
     else:
-        tokenizer = tokenization.FullTokenizer(vocab_file, do_lower_case=True)
+        tokenizer = tokenization.FullTokenizer(vocal_path, do_lower_case=True)
 
-    if max_len is None:
-        # max_len = statistics.median(all-sentence-tokens)
+    if max_pos is None:
+        # max_pos = statistics.median(all-sentence-tokens)
         import statistics
-        with open(data_file, 'r', newline="\n", encoding="utf-8") as data:
+        with open(dataset_path, 'r', newline="\n", encoding="utf-8") as data:
             tokens = list(map(tokenizer.tokenize, data.readlines()))
-            max_len = round(statistics.median(list(map(lambda x: len(x), tokens))))   
-        max_len = max_len*2+3  # [CLS]a[SEP]b[SEP]
-        print("max_len (median):", max_len)
+            max_pos = round(statistics.median(list(map(lambda x: len(x), tokens))))
+        max_pos = max_pos*2+3  # [CLS]a[SEP]b[SEP]
+        print("max_pos (median):", max_pos)
 
     train_dataset = PretrainDataset(
-        data_file,
+        dataset_path,
         tokenizer,
-        max_pos=max_len,
+        max_pos=max_pos,
         corpus_lines=None,
         on_memory=True
     )
 
-    model_cfg = models.Config.from_json(model_cfg, len(tokenizer), max_len)
-    print('model params :', model_cfg)
-    model = pretrain_tasks.BertPretrainingTasks(model_cfg)
+    config = models.Config.from_json(config_path, len(tokenizer), max_pos)
+    print('model params :', config)
+    model = pretrain_tasks.BertPretrainingTasks(config)
     helper = Helper()
 
     if mode is 'train':
@@ -88,19 +90,20 @@ def main(model_cfg='config/bert_base.json',
             next_sentence_loss = criterion_ns(next_sentence_loss.view(-1, 2), next_sentence_labels.view(-1)).mean()
             return masked_lm_loss + next_sentence_loss
 
-        helper.training(process, model, train_dataset, optimizer, batch_size, epoch, model_file, save_dir, per_save_epoc)
+        helper.training(process, model, train_dataset, optimizer, batch_size, epoch, model_path, save_dir, per_save_epoc)
 
-        output_model_file = os.path.join(save_dir, "bert_model.pt")
-        save(model.bert, output_model_file)
+        output_model_path = os.path.join(save_dir, "bert_model.pt")
+        save(model.bert, output_model_path)
 
     elif mode is 'eval':
 
-        assert model_file is not None or model_file is not '', '\"eval\" mode is model_file require'
+        assert model_path is not None or model_path is not '', '\"eval\" mode is model_path require'
 
         criterion_lm = NLLLoss(ignore_index=-1, reduction='none')
         criterion_ns = NLLLoss(ignore_index=-1, reduction='none')
         Example = namedtuple('Example', ('lm_pred', 'lm_true', 'ns_pred', 'ns_true'))
-        logger = get_logger('eval', log_dir, False)
+        if log_dir is not None or log_dir is not '':
+            logger = get_logger('eval', log_dir, False)
 
         def process(batch, model, iter_bar, epoch, step):
             input_ids, segment_ids, input_mask, next_sentence_labels = batch
@@ -148,20 +151,60 @@ def main(model_cfg='config/bert_base.json',
                 for t in ns_true:
                     y_ns_trues.append(t)
 
-            lm_reports = classification_report(y_lm_trues, y_lm_preds, output_dict=True)
-            for k, v in lm_reports.get('micro avg').items():
-                logger.info(str('macro avg') + "," + str(k) + "," + str(v))
-            for k, v in lm_reports.get('macro avg').items():
-                logger.info(str('macro avg') + "," + str(k) + "," + str(v))
-            for k, v in lm_reports.get('weighted avg').items():
-                logger.info(str('weighted avg') + "," + str(k) + "," + str(v))
+            if log_dir is not None or log_dir is not '':
+                lm_reports = classification_report(y_lm_trues, y_lm_preds, output_dict=True)
+                # omit tokens score
+                for k, v in lm_reports.get('micro avg').items():
+                    logger.info(str('macro avg') + "," + str(k) + "," + str(v))
+                for k, v in lm_reports.get('macro avg').items():
+                    logger.info(str('macro avg') + "," + str(k) + "," + str(v))
+                for k, v in lm_reports.get('weighted avg').items():
+                    logger.info(str('weighted avg') + "," + str(k) + "," + str(v))
 
-            ns_reports = classification_report(y_ns_trues, y_ns_preds, output_dict=True)
-            for k, v in ns_reports.items():
-                for ck, cv in v.items():
-                    logger.info(str(k) + "," + str(ck) + "," + str(cv))
+                ns_reports = classification_report(y_ns_trues, y_ns_preds, output_dict=True)
+                for k, v in ns_reports.items():
+                    for ck, cv in v.items():
+                        logger.info(str(k) + "," + str(ck) + "," + str(cv))
+            else:
+                print(classification_report(y_ns_trues, y_ns_preds))
 
-        helper.evaluate(process, model, train_dataset, batch_size, epoch, model_file, example_reports)
+        helper.evaluate(process, model, train_dataset, batch_size, epoch, model_path, example_reports)
 
 
-main(mode='train')
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description='BERT pre-training.', usage='%(prog)s [options]')
+    parser.add_argument('--config_path', help='JSON file path for defines networks.', nargs='?',
+                        type=str, default='config/bert_base.json')
+    parser.add_argument('--dataset_path', help='Dataset file path for BERT to pre-training.', nargs='?',
+                        type=str, default='tests/sample_text.txt')
+    parser.add_argument('--model_path', help='Pre-training PyTorch model path.', nargs='?',
+                        type=str, default=None)
+    parser.add_argument('--vocab_path', help='Vocabulary file path for BERT to pre-training.', nargs='?',
+                        type=str, default='tests/sample_text.vocab')
+    parser.add_argument('--sp_model_path', help='Trained SentencePiece model path.', nargs='?',
+                        type=str, default='tests/sample_text.model')
+    parser.add_argument('--save_dir', help='BERT pre-training model saving directory path.', nargs='?',
+                        type=str, default='pretrain/')
+    parser.add_argument('--log_dir', help='Logging file path.', nargs='?',
+                        type = str, default='logs/')
+    parser.add_argument('--batch_size',  help='Batch size', nargs='?',
+                        type=int, default=2)
+    parser.add_argument('--max_pos', help='The maximum sequence length for BERT (slow as big).', nargs='?',
+                        type=int, default=128)
+    parser.add_argument('--lr', help='Learning rate', nargs='?',
+                        type=float, default = 5e-5)
+    parser.add_argument('--warmup_steps', help='Warm-up steps proportion.', nargs='?',
+                        type=float, default=0.1)
+    parser.add_argument('--epoch', help='Epoch', nargs='?',
+                        type=int, default=20)
+    parser.add_argument('--per_save_epoc', help=
+                        'Saving training model timing is the number divided by the epoch number', nargs='?',
+                        type=int, default=1)
+    parser.add_argument('--mode', help='train or eval', nargs='?',
+                        type=str, default='train')
+    args = parser.parse_args()
+    bert_pretraining(args.config_path, args.dataset_path, args.model_path, args.vocab_path, args.sp_model_path,
+                     args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr, args.warmup_steps,
+                     args.epoch, args.per_save_epoc, args.mode)
+
