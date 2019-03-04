@@ -41,7 +41,7 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='SentencePiece training.', usage='%(prog)s [options]')
     parser.add_argument('--config_path', help='JSON file path for defines training.', nargs='?',
-                        type=str, default='config/sentensepiece.json')
+                        type=str, default='tests/test_sp.json')
     args = parser.parse_args()
     main(args.config_path)
 

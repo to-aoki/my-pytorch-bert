@@ -4,6 +4,43 @@ These codes are [BERT](https://arxiv.org/abs/1810.04805) implementation by PyTor
 The base of this implementation is [google BERT](https://github.com/google-research/bert) and [pytorch-pretrained-BERT](https://github.com/huggingface/pytorch-pretrained-BERT).
 And we add [bert-japanese](https://github.com/yoheikikuta/bert-japanese) as [SentencePiece](https://github.com/google/sentencepiece) Tokenizer.
 
+### How to convert from TensorFlow model to my model
+```
+python load_tf_bert.py \
+    --config_path=json-file \
+    --tfmodel_path=bert-wiki-ja/model.ckpt-1400000 \
+    --vocab_num=32000 --output_path=bert-wiki-ja.pt
+```
+json-file example:
+```
+{
+	"vocab_size": 32000,
+	"hidden_size": 768,
+	"num_hidden_layers": 12,
+	"num_attention_heads": 12,
+	"intermediate_size": 3072,
+	"attention_probs_dropout_prob": 0.1,
+	"hidden_dropout_prob": 0.1,
+	"max_position_embeddings": 128,
+	"type_vocab_size": 2,
+	"initializer_range": 0.02
+}
+```
+
+### How to train Sentence Piece
+```
+python train-sentencepiece.py --config_path=json-file
+```
+json-file example:
+```
+{
+    "text_dir" : "tests/",
+    "prefix" : "tests/sample_text",
+    "vocab_size" : 100,
+    "ctl_symbols" : "[PAD],[CLS],[SEP],[MASK]"
+}
+```
+
 
 ### Classification result of my-pytorch-bert
 - Dataset : [livedoor ニュースコーパス](https://www.rondhuit.com/download.html)  8(training):2(evaluate)
