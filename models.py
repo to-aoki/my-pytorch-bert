@@ -48,6 +48,8 @@ class Config(NamedTuple):
             config['vocab_size'] = vocab_size
         if max_position_embeddings is not None:
             config['max_position_embeddings'] = max_position_embeddings
+        if type_vocab_size is not None:
+            config['type_vocab_size'] = type_vocab_size
         return cls(**config)
 
 

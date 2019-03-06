@@ -241,15 +241,12 @@ class PretrainDataset(Dataset):
         segment_ids = [0]*(len(tokens_a)+2) + [1]*(len(tokens_b)+1) 
 
         # mask prediction calc
-        masked_tokens, masked_lm_positions = [], []
         mask_prediction = int(round(len(tokens) * masked_lm_prob))
 
         mask_candidate_pos = [i for i, token in enumerate(tokens) if token != '[CLS]' and token != '[SEP]']
         # masked
         shuffle(mask_candidate_pos)
         for pos in mask_candidate_pos[:mask_prediction]:
-            masked_tokens.append(tokens[pos])
-            masked_lm_positions.append(pos)
             if random() < 0.8:    # 80%
                 tokens[pos] = '[MASK]'
             elif random() < 0.5:  # 10%
@@ -259,11 +256,13 @@ class PretrainDataset(Dataset):
         # tokens indexing
         input_ids = self.tokenizer.convert_tokens_to_ids(tokens)
         input_mask = [1]*len(input_ids)
+        label_ids = self.tokenizer.convert_tokens_to_ids(['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]'])
 
         # zero padding
         num_zero_pad = max_pos - len(input_ids)
         input_ids.extend([0]*num_zero_pad)
         segment_ids.extend([0]*num_zero_pad)
         input_mask.extend([0]*num_zero_pad)
+        label_ids.extend([0]*num_zero_pad)
 
-        return [input_ids,  segment_ids, input_mask, is_next_label]
+        return [input_ids,  segment_ids, input_mask, is_next_label, label_ids]

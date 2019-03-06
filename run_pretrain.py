@@ -44,7 +44,7 @@ def bert_pretraining(
         per_save_epoc=1,
         mode='train'):
 
-    assert mode is not None and (mode is 'train' or mode is 'eval'), 'support mode train or eval.'
+    assert mode is not None and (mode == 'train' or mode == 'eval'), 'support mode train or eval.'
 
     if sp_model_path is not None:
         tokenizer = tokenization_sentencepiece.FullTokenizer(
@@ -74,20 +74,19 @@ def bert_pretraining(
     model = pretrain_tasks.BertPretrainingTasks(config)
     helper = Helper()
 
-    if mode is 'train':
+    if mode == 'train':
 
         warmup_steps = int(len(train_dataset) / batch_size * epoch * warmup_proportion)
         optimizer = optimization.get_optimizer(model, lr, warmup_steps)
-        criterion_lm = CrossEntropyLoss(ignore_index=-1, reduction='none')
-        criterion_ns = CrossEntropyLoss(ignore_index=-1, reduction='none')
+        criterion_lm = CrossEntropyLoss(ignore_index=-1)
+        criterion_ns = CrossEntropyLoss(ignore_index=-1)
 
         def process(batch, model, iter_bar, epoch, step):
-            input_ids, segment_ids, input_mask, next_sentence_labels = batch
+            input_ids, segment_ids, input_mask, next_sentence_labels, label_ids = batch
             masked_lm_loss, next_sentence_loss = model(input_ids, segment_ids, input_mask)
-            lm_labels = input_ids.view(-1)
+            lm_labels = label_ids.view(-1)
             masked_lm_loss = criterion_lm(masked_lm_loss.view(-1, len(tokenizer)), lm_labels)
-            masked_lm_loss = masked_lm_loss.sum()/len(lm_labels) + 1e-5
-            next_sentence_loss = criterion_ns(next_sentence_loss.view(-1, 2), next_sentence_labels.view(-1)).mean()
+            next_sentence_loss = criterion_ns(next_sentence_loss.view(-1, 2), next_sentence_labels.view(-1))
             return masked_lm_loss + next_sentence_loss
 
         helper.training(process, model, train_dataset, optimizer, batch_size, epoch, model_path, save_dir, per_save_epoc)
@@ -95,7 +94,7 @@ def bert_pretraining(
         output_model_path = os.path.join(save_dir, "bert_model.pt")
         save(model.bert, output_model_path)
 
-    elif mode is 'eval':
+    elif mode == 'eval':
 
         assert model_path is not None or model_path is not '', '\"eval\" mode is model_path require'
 
@@ -106,12 +105,12 @@ def bert_pretraining(
             logger = get_logger('eval', log_dir, False)
 
         def process(batch, model, iter_bar, epoch, step):
-            input_ids, segment_ids, input_mask, next_sentence_labels = batch
+            input_ids, segment_ids, input_mask, next_sentence_labels, label_ids = batch
             masked_lm_loss, next_sentence_loss = model(input_ids, segment_ids, input_mask)
 
             masked_lm_probs = F.log_softmax(masked_lm_loss.view(-1, len(tokenizer)), 1)
             masked_lm_predictions = masked_lm_probs.max(1, False)
-            lm_labels = input_ids.view(-1)
+            lm_labels = label_ids.view(-1)
 
             ns_probs = F.log_softmax(next_sentence_loss.view(-1, 2), 1)
             ns_predictions = ns_probs.max(1, False)
@@ -122,7 +121,7 @@ def bert_pretraining(
                 ns_predictions[1].tolist(), ns_labels.tolist())
 
             masked_lm_loss = criterion_lm(masked_lm_probs, lm_labels)
-            masked_lm_loss = masked_lm_loss.sum()/len(lm_labels) + 1e-5
+            masked_lm_loss = masked_lm_loss.sum()/(len(lm_labels) + 1e-5)
             next_sentence_loss = criterion_ns(ns_probs, ns_labels).mean()
 
             return masked_lm_loss + next_sentence_loss, example
@@ -202,7 +201,7 @@ if __name__ == '__main__':
                         'Saving training model timing is the number divided by the epoch number', nargs='?',
                         type=int, default=1)
     parser.add_argument('--mode', help='train or eval', nargs='?',
-                        type=str, default='train')
+                        type=str, default="train")
     args = parser.parse_args()
     bert_pretraining(args.config_path, args.dataset_path, args.model_path, args.vocab_path, args.sp_model_path,
                      args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr, args.warmup_steps,
