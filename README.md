@@ -48,21 +48,21 @@ json-file example:
 
 1. [Pretrained BERT model and trained SentencePiece model](https://drive.google.com/drive/folders/1Zsm9DD40lrUVu6iAnIuTH2ODIkh-WM-O?usp=sharing) (PyTorch converted).
   ```
-                  precision    recall  f1-score   support
+                 precision    recall  f1-score   support
 
-              0       0.86      0.94      0.90       173
-              1       0.96      0.86      0.91       174
-              2       0.99      0.92      0.95       173
-              3       0.79      0.90      0.85       103
-              4       0.96      0.98      0.97       174
-              5       0.89      0.89      0.89       169
-              6       0.93      0.98      0.96       174
-              7       0.96      0.99      0.98       180
-              8       1.00      0.87      0.93       154
+             0       0.91      0.93      0.92       173
+             1       0.89      0.90      0.89       174
+             2       0.96      0.94      0.95       173
+             3       0.92      0.84      0.88       103
+             4       0.95      0.95      0.95       174
+             5       0.89      0.88      0.89       169
+             6       0.96      0.98      0.97       174
+             7       0.96      0.99      0.98       180
+             8       0.96      0.94      0.95       154
 
-      micro avg       0.93      0.93      0.93      1474
-      macro avg       0.93      0.93      0.92      1474
-   weighted avg       0.93      0.93      0.93      1474
+     micro avg       0.93      0.93      0.93      1474
+     macro avg       0.93      0.93      0.93      1474
+weighted avg       0.93      0.93      0.93      1474
 
  ```
 
