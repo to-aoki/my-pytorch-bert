@@ -38,7 +38,7 @@ def classification(
     log_dir='logs/',
     batch_size=2,
     max_pos=512,
-    lr=2e-5,
+    lr=5e-5,
     warmup_proportion=0.1,  # warmup_steps = len(dataset) / batch_size * epoch * warmup_proportion
     epoch=5,
     per_save_epoc=1,

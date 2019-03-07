@@ -158,7 +158,7 @@ class PretrainDataset(Dataset):
         else:
             if self.line_buffer is None:
                 # read first non-empty line of file
-                while t1 == "" :
+                while t1 == "":
                     t1 = self.file.__next__().strip()
                     t2 = self.file.__next__().strip()
             else:
