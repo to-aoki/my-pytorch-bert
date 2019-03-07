@@ -72,7 +72,7 @@ def classification(
         def process(batch, model, iter_bar, epoch, step):
             input_ids, segment_ids, input_mask, label_id = batch
             logits = model(input_ids, segment_ids, input_mask)
-            return criterion(logits, label_id)
+            return criterion(logits.view(-1, label_num), label_id.view(-1))
 
         helper.training(process, model, dataset, optimizer, batch_size, epoch, model_path, save_dir, per_save_epoc)
 
@@ -88,7 +88,7 @@ def classification(
         def process(batch, model, iter_bar, epoch, step):
             input_ids, segment_ids, input_mask, label_id = batch
             logits = model(input_ids, segment_ids, input_mask)
-            loss = criterion(logits, label_id)
+            loss = criterion(logits.view(-1, label_num), label_id.view(-1))
             _, label_pred = logits.max(1)
             example = Example(label_pred.tolist(), label_id.tolist())
             return loss, example
