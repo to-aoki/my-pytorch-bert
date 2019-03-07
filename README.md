@@ -27,6 +27,42 @@ json-file example:
 }
 ```
 
+### How to Classifier train
+```
+python run_classifier.py \
+  --config_path=config/bert_base.json
+  --dataset_path=data/class_train.tsv
+  --pretrain_path=bert-wiki-ja.pt
+  --vocab_path=bert-wki-ja/wiki-ja.vocab
+  --sp_model_path=bert-wki-ja/wiki-ja.model
+  --save_dir=classifier/
+  --log_dir=logs/
+  --batch_size=4
+  --max_pos=512
+  --lr=2e-5
+  --warmup_steps=0.1
+  --epoch=10
+  --per_save_epoc=1
+  --mode=train
+  --label_num=3
+```
+
+### How to Classifier evaluate
+```
+python run_classifier.py \
+  --config_path=config/bert_base.json
+  --dataset_path=data/class_eval.tsv
+  --moel_path=classifier/classifier.pt
+  --vocab_path=bert-wki-ja/wiki-ja.vocab
+  --sp_model_path=bert-wki-ja/wiki-ja.model
+  --log_dir=logs/
+  --batch_size=4
+  --max_pos=512
+  --epoch=1
+  --mode=eval
+  --label_num=3
+```
+
 ### How to train Sentence Piece
 ```
 python train-sentencepiece.py --config_path=json-file
@@ -41,28 +77,46 @@ json-file example:
 }
 ```
 
+### How to pre-train
+```
+python run_pretrain.py \
+  --config_path=config/bert_base.json
+  --dataset_path=tests/sample_text.txt
+  --pretrain_path=None
+  --vocab_path=bert-wki-ja/wiki-ja.vocab
+  --sp_model_path=bert-wki-ja/wiki-ja.model
+  --save_dir=pretrain/
+  --log_dir=logs/
+  --batch_size=4
+  --max_pos=512
+  --lr=5e-5
+  --warmup_steps=0.1
+  --epoch=20
+  --per_save_epoc=1
+  --mode=train
+```
+
 
 ### Classification result of my-pytorch-bert
 - Dataset : [livedoor ニュースコーパス](https://www.rondhuit.com/download.html)  8(training):2(evaluate)
 - epoch : 10
 
 1. [Pretrained BERT model and trained SentencePiece model](https://drive.google.com/drive/folders/1Zsm9DD40lrUVu6iAnIuTH2ODIkh-WM-O?usp=sharing) (PyTorch converted).
-  ```
-                 precision    recall  f1-score   support
-
-             0       0.91      0.93      0.92       173
-             1       0.89      0.90      0.89       174
-             2       0.96      0.94      0.95       173
-             3       0.92      0.84      0.88       103
-             4       0.95      0.95      0.95       174
-             5       0.89      0.88      0.89       169
-             6       0.96      0.98      0.97       174
-             7       0.96      0.99      0.98       180
-             8       0.96      0.94      0.95       154
-
-     micro avg       0.93      0.93      0.93      1474
-     macro avg       0.93      0.93      0.93      1474
-weighted avg       0.93      0.93      0.93      1474
-
  ```
+               precision    recall  f1-score   support
+
+            0       0.91      0.93      0.92       173
+            1       0.89      0.90      0.89       174
+            2       0.96      0.94      0.95       173
+            3       0.92      0.84      0.88       103
+            4       0.95      0.95      0.95       174
+            5       0.89      0.88      0.89       169
+            6       0.96      0.98      0.97       174
+            7       0.96      0.99      0.98       180
+            8       0.96      0.94      0.95       154
+
+    micro avg       0.93      0.93      0.93      1474
+    macro avg       0.93      0.93      0.93      1474
+weighted avg       0.93      0.93      0.93      1474
+```
 
