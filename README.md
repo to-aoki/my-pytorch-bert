@@ -98,25 +98,25 @@ python run_pretrain.py \
 
 
 ### Classification result of my-pytorch-bert
-- Dataset : [livedoor ニュースコーパス](https://www.rondhuit.com/download.html)  8(training):2(evaluate)
+- Dataset : [livedoor ニュースコーパス](https://www.rondhuit.com/download.html)  6(training):2(evaluate)
 - epoch : 10
 
 1. [Pretrained BERT model and trained SentencePiece model](https://drive.google.com/drive/folders/1Zsm9DD40lrUVu6iAnIuTH2ODIkh-WM-O?usp=sharing) (PyTorch converted).
  ```
                precision    recall  f1-score   support
 
-            0       0.91      0.93      0.92       173
-            1       0.89      0.90      0.89       174
-            2       0.96      0.94      0.95       173
-            3       0.92      0.84      0.88       103
-            4       0.95      0.95      0.95       174
-            5       0.89      0.88      0.89       169
-            6       0.96      0.98      0.97       174
-            7       0.96      0.99      0.98       180
-            8       0.96      0.94      0.95       154
+            0       0.95      0.93      0.94       178
+            1       0.91      0.97      0.94       172
+            2       0.99      0.97      0.98       176
+            3       0.94      0.82      0.88        95
+            4       0.95      0.99      0.97       158
+            5       0.92      0.95      0.93       174
+            6       0.96      0.96      0.96       167
+            7       0.98      0.99      0.98       190
+            8       0.97      0.95      0.96       163
 
-    micro avg       0.93      0.93      0.93      1474
-    macro avg       0.93      0.93      0.93      1474
-weighted avg       0.93      0.93      0.93      1474
+    micro avg       0.95      0.95      0.95      1473
+    macro avg       0.95      0.95      0.95      1473
+weighted avg       0.95      0.95      0.95      1473
 ```
 
