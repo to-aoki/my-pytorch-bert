@@ -25,10 +25,12 @@ from utils import truncate_seq_pair
 
 class BertCsvDataset(Dataset):
 
-    def __init__(self, file_path, tokenizer, max_pos, label_num, delimiter='\t', encoding='utf-8', header_skip=True):
+    def __init__(self, file_path, tokenizer, max_pos, label_num, delimiter='\t',
+                 encoding='utf-8', header_skip=True, cash_text=False):
         super().__init__()
         labels = []
         self.records = []
+        self.text_records = []
         start = 1 if header_skip else 0
         with open(file_path, "r", encoding=encoding) as f:
             csv_reader = csv.reader(f, delimiter=delimiter, quotechar=None)
@@ -64,18 +66,25 @@ class BertCsvDataset(Dataset):
                 input_mask.extend([0] * num_zero_pad)
 
                 self.records.append([input_ids, segment_ids, input_mask, label])
+                if cash_text:
+                    self.text_records.append(line)
 
         if len(self.records) is 0:
             raise ValueError(file_path + 'were not includes documents.')
 
         assert label_num == len(labels), 'label_num mismatch'
         labels.sort()
+        self.per_label_record = dict(zip(labels,[0]*len(labels)))
         for record in self.records:
             label_dict = {name: i for i, name in enumerate(labels)}
             record[3] = label_dict.get(record[3])  # to id
+            self.per_label_record[record[3]] += 1
 
     def __len__(self):
         return len(self.records)
 
     def __getitem__(self, index):
         return [torch.tensor(x, dtype=torch.long) for x in self.records[index]]
+
+    def per_label_record(self):
+        return self.per_label_record()
