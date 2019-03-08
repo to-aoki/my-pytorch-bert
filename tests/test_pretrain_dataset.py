@@ -39,6 +39,16 @@ class PretrainDatasetTestCase(unittest.TestCase):
                 on_memory=True
             )
 
+    def test_not_found_file_load(self):
+        with self.assertRaises(FileNotFoundError):
+            PretrainDataset(
+                "not_found_text.txt",
+                self.tokenizer,
+                max_pos=128,
+                corpus_lines=None,
+                on_memory=True
+            )
+
     def test_last_row_empty_file_load(self):
         dataset1 = PretrainDataset(
             "sample_text.txt",
@@ -55,6 +65,28 @@ class PretrainDatasetTestCase(unittest.TestCase):
             on_memory=True
         )
         self.assertEqual(len(dataset1), len(dataset2))
+
+
+    def test_get_item_one(self):
+        dataset = PretrainDataset(
+            "sample_text.txt",
+            self.tokenizer,
+            max_pos=128,
+            corpus_lines=None,
+            on_memory=True
+        )
+        self.assertIsNotNone(dataset.__getitem__(1))
+
+    def test_get_item_use_not_item_index(self):
+        with self.assertRaises(AssertionError):
+            dataset = PretrainDataset(
+                "sample_text.txt",
+                self.tokenizer,
+                max_pos=128,
+                corpus_lines=None,
+                on_memory=True
+            )
+            dataset.__getitem__([1, 2])
 
 
 if __name__ == '__main__':

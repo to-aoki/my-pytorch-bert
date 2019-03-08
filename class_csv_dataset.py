@@ -25,15 +25,15 @@ from utils import truncate_seq_pair
 
 class BertCsvDataset(Dataset):
 
-    def __init__(self, file_path, tokenizer, max_pos, label_num, delimiter='\t', encoding='utf-8', headskip=False):
+    def __init__(self, file_path, tokenizer, max_pos, label_num, delimiter='\t', encoding='utf-8', header_skip=True):
         super().__init__()
         labels = []
         self.records = []
-        start = 1 if headskip else 0
+        start = 1 if header_skip else 0
         with open(file_path, "r", encoding=encoding) as f:
             csv_reader = csv.reader(f, delimiter=delimiter, quotechar=None)
             lines = tqdm(csv_reader, desc="Loading Dataset")
-            for line in itertools.islice(lines, 1, None):  # skip header
+            for line in itertools.islice(lines, start, None):
                 assert len(line) > 1, 'require label and one sentence'
                 label = line[0]
                 if label not in labels:
@@ -64,6 +64,9 @@ class BertCsvDataset(Dataset):
                 input_mask.extend([0] * num_zero_pad)
 
                 self.records.append([input_ids, segment_ids, input_mask, label])
+
+        if len(self.records) is 0:
+            raise ValueError(file_path + 'were not includes documents.')
 
         assert label_num == len(labels), 'label_num mismatch'
         labels.sort()

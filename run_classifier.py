@@ -43,9 +43,9 @@ def classification(
     epoch=5,
     per_save_epoc=1,
     mode='train',
-    label_num=None
+    label_num=None,
+    read_head=False
 ):
-
     if sp_model_path is not None:
         tokenizer = tokenization_sentencepiece.FullTokenizer(
             sp_model_path, vocab_path, do_lower_case=True)
@@ -53,7 +53,7 @@ def classification(
         tokenizer = tokenization.FullTokenizer(vocab_path, do_lower_case=True)
 
     config = models.Config.from_json(config_path, len(tokenizer), max_pos)
-    dataset = BertCsvDataset(dataset_path, tokenizer, max_pos, label_num)
+    dataset = BertCsvDataset(dataset_path, tokenizer, max_pos, label_num, header_skip=read_head)
 
     model = Classifier(config, label_num)
 
@@ -82,7 +82,6 @@ def classification(
     elif mode is 'eval':
         logger = get_logger('eval', log_dir, False)
         criterion = CrossEntropyLoss()
-
         Example = namedtuple('Example', ('pred', 'true'))
 
         def process(batch, model, iter_bar, epoch, step):
@@ -159,9 +158,10 @@ if __name__ == '__main__':
                         type=str, default='train')
     parser.add_argument('--label_num', help='labels number', required=True,
                         type=int)
+    parser.add_argument('--read_head', action='store_true')
 #    parser.add_argument('--labels', nargs='+', help='<Required> labels', required=True)
 
     args = parser.parse_args()
     classification(args.config_path, args.dataset_path, args.pretrain_path, args.model_path, args.vocab_path,
                    args.sp_model_path, args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr,
-                   args.warmup_steps, args.epoch, args.per_save_epoc, args.mode, args.label_num)
+                   args.warmup_steps, args.epoch, args.per_save_epoc, args.mode, args.label_num, not(args.read_head))

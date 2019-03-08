@@ -1,0 +1,31 @@
+class01	This text is included to make sure Unicode is handled properly: 力加勝北区ᴵᴺᵀᵃছজটডণত
+class01,Text should be one-sentence-per-line, with empty lines between documents.
+class01	his sample text is public domain and was randomly selected from Project Guttenberg.
+class02	The rain had only ceased with the gray streaks of morning at Blazing Star, and the settlement awoke to a moral sense of cleanliness, and the finding of forgotten knives, tin cups, and smaller camp utensils, where the heavy showers had washed away the debris and dust heaps before the cabin doors.
+class02	Indeed, it was recorded in Blazing Star that a fortunate early riser had once picked up on the highway a solid chunk of gold quartz which the rain had freed from its incumbering soil, and washed into immediate and glittering popularity.
+class02	Possibly this may have been the reason why early risers in that locality, during the rainy season, adopted a thoughtful habit of body, and seldom lifted their eyes to the rifted or india-ink washed skies above them.
+class02	"Cass" Beard had risen early that morning, but not with a view to discovery.
+class02	A leak in his cabin roof,--quite consistent with his careless, improvident habits,--had roused him at 4 A. M., with a flooded "bunk" and wet blankets.
+class02	The chips from his wood pile refused to kindle a fire to dry his bed-clothes, and he had recourse to a more provident neighbor's to supply the deficiency.
+class02	This was nearly opposite.
+class02	Mr. Cassius crossed the highway, and stopped suddenly.
+class02	Something glittered in the nearest red pool before him.
+class02	Gold, surely!
+class02	But, wonderful to relate, not an irregular, shapeless fragment of crude ore, fresh from Nature's crucible, but a bit of jeweler's handicraft in the form of a plain gold ring.
+class02	Looking at it more attentively, he saw that it bore the inscription, "May to Cass."
+class02	Like most of his fellow gold-seekers, Cass was superstitious.
+class03	The fountain of classic wisdom, Hypatia herself.
+class03	As the ancient sage--the name is unimportant to a monk--pumped water nightly that he might study by day, so I, the guardian of cloaks and parasols, at the sacred doors of her lecture-room, imbibe celestial knowledge.
+class03	From my youth I felt in me a soul above the matter-entangled herd.
+class03	She revealed to me the glorious fact, that I am a spark of Divinity itself.
+class03	A fallen star, I am, sir!' continued he, pensively, stroking his lean stomach--'a fallen star!--fallen, if the dignity of philosophy will allow of the simile, among the hogs of the lower world--indeed, even into the hog-bucket itself. Well, after all, I will show you the way to the Archbishop's.
+class03	There is a philosophic pleasure in opening one's treasures to the modest young.
+class03	Perhaps you will assist me by carrying this basket of fruit?' And the little man jumped up, put his basket on Philammon's head, and trotted off up a neighbouring street.
+class03	Philammon followed, half contemptuous, half wondering at what this philosophy might be, which could feed the self-conceit of anything so abject as his ragged little apish guide;
+class03	but the novel roar and whirl of the street, the perpetual stream of busy faces, the line of curricles, palanquins, laden asses, camels, elephants, which met and passed him, and squeezed him up steps and into doorways, as they threaded their way through the great Moon-gate into the ample street beyond, drove everything from his mind but wondering curiosity, and a vague, helpless dread of that great living wilderness, more terrible than any dead wilderness of sand which he had left behind.
+class03	Already he longed for the repose, the silence of the Laura--for faces which knew him and smiled upon him; but it was too late to turn back now.
+class03	His guide held on for more than a mile up the great main street, crossed in the centre of the city, at right angles, by one equally magnificent, at each end of which, miles away, appeared, dim and distant over the heads of the living stream of passengers, the yellow sand-hills of the desert;
+class03	while at the end of the vista in front of them gleamed the blue harbour, through a network of countless masts.
+class03	At last they reached the quay at the opposite end of the street;
+class03	and there burst on Philammon's astonished eyes a vast semicircle of blue sea, ringed with palaces and towers.
+class03	He stopped involuntarily; and his little guide stopped also, and looked askance at the young monk, to watch the effect which that grand panorama should produce on him.

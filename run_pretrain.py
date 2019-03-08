@@ -78,14 +78,15 @@ def bert_pretraining(
 
         warmup_steps = int(len(train_dataset) / batch_size * epoch * warmup_proportion)
         optimizer = optimization.get_optimizer(model, lr, warmup_steps)
-        criterion_lm = CrossEntropyLoss(ignore_index=-1)
+        criterion_lm = CrossEntropyLoss(ignore_index=-1, reduction='none')
         criterion_ns = CrossEntropyLoss(ignore_index=-1)
 
         def process(batch, model, iter_bar, epoch, step):
             input_ids, segment_ids, input_mask, next_sentence_labels, label_ids = batch
             masked_lm_loss, next_sentence_loss = model(input_ids, segment_ids, input_mask)
             lm_labels = label_ids.view(-1)
-            masked_lm_loss = criterion_lm(masked_lm_loss.view(-1, len(tokenizer)), lm_labels)
+            masked_lm_loss = criterion_lm(masked_lm_loss, lm_labels)
+            masked_lm_loss = masked_lm_loss.sum()/(len(lm_labels) + 1e-5)
             next_sentence_loss = criterion_ns(next_sentence_loss.view(-1, 2), next_sentence_labels.view(-1))
             return masked_lm_loss + next_sentence_loss
 
@@ -99,7 +100,7 @@ def bert_pretraining(
         assert model_path is not None or model_path is not '', '\"eval\" mode is model_path require'
 
         criterion_lm = NLLLoss(ignore_index=-1, reduction='none')
-        criterion_ns = NLLLoss(ignore_index=-1, reduction='none')
+        criterion_ns = NLLLoss(ignore_index=-1)
         Example = namedtuple('Example', ('lm_pred', 'lm_true', 'ns_pred', 'ns_true'))
         if log_dir is not None or log_dir is not '':
             logger = get_logger('eval', log_dir, False)
@@ -122,7 +123,7 @@ def bert_pretraining(
 
             masked_lm_loss = criterion_lm(masked_lm_probs, lm_labels)
             masked_lm_loss = masked_lm_loss.sum()/(len(lm_labels) + 1e-5)
-            next_sentence_loss = criterion_ns(ns_probs, ns_labels).mean()
+            next_sentence_loss = criterion_ns(ns_probs, ns_labels)
 
             return masked_lm_loss + next_sentence_loss, example
 

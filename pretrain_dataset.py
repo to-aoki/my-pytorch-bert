@@ -147,7 +147,10 @@ class PretrainDataset(Dataset):
         """
         t1 = ""
         t2 = ""
-        assert item < self.corpus_lines
+
+        assert isinstance(item, int), 'item only support int(index) access.'
+        assert item < self.corpus_lines, 'item index out range corpus.'
+
         if self.on_memory:
             sample = self.sample_to_doc[item]
             t1 = self.all_documents[sample["doc_id"]][sample["line"]]
