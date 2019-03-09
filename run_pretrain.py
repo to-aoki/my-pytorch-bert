@@ -35,7 +35,7 @@ def bert_pretraining(
         vocal_path='tests/sample_text.vocab',
         sp_model_path='tests/sample_text.model',
         save_dir='pretrain/',
-        log_dir='logs/',
+        log_dir=None,
         batch_size=2,
         max_pos=128,
         lr=5e-5,
@@ -97,15 +97,17 @@ def bert_pretraining(
 
     elif mode == 'eval':
 
-        assert model_path is not None or model_path is not '', '\"eval\" mode is model_path require'
+        assert model_path is not None and model_path is not '', '\"eval\" mode is model_path require'
 
         criterion_lm = NLLLoss(ignore_index=-1, reduction='none')
         criterion_ns = NLLLoss(ignore_index=-1)
         Example = namedtuple('Example', ('lm_pred', 'lm_true', 'ns_pred', 'ns_true'))
-        if log_dir is not None or log_dir is not '':
+
+        logger = None
+        if log_dir is not None and log_dir is not '':
             logger = get_logger('eval', log_dir, False)
 
-        def process(batch, model, iter_bar, epoch, step):
+        def process(batch, model, iter_bar, step):
             input_ids, segment_ids, input_mask, next_sentence_labels, label_ids = batch
             masked_lm_loss, next_sentence_loss = model(input_ids, segment_ids, input_mask)
 
@@ -151,7 +153,7 @@ def bert_pretraining(
                 for t in ns_true:
                     y_ns_trues.append(t)
 
-            if log_dir is not None or log_dir is not '':
+            if logger is not None:
                 lm_reports = classification_report(y_lm_trues, y_lm_preds, output_dict=True)
                 # omit tokens score
                 for k, v in lm_reports.get('micro avg').items():
@@ -166,9 +168,10 @@ def bert_pretraining(
                     for ck, cv in v.items():
                         logger.info(str(k) + "," + str(ck) + "," + str(cv))
             else:
+                print(classification_report(y_lm_trues, y_lm_preds))
                 print(classification_report(y_ns_trues, y_ns_preds))
 
-        helper.evaluate(process, model, train_dataset, batch_size, epoch, model_path, example_reports)
+        helper.evaluate(process, model, train_dataset, batch_size, model_path, example_reports)
 
 
 if __name__ == '__main__':
@@ -187,7 +190,7 @@ if __name__ == '__main__':
     parser.add_argument('--save_dir', help='BERT pre-training model saving directory path.', nargs='?',
                         type=str, default='pretrain/')
     parser.add_argument('--log_dir', help='Logging file path.', nargs='?',
-                        type = str, default='logs/')
+                        type=str, default=None)
     parser.add_argument('--batch_size',  help='Batch size', nargs='?',
                         type=int, default=2)
     parser.add_argument('--max_pos', help='The maximum sequence length for BERT (slow as big).', nargs='?',

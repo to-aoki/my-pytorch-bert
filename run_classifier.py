@@ -19,12 +19,13 @@ import models
 import optimization
 import tokenization_sentencepiece
 import tokenization
+import torch
 from torch.nn import CrossEntropyLoss, NLLLoss
 
 from finetuning import Classifier
 from class_csv_dataset import BertCsvDataset
 from helper import Helper
-from utils import save, load, get_logger
+from utils import save, load, get_logger, make_balanced_classes_weights
 
 
 def classification(
@@ -35,7 +36,7 @@ def classification(
     vocab_path='collections/wiki-ja.vocab',
     sp_model_path='collections/wiki-ja.model',
     save_dir='classifier/',
-    log_dir='logs/',
+    log_dir=None,
     batch_size=2,
     max_pos=512,
     lr=5e-5,
@@ -44,6 +45,7 @@ def classification(
     per_save_epoc=1,
     mode='train',
     label_num=None,
+    balanced=False,
     read_head=False
 ):
     if sp_model_path is not None:
@@ -59,16 +61,19 @@ def classification(
 
     print('model params :', config)
     helper = Helper()
-
-    if mode is 'train':
+    if mode == 'train':
         logger = get_logger('eval', log_dir, True)
         if pretrain_path is not None:
             load(model.bert, pretrain_path)
 
         max_steps = int(len(dataset) / batch_size * epoch)
-        warmup_steps = int(max_steps* warmup_proportion)
+        warmup_steps = int(max_steps * warmup_proportion)
         optimizer = optimization.get_optimizer(model, lr, warmup_steps, max_steps)
-        criterion = CrossEntropyLoss()
+
+        balance_weights = None
+        if balanced:
+            balance_weights = torch.Tensor(make_balanced_classes_weights(dataset.per_label_records_num))
+        criterion = CrossEntropyLoss(weight=balance_weights)
 
         def process(batch, model, iter_bar, epoch, step):
             input_ids, segment_ids, input_mask, label_id = batch
@@ -80,12 +85,15 @@ def classification(
         output_model_path = os.path.join(save_dir, "classifier.pt")
         save(model, output_model_path)
 
-    elif mode is 'eval':
-        logger = get_logger('eval', log_dir, False)
+    elif mode == 'eval':
+
         criterion = CrossEntropyLoss()
         Example = namedtuple('Example', ('pred', 'true'))
+        logger = None
+        if log_dir is not None and log_dir is not '':
+            logger = get_logger('eval', log_dir, False)
 
-        def process(batch, model, iter_bar, epoch, step):
+        def process(batch, model, iter_bar, step):
             input_ids, segment_ids, input_mask, label_id = batch
             logits = model(input_ids, segment_ids, input_mask)
             loss = criterion(logits.view(-1, label_num), label_id.view(-1))
@@ -112,15 +120,16 @@ def classification(
                     y_preds.append(p)
                 for t in trues:
                     y_trues.append(t)
-            if log_dir is not None or log_dir is not '':
+
+            if logger is not None:
                 classify_reports = classification_report(y_trues, y_preds, output_dict=True)
                 for k, v in classify_reports.items():
                     for ck, cv in v.items():
                         logger.info(str(k) + "," + str(ck) + "," + str(cv))
             else:
-                classification_report(y_trues, y_preds)
+                print(classification_report(y_trues, y_preds))
 
-        helper.evaluate(process, model, dataset, batch_size, epoch, model_path, example_reports)
+        helper.evaluate(process, model, dataset, batch_size, model_path, example_reports)
 
 
 if __name__ == '__main__':
@@ -128,7 +137,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='BERT classification.', usage='%(prog)s [options]')
     parser.add_argument('--config_path', help='JSON file path for defines networks.', nargs='?',
                         type=str, default='config/bert_base.json')
-    parser.add_argument('--dataset_path', help='Dataset file path for classification.', required=True,
+    parser.add_argument('--dataset_path', help='Dataset file (TSV file) path for classification.', required=True,
                         type=str)
     parser.add_argument('--pretrain_path', help='Pre-training PyTorch model path.', nargs='?',
                         type=str, default='bert-wiki-ja/bert-wiki-ja.pt')
@@ -141,7 +150,7 @@ if __name__ == '__main__':
     parser.add_argument('--save_dir', help='Classification model saving directory path.', nargs='?',
                         type=str, default='classifier/')
     parser.add_argument('--log_dir', help='Logging file path.', nargs='?',
-                        type = str, default='logs/')
+                        type=str, default=None)
     parser.add_argument('--batch_size',  help='Batch size', nargs='?',
                         type=int, default=4)
     parser.add_argument('--max_pos', help='The maximum sequence length for BERT (slow as big).', nargs='?',
@@ -159,10 +168,14 @@ if __name__ == '__main__':
                         type=str, default='train')
     parser.add_argument('--label_num', help='labels number', required=True,
                         type=int)
-    parser.add_argument('--read_head', action='store_true')
+    parser.add_argument('--balanced', action='store_true',
+                        help='Use automatically adjust weights')
+    parser.add_argument('--read_head', action='store_true',
+                        help='Use not include header TSV file')
 #    parser.add_argument('--labels', nargs='+', help='<Required> labels', required=True)
 
     args = parser.parse_args()
     classification(args.config_path, args.dataset_path, args.pretrain_path, args.model_path, args.vocab_path,
                    args.sp_model_path, args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr,
-                   args.warmup_steps, args.epoch, args.per_save_epoc, args.mode, args.label_num, args.read_head)
+                   args.warmup_steps, args.epoch, args.per_save_epoc, args.mode, args.label_num,
+                   args.balanced, args.read_head)

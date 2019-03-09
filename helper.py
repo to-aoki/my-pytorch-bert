@@ -94,7 +94,6 @@ class Helper(object):
         model,
         dataset,
         batch_size,
-        epoch,
         model_file,
         examples_reports=None
     ):
@@ -104,35 +103,31 @@ class Helper(object):
             model = torch.nn.DataParallel(model)
 
         if model_file is not None:
-            # warmup_steps over-ride
             load(model, model_file, self.device)
 
         global_step = 0
         sampler = RandomSampler(dataset)
+
         dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
 
         model.eval()
-        for e in range(epoch):
-            total_loss = 0.0
-            total_steps = 0
-            examples = []
-            iter_bar = tqdm(
-                dataloader, desc="E-{:0=2} : XX.XXXX avg loss ".format(e), position=0)
-            for step, batch in enumerate(iter_bar):
-                batch = tuple(t.to(self.device) for t in batch)
+        total_loss = 0.0
+        total_steps = 0
+        examples = []
+        iter_bar = tqdm(dataloader, desc="XX.XXXX avg loss ", position=0)
+        for step, batch in enumerate(iter_bar):
+            batch = tuple(t.to(self.device) for t in batch)
+            with torch.no_grad():
+                loss, example = process(batch, model, iter_bar, step)
+            examples.append(example)
+            if self.num_gpu > 1:
+                loss = loss.mean()
 
-                with torch.no_grad():
-                    loss, example = process(batch, model, iter_bar, e, step)
-                examples.append(example)
+            total_loss += loss.item()
+            total_steps += 1
+            iter_bar.set_description("{:2.4f} avg loss ".format(total_loss / total_steps))
+            global_step += 1
 
-                if self.num_gpu > 1:
-                    loss = loss.mean()
-
-                total_loss += loss.item()
-                total_steps += 1
-                iter_bar.set_description("E-{:0=2} : {:2.4f} avg loss ".format(e, total_loss / total_steps))
-                global_step += 1
-
-            if examples_reports is not None:
-                examples_reports(examples)
+        if examples_reports is not None:
+            examples_reports(examples)
 

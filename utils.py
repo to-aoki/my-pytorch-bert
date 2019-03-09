@@ -23,6 +23,16 @@ import numpy as np
 import torch
 from itertools import takewhile, repeat
 
+
+def make_balanced_classes_weights(per_label_records_num):
+    all_records_num = sum(per_label_records_num)
+    label_num = len(per_label_records_num)
+    classes_weights = [0] * label_num
+    for i in range(label_num):
+        classes_weights[i] = all_records_num / (label_num * per_label_records_num[i])
+    return classes_weights
+
+
 URI_REGEX = re.compile(
     r'\w+:(\/?\/?)[^\s]+\b',
     re.UNICODE)

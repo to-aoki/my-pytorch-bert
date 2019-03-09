@@ -74,11 +74,11 @@ class BertCsvDataset(Dataset):
 
         assert label_num == len(labels), 'label_num mismatch'
         labels.sort()
-        self.per_label_record = dict(zip(labels, [0]*len(labels)))
+        self.per_label_records_num = [0]*len(labels)
         for record in self.records:
             label_dict = {name: i for i, name in enumerate(labels)}
-            self.per_label_record[record[3]] += 1
             record[3] = label_dict.get(record[3])  # to id
+            self.per_label_records_num[record[3]] += 1
 
     def __len__(self):
         return len(self.records)
