@@ -45,10 +45,14 @@ class BertAdam(Optimizer):
                  b1=0.9, b2=0.999, e=1e-6, max_grad_norm=1.0):
         if lr is not required and lr < 0.0:
             raise ValueError("Invalid learning rate: {} - should be >= 0.0".format(lr))
+        if warmup_steps < 0:
+            raise ValueError("Invalid warmup_steps parameter: {} - should be >= 0".format(warmup_steps))
+        if max_steps < 0:
+            raise ValueError("Invalid max_steps parameter: {} - should be >= 0".format(max_steps))
         if not 0.0 <= b1 < 1.0:
-            raise ValueError("Invalid b1 parameter: {} - should be in [0.0, 1.0[".format(b1))
+            raise ValueError("Invalid b1 parameter: {} - should be in [0.0, 1.0]".format(b1))
         if not 0.0 <= b2 < 1.0:
-            raise ValueError("Invalid b2 parameter: {} - should be in [0.0, 1.0[".format(b2))
+            raise ValueError("Invalid b2 parameter: {} - should be in [0.0, 1.0]".format(b2))
         if not e >= 0.0:
             raise ValueError("Invalid epsilon value: {} - should be >= 0.0".format(e))
         defaults = dict(lr=lr, warmup_steps=warmup_steps, max_steps=max_steps,
@@ -66,6 +70,8 @@ class BertAdam(Optimizer):
                     lr_scheduled = group['lr'] * state['step']/group['warmup_steps']
                 elif state['step'] < group['max_steps']:
                     lr_scheduled = group['lr'] * (1 - state['step']/group['max_steps'])
+                elif (state['step'] >= group['max_steps']) and (group['max_steps'] is not 0):
+                    lr_scheduled = group['lr'] * (1 - (group['max_steps']-1) / group['max_steps'])
                 else:
                     lr_scheduled = group['lr']
                 lr.append(lr_scheduled)
@@ -126,6 +132,8 @@ class BertAdam(Optimizer):
                     lr_scheduled = group['lr'] * state['step']/group['warmup_steps']
                 elif state['step'] < group['max_steps']:
                     lr_scheduled = group['lr'] * (1 - state['step'] / group['max_steps'])
+                elif (state['step'] >= group['max_steps']) and (group['max_steps'] is not 0):
+                    lr_scheduled = group['lr'] * (1 - (group['max_steps']-1) / group['max_steps'])
                 else:
                     lr_scheduled = group['lr']
 
