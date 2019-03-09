@@ -76,7 +76,7 @@ def bert_pretraining(
 
     if mode == 'train':
         max_steps = int(len(train_dataset) / batch_size * epoch)
-        warmup_steps = int(len(train_dataset) / batch_size * epoch * warmup_proportion)
+        warmup_steps = int(max_steps * warmup_proportion)
         optimizer = optimization.get_optimizer(model, lr, warmup_steps, max_steps)
         criterion_lm = CrossEntropyLoss(ignore_index=-1, reduction='none')
         criterion_ns = CrossEntropyLoss(ignore_index=-1)

@@ -53,7 +53,7 @@ def classification(
         tokenizer = tokenization.FullTokenizer(vocab_path, do_lower_case=True)
 
     config = models.Config.from_json(config_path, len(tokenizer), max_pos)
-    dataset = BertCsvDataset(dataset_path, tokenizer, max_pos, label_num, header_skip=read_head)
+    dataset = BertCsvDataset(dataset_path, tokenizer, max_pos, label_num, header_skip=not read_head)
 
     model = Classifier(config, label_num)
 
@@ -66,8 +66,8 @@ def classification(
             load(model.bert, pretrain_path)
 
         max_steps = int(len(dataset) / batch_size * epoch)
-        warmup_steps = max_steps * warmup_proportion
-        optimizer = optimization.get_optimizer(model, lr, warmup_steps. max_steps)
+        warmup_steps = int(max_steps* warmup_proportion)
+        optimizer = optimization.get_optimizer(model, lr, warmup_steps, max_steps)
         criterion = CrossEntropyLoss()
 
         def process(batch, model, iter_bar, epoch, step):
@@ -165,4 +165,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     classification(args.config_path, args.dataset_path, args.pretrain_path, args.model_path, args.vocab_path,
                    args.sp_model_path, args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr,
-                   args.warmup_steps, args.epoch, args.per_save_epoc, args.mode, args.label_num, not(args.read_head))
+                   args.warmup_steps, args.epoch, args.per_save_epoc, args.mode, args.label_num, args.read_head)
