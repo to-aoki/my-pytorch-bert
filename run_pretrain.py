@@ -75,9 +75,9 @@ def bert_pretraining(
     helper = Helper()
 
     if mode == 'train':
-
+        max_steps = int(len(train_dataset) / batch_size * epoch)
         warmup_steps = int(len(train_dataset) / batch_size * epoch * warmup_proportion)
-        optimizer = optimization.get_optimizer(model, lr, warmup_steps)
+        optimizer = optimization.get_optimizer(model, lr, warmup_steps, max_steps)
         criterion_lm = CrossEntropyLoss(ignore_index=-1, reduction='none')
         criterion_ns = CrossEntropyLoss(ignore_index=-1)
 
@@ -85,7 +85,7 @@ def bert_pretraining(
             input_ids, segment_ids, input_mask, next_sentence_labels, label_ids = batch
             masked_lm_loss, next_sentence_loss = model(input_ids, segment_ids, input_mask)
             lm_labels = label_ids.view(-1)
-            masked_lm_loss = criterion_lm(masked_lm_loss, lm_labels)
+            masked_lm_loss = criterion_lm(masked_lm_loss.view(-1, len(tokenizer)), lm_labels)
             masked_lm_loss = masked_lm_loss.sum()/(len(lm_labels) + 1e-5)
             next_sentence_loss = criterion_ns(next_sentence_loss.view(-1, 2), next_sentence_labels.view(-1))
             return masked_lm_loss + next_sentence_loss

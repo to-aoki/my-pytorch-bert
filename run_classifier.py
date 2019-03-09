@@ -65,8 +65,9 @@ def classification(
         if pretrain_path is not None:
             load(model.bert, pretrain_path)
 
-        warmup_steps = int(len(dataset) / batch_size * epoch * warmup_proportion)
-        optimizer = optimization.get_optimizer(model, lr, warmup_steps)
+        max_steps = int(len(dataset) / batch_size * epoch)
+        warmup_steps = max_steps * warmup_proportion
+        optimizer = optimization.get_optimizer(model, lr, warmup_steps. max_steps)
         criterion = CrossEntropyLoss()
 
         def process(batch, model, iter_bar, epoch, step):

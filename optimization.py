@@ -34,13 +34,14 @@ class BertAdam(Optimizer):
     """Implements BERT version of Adam algorithm with weight decay fix.
     Params:
         lr: learning rate
-        t_total: total number of warmup steps. 0  means constant learning rate. Default: 0
+        warmup_steps: total number of warmup steps. 0 means polynomial decay learning rate. Default: 0
+        max_steps: total number of max steps. 0  means constant learning rate. Default: 0
         b1: Adams b1. Default: 0.9
         b2: Adams b2. Default: 0.999
         e: Adams epsilon. Default: 1e-6
         max_grad_norm: Maximum norm for the gradients (-1 means no clipping). Default: 1.0
     """
-    def __init__(self, params, lr=required, warmup_steps=0,
+    def __init__(self, params, lr=required, warmup_steps=0, max_steps=0,
                  b1=0.9, b2=0.999, e=1e-6, max_grad_norm=1.0):
         if lr is not required and lr < 0.0:
             raise ValueError("Invalid learning rate: {} - should be >= 0.0".format(lr))
@@ -50,7 +51,7 @@ class BertAdam(Optimizer):
             raise ValueError("Invalid b2 parameter: {} - should be in [0.0, 1.0[".format(b2))
         if not e >= 0.0:
             raise ValueError("Invalid epsilon value: {} - should be >= 0.0".format(e))
-        defaults = dict(lr=lr, warmup_steps=warmup_steps,
+        defaults = dict(lr=lr, warmup_steps=warmup_steps, max_steps=max_steps,
                         b1=b1, b2=b2, e=e, max_grad_norm=max_grad_norm)
         super(BertAdam, self).__init__(params, defaults)
 
@@ -63,6 +64,8 @@ class BertAdam(Optimizer):
                     return [0]
                 if group['warmup_steps'] != 0 and state['step'] < group['warmup_steps']:
                     lr_scheduled = group['lr'] * state['step']/group['warmup_steps']
+                elif state['step'] < group['max_steps']:
+                    lr_scheduled = group['lr'] * (1 - state['step']/group['max_steps'])
                 else:
                     lr_scheduled = group['lr']
                 lr.append(lr_scheduled)
@@ -121,6 +124,8 @@ class BertAdam(Optimizer):
 
                 if group['warmup_steps'] is not 0 and state['step'] < group['warmup_steps']:
                     lr_scheduled = group['lr'] * state['step']/group['warmup_steps']
+                elif state['step'] < group['max_steps']:
+                    lr_scheduled = group['lr'] * (1 - state['step'] / group['max_steps'])
                 else:
                     lr_scheduled = group['lr']
 
@@ -140,13 +145,13 @@ class BertAdam(Optimizer):
 
 
 # add for optimizer initializer
-def get_optimizer(model, lr=5e-5, warmup_steps=0, decoy=0.01, no_decay=('bias', 'layer_norm')):
+def get_optimizer(model, lr=5e-5, warmup_steps=0, max_steps=0, decoy=0.01, no_decay=('bias', 'layer_norm')):
     param_optimizer = list(model.named_parameters())
     optimizer_grouped_parameters = [
         {'params': [p for n, p in param_optimizer if _do_use_weight_decay(n, no_decay)], 'weight_decay_rate': decoy},
         {'params': [p for n, p in param_optimizer if not _do_use_weight_decay(n, no_decay)], 'weight_decay_rate': 0.0}
     ]
-    return BertAdam(optimizer_grouped_parameters, lr, warmup_steps)
+    return BertAdam(optimizer_grouped_parameters, lr, warmup_steps, max_steps)
 
 
 def _do_use_weight_decay(param_name, exclude_from_weight_decay):
