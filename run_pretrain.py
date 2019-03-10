@@ -41,7 +41,7 @@ def bert_pretraining(
         lr=5e-5,
         warmup_proportion=0.1,  # warmup_steps = len(dataset) / batch_size * epoch * warmup_proportion
         epoch=5,
-        per_save_epoc=1,
+        per_save_epoch=1,
         mode='train'):
 
     assert mode is not None and (mode == 'train' or mode == 'eval'), 'support mode train or eval.'
@@ -90,7 +90,7 @@ def bert_pretraining(
             next_sentence_loss = criterion_ns(next_sentence_loss.view(-1, 2), next_sentence_labels.view(-1))
             return masked_lm_loss + next_sentence_loss
 
-        helper.training(process, model, train_dataset, optimizer, batch_size, epoch, model_path, save_dir, per_save_epoc)
+        helper.training(process, model, train_dataset, optimizer, batch_size, epoch, model_path, save_dir, per_save_epoch)
 
         output_model_path = os.path.join(save_dir, "bert_model.pt")
         save(model.bert, output_model_path)
@@ -155,13 +155,9 @@ def bert_pretraining(
 
             if logger is not None:
                 lm_reports = classification_report(y_lm_trues, y_lm_preds, output_dict=True)
-                # omit tokens score
-                for k, v in lm_reports.get('micro avg').items():
-                    logger.info(str('macro avg') + "," + str(k) + "," + str(v))
-                for k, v in lm_reports.get('macro avg').items():
-                    logger.info(str('macro avg') + "," + str(k) + "," + str(v))
-                for k, v in lm_reports.get('weighted avg').items():
-                    logger.info(str('weighted avg') + "," + str(k) + "," + str(v))
+                for k, v in lm_reports.items():
+                    for ck, cv in v.items():
+                        logger.info(str(k) + "," + str(ck) + "," + str(cv))
 
                 ns_reports = classification_report(y_ns_trues, y_ns_preds, output_dict=True)
                 for k, v in ns_reports.items():
@@ -201,7 +197,7 @@ if __name__ == '__main__':
                         type=float, default=0.1)
     parser.add_argument('--epoch', help='Epoch', nargs='?',
                         type=int, default=20)
-    parser.add_argument('--per_save_epoc', help=
+    parser.add_argument('--per_save_epoch', help=
                         'Saving training model timing is the number divided by the epoch number', nargs='?',
                         type=int, default=1)
     parser.add_argument('--mode', help='train or eval', nargs='?',
@@ -209,5 +205,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     bert_pretraining(args.config_path, args.dataset_path, args.model_path, args.vocab_path, args.sp_model_path,
                      args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr, args.warmup_steps,
-                     args.epoch, args.per_save_epoc, args.mode)
+                     args.epoch, args.per_save_epoch, args.mode)
 

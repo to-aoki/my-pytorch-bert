@@ -66,12 +66,11 @@ class BertAdam(Optimizer):
                 state = self.state[p]
                 if len(state) == 0:
                     return [0]
-                if group['warmup_steps'] != 0 and state['step'] < group['warmup_steps']:
+                if group['warmup_steps'] is not 0 and state['step'] < group['warmup_steps']:
                     lr_scheduled = group['lr'] * state['step']/group['warmup_steps']
-                elif state['step'] < group['max_steps']:
-                    lr_scheduled = group['lr'] * (1 - state['step']/group['max_steps'])
-                elif (state['step'] >= group['max_steps']) and (group['max_steps'] is not 0):
-                    lr_scheduled = group['lr'] * (1 - (group['max_steps']-1) / group['max_steps'])
+                elif group['max_steps'] is not 0:
+                    global_step = min(state['step'], group['max_steps'])
+                    lr_scheduled = group['lr'] * (1 - global_step / group['max_steps'])
                 else:
                     lr_scheduled = group['lr']
                 lr.append(lr_scheduled)
@@ -130,10 +129,9 @@ class BertAdam(Optimizer):
 
                 if group['warmup_steps'] is not 0 and state['step'] < group['warmup_steps']:
                     lr_scheduled = group['lr'] * state['step']/group['warmup_steps']
-                elif state['step'] < group['max_steps']:
-                    lr_scheduled = group['lr'] * (1 - state['step'] / group['max_steps'])
-                elif (state['step'] >= group['max_steps']) and (group['max_steps'] is not 0):
-                    lr_scheduled = group['lr'] * (1 - (group['max_steps']-1) / group['max_steps'])
+                elif group['max_steps'] is not 0:
+                    global_step = min(state['step'], group['max_steps'])
+                    lr_scheduled = group['lr'] * (1 - global_step / group['max_steps'])
                 else:
                     lr_scheduled = group['lr']
 

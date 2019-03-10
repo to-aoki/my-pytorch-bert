@@ -36,13 +36,12 @@ python run_classifier.py \
   --vocab_path=bert-wki-ja/wiki-ja.vocab
   --sp_model_path=bert-wki-ja/wiki-ja.model
   --save_dir=classifier/
-  --log_dir=logs/
   --batch_size=4
   --max_pos=512
   --lr=2e-5
   --warmup_steps=0.1
   --epoch=10
-  --per_save_epoc=1
+  --per_save_epoch=1
   --mode=train
   --label_num=3
 ```
@@ -55,10 +54,8 @@ python run_classifier.py \
   --moel_path=classifier/classifier.pt
   --vocab_path=bert-wki-ja/wiki-ja.vocab
   --sp_model_path=bert-wki-ja/wiki-ja.model
-  --log_dir=logs/
   --batch_size=4
   --max_pos=512
-  --epoch=1
   --mode=eval
   --label_num=3
 ```
@@ -83,16 +80,15 @@ python run_pretrain.py \
   --config_path=config/bert_base.json
   --dataset_path=tests/sample_text.txt
   --pretrain_path=None
-  --vocab_path=bert-wki-ja/wiki-ja.vocab
-  --sp_model_path=bert-wki-ja/wiki-ja.model
+  --vocab_path=tests/sample_text.vocab
+  --sp_model_path=tests/sample_text.model
   --save_dir=pretrain/
-  --log_dir=logs/
   --batch_size=4
   --max_pos=512
   --lr=5e-5
   --warmup_steps=0.1
   --epoch=20
-  --per_save_epoc=1
+  --per_save_epoch=5
   --mode=train
 ```
 
@@ -105,18 +101,18 @@ python run_pretrain.py \
  ```
                precision    recall  f1-score   support
 
-            0       0.95      0.93      0.94       178
-            1       0.91      0.97      0.94       172
-            2       0.99      0.97      0.98       176
-            3       0.94      0.82      0.88        95
-            4       0.95      0.99      0.97       158
-            5       0.92      0.95      0.93       174
-            6       0.96      0.96      0.96       167
-            7       0.98      0.99      0.98       190
-            8       0.97      0.95      0.96       163
+            0       0.97      0.93      0.95       178
+            1       0.95      0.93      0.94       172
+            2       0.98      0.97      0.98       176
+            3       0.91      0.88      0.90        95
+            4       0.95      0.98      0.97       158
+            5       0.93      0.93      0.93       174
+            6       0.95      0.99      0.97       167
+            7       0.98      0.99      0.99       190
+            8       0.96      0.97      0.97       163
 
-    micro avg       0.95      0.95      0.95      1473
+    micro avg       0.96      0.96      0.96      1473
     macro avg       0.95      0.95      0.95      1473
-weighted avg       0.95      0.95      0.95      1473
+weighted avg       0.96      0.96      0.96      1473
 ```
 

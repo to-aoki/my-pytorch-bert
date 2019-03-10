@@ -42,7 +42,7 @@ def classification(
     lr=5e-5,
     warmup_proportion=0.1,  # warmup_steps = len(dataset) / batch_size * epoch * warmup_proportion
     epoch=5,
-    per_save_epoc=1,
+    per_save_epoch=1,
     mode='train',
     label_num=None,
     balanced=False,
@@ -62,7 +62,6 @@ def classification(
     print('model params :', config)
     helper = Helper()
     if mode == 'train':
-        logger = get_logger('eval', log_dir, True)
         if pretrain_path is not None:
             load(model.bert, pretrain_path)
 
@@ -80,7 +79,7 @@ def classification(
             logits = model(input_ids, segment_ids, input_mask)
             return criterion(logits.view(-1, label_num), label_id.view(-1))
 
-        helper.training(process, model, dataset, optimizer, batch_size, epoch, model_path, save_dir, per_save_epoc)
+        helper.training(process, model, dataset, optimizer, batch_size, epoch, model_path, save_dir, per_save_epoch)
 
         output_model_path = os.path.join(save_dir, "classifier.pt")
         save(model, output_model_path)
@@ -161,7 +160,7 @@ if __name__ == '__main__':
                         type=float, default=0.1)
     parser.add_argument('--epoch', help='Epoch', nargs='?',
                         type=int, default=10)
-    parser.add_argument('--per_save_epoc', help=
+    parser.add_argument('--per_save_epoch', help=
                         'Saving training model timing is the number divided by the epoch number', nargs='?',
                         type=int, default=1)
     parser.add_argument('--mode', help='train or eval', nargs='?',
@@ -177,5 +176,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     classification(args.config_path, args.dataset_path, args.pretrain_path, args.model_path, args.vocab_path,
                    args.sp_model_path, args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr,
-                   args.warmup_steps, args.epoch, args.per_save_epoc, args.mode, args.label_num,
+                   args.warmup_steps, args.epoch, args.per_save_epoch, args.mode, args.label_num,
                    args.balanced, args.read_head)
