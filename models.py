@@ -53,8 +53,11 @@ class Config(NamedTuple):
         return cls(**config)
 
 
+PRE_COMPUTE_FACTOR = np.sqrt(2 / np.pi)
+
+
 def gelu(x):
-    return x * 0.5 * (1.0 + torch.tanh((np.sqrt(2 / np.pi) * (x + 0.044715 * torch.pow(x, 3)))))
+    return x * 0.5 * (1.0 + torch.tanh(PRE_COMPUTE_FACTOR * (x + 0.044715 * torch.pow(x, 3))))
 
 
 class LayerNorm(nn.Module):
@@ -277,7 +280,6 @@ class BertModel(nn.Module):
         extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
         embedding_output = self.embeddings(input_ids, token_type_ids)
         hidden_states = self.encoder(embedding_output, extended_attention_mask, monitor)
-
         pooled_output = torch.tanh(self.pool(hidden_states[:, 0]))
 
         return hidden_states, pooled_output

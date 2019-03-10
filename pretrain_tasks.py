@@ -46,14 +46,14 @@ class MaskedLM(nn.Module):
         n_vocab = word_embeddings.weight.size(0)
         self.n_vocab = n_vocab
         self.dense = nn.Linear(config.hidden_size, config.hidden_size)
-        self.LayerNorm = LayerNorm(config.hidden_size, eps=1e-12)
+        self.layer_norm = LayerNorm(config.hidden_size, eps=1e-12)
         self.decoder = nn.Linear(config.hidden_size, n_vocab)
         self.decoder.weight = word_embeddings.weight
         self.decoder.bias = nn.Parameter(torch.zeros(n_vocab))
 
     def forward(self, hidden_states):
         hidden_states = gelu(self.dense(hidden_states))
-        hidden_states = self.LayerNorm(hidden_states)
+        hidden_states = self.layer_norm(hidden_states)
         return self.decoder(hidden_states)
 
 
@@ -64,6 +64,8 @@ class NextSentencePrediction(nn.Module):
         super().__init__()
         self.classifier = nn.Linear(config.hidden_size, 2)
         self.classifier.bias = nn.Parameter(torch.zeros(2))
+        self.classifier.weight.data = torch.fmod(
+            torch.randn(self.classifier.weight.size()), config.initializer_range)
 
     def forward(self, pooled_output):
         return self.classifier(pooled_output)
