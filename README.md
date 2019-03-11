@@ -30,34 +30,34 @@ json-file example:
 ### How to Classifier train
 ```
 python run_classifier.py \
-  --config_path=config/bert_base.json
-  --dataset_path=data/class_train.tsv
-  --pretrain_path=bert-wiki-ja.pt
-  --vocab_path=bert-wki-ja/wiki-ja.vocab
-  --sp_model_path=bert-wki-ja/wiki-ja.model
-  --save_dir=classifier/
-  --batch_size=4
-  --max_pos=512
-  --lr=2e-5
-  --warmup_steps=0.1
-  --epoch=10
-  --per_save_epoch=1
-  --mode=train
-  --label_num=3
+ --config_path=config/bert_base.json  \
+ --dataset_path=/content/drive/My\ Drive/data/sample_train.tsv \
+ --pretrain_path=/content/drive/My\ Drive/pretrain/bert.pt \
+ --vocab_path=/content/drive/My\ Drive/data/sample.vocab \
+ --sp_model_path=/content/drive/My\ Drive/data/sample.model \
+ --save_dir=classifier/  \
+ --batch_size=4  \
+ --max_pos=512  \
+ --lr=2e-5  \
+ --warmup_steps=0.1  \
+ --epoch=10  \
+ --per_save_epoch=1 \
+ --mode=train \
+ --label_num=9
 ```
 
 ### How to Classifier evaluate
 ```
 python run_classifier.py \
-  --config_path=config/bert_base.json
-  --dataset_path=data/class_eval.tsv
-  --moel_path=classifier/classifier.pt
-  --vocab_path=bert-wki-ja/wiki-ja.vocab
-  --sp_model_path=bert-wki-ja/wiki-ja.model
-  --batch_size=4
-  --max_pos=512
-  --mode=eval
-  --label_num=3
+ --config_path=config/bert_base.json \
+ --dataset_path=/content/drive/My\ Drive/data/sample_eval.tsv \
+ --model_path=/content/drive/My\ Drive/classifier/classifier.pt \
+ --vocab_path=/content/drive/My\ Drive/data/sample.vocab \
+ --sp_model_path=/content/drive/My\ Drive/data/sample.model \
+ --batch_size=4 \
+ --max_pos=512 \
+ --mode=eval \
+ --label_num=9
 ```
 
 ### How to train Sentence Piece
@@ -77,19 +77,18 @@ json-file example:
 ### How to pre-train
 ```
 python run_pretrain.py \
-  --config_path=config/bert_base.json
-  --dataset_path=tests/sample_text.txt
-  --pretrain_path=None
-  --vocab_path=tests/sample_text.vocab
-  --sp_model_path=tests/sample_text.model
-  --save_dir=pretrain/
-  --batch_size=4
-  --max_pos=512
-  --lr=5e-5
-  --warmup_steps=0.1
-  --epoch=20
-  --per_save_epoch=5
-  --mode=train
+ --config_path=config/bert_base.json \
+ --dataset_path=/content/drive/My\ Drive/data/sample.txt \
+ --vocab_path=/content/drive/My\ Drive/data/sample.vocab \
+ --sp_model_path=/content/drive/My\ Drive/data/sample.model \
+ --save_dir=pretrain/ \
+ --batch_size=4 \
+ --max_pos=256 \
+ --lr=5e-5 \
+ --warmup_steps=0.1 \
+ --epoch=20 \
+ --per_save_epoch=4 \
+ --mode=train
 ```
 
 

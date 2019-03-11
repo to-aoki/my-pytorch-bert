@@ -20,7 +20,7 @@ import optimization
 import tokenization_sentencepiece
 import tokenization
 import torch
-from torch.nn import CrossEntropyLoss, NLLLoss
+from torch.nn import CrossEntropyLoss
 
 from finetuning import Classifier
 from class_csv_dataset import BertCsvDataset
@@ -171,7 +171,6 @@ if __name__ == '__main__':
                         help='Use automatically adjust weights')
     parser.add_argument('--read_head', action='store_true',
                         help='Use not include header TSV file')
-#    parser.add_argument('--labels', nargs='+', help='<Required> labels', required=True)
 
     args = parser.parse_args()
     classification(args.config_path, args.dataset_path, args.pretrain_path, args.model_path, args.vocab_path,
