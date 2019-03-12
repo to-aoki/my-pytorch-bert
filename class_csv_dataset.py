@@ -87,4 +87,4 @@ class BertCsvDataset(Dataset):
         return [torch.tensor(x, dtype=torch.long) for x in self.records[index]]
 
     def per_label_record(self):
-        return self.per_label_record()
+        return self.per_label_records_num

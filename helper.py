@@ -16,7 +16,7 @@
 import os
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, RandomSampler
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 from utils import set_seeds, save, load, get_device
 
@@ -43,12 +43,13 @@ class Helper(object):
         process,
         model,
         dataset,
+        sampler,
         optimizer,
         batch_size=1,
         epoch=20,
         model_file=None,
         save_dir='train/',
-        per_save_epoc=-1,
+        per_save_epoc=-1
     ):
 
         model.to(self.device)
@@ -60,7 +61,6 @@ class Helper(object):
             load(model, model_file, self.device, optimizer)
 
         global_step = optimizer.get_step()
-        sampler = RandomSampler(dataset)
         dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
 
         model.train()
@@ -84,7 +84,7 @@ class Helper(object):
                 optimizer.zero_grad()
                 global_step += 1
 
-            if per_save_epoc is not -1 and (e + 1) % per_save_epoc is 0:
+            if per_save_epoc > 0 and (e + 1) % per_save_epoc is 0:
                 output_model_file = os.path.join(save_dir, "train_model_" + str(e) + "_" + str(global_step) + ".pt")
                 save(model, output_model_file, optimizer)
 
@@ -93,6 +93,7 @@ class Helper(object):
         process,
         model,
         dataset,
+        sampler,
         batch_size,
         model_file,
         examples_reports=None
@@ -106,7 +107,6 @@ class Helper(object):
             load(model, model_file, self.device)
 
         global_step = 0
-        sampler = RandomSampler(dataset)
 
         dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
 

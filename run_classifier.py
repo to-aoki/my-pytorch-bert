@@ -21,6 +21,7 @@ import tokenization_sentencepiece
 import tokenization
 import torch
 from torch.nn import CrossEntropyLoss
+from torch.utils.data import RandomSampler, WeightedRandomSampler
 
 from finetuning import Classifier
 from class_csv_dataset import BertCsvDataset
@@ -45,7 +46,8 @@ def classification(
     per_save_epoch=1,
     mode='train',
     label_num=None,
-    balanced=False,
+    balance_weight=False,
+    balance_sample=False,
     read_head=False
 ):
     if sp_model_path is not None:
@@ -70,8 +72,9 @@ def classification(
         optimizer = optimization.get_optimizer(model, lr, warmup_steps, max_steps)
 
         balance_weights = None
-        if balanced:
+        if balance_weight:
             balance_weights = torch.Tensor(make_balanced_classes_weights(dataset.per_label_records_num))
+
         criterion = CrossEntropyLoss(weight=balance_weights)
 
         def process(batch, model, iter_bar, epoch, step):
@@ -79,7 +82,16 @@ def classification(
             logits = model(input_ids, segment_ids, input_mask)
             return criterion(logits.view(-1, label_num), label_id.view(-1))
 
-        helper.training(process, model, dataset, optimizer, batch_size, epoch, model_path, save_dir, per_save_epoch)
+        if balance_sample:
+            indices = list(range(len(dataset)))
+            num_samples = len(dataset)
+            weights = [1.0 / dataset.per_label_records_num[dataset[index][3].item()] for index in indices]
+            weights = torch.FloatTensor(weights)
+            sampler = WeightedRandomSampler(dataset, weights, num_samples)
+        else:
+            sampler = RandomSampler(dataset)
+
+        helper.training(process, model, dataset, sampler, optimizer, batch_size, epoch, model_path, save_dir, per_save_epoch)
 
         output_model_path = os.path.join(save_dir, "classifier.pt")
         save(model, output_model_path)
@@ -167,8 +179,10 @@ if __name__ == '__main__':
                         type=str, default='train')
     parser.add_argument('--label_num', help='labels number', required=True,
                         type=int)
-    parser.add_argument('--balanced', action='store_true',
+    parser.add_argument('--balance_weight', action='store_true',
                         help='Use automatically adjust weights')
+    parser.add_argument('--balance_sample', action='store_true',
+                        help='Use automatically adjust samples')
     parser.add_argument('--read_head', action='store_true',
                         help='Use not include header TSV file')
 
@@ -176,4 +190,4 @@ if __name__ == '__main__':
     classification(args.config_path, args.dataset_path, args.pretrain_path, args.model_path, args.vocab_path,
                    args.sp_model_path, args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr,
                    args.warmup_steps, args.epoch, args.per_save_epoch, args.mode, args.label_num,
-                   args.balanced, args.read_head)
+                   args.balance_weight, args.balance_sample, args.read_head)

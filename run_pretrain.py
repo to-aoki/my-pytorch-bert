@@ -22,6 +22,7 @@ import models
 import pretrain_tasks
 import optimization
 from pretrain_dataset import PretrainDataset
+from torch.utils.data import RandomSampler
 import tokenization_sentencepiece
 import tokenization
 from helper import Helper
@@ -69,6 +70,8 @@ def bert_pretraining(
         on_memory=True
     )
 
+    sampler = RandomSampler(train_dataset)
+
     config = models.Config.from_json(config_path, len(tokenizer), max_pos)
     print('model params :', config)
     model = pretrain_tasks.BertPretrainingTasks(config)
@@ -90,7 +93,7 @@ def bert_pretraining(
             next_sentence_loss = criterion_ns(next_sentence_loss.view(-1, 2), next_sentence_labels.view(-1))
             return masked_lm_loss + next_sentence_loss
 
-        helper.training(process, model, train_dataset, optimizer, batch_size,
+        helper.training(process, model, train_dataset, sampler, optimizer, batch_size,
                         epoch, model_path, save_dir, per_save_epoch)
 
         output_model_path = os.path.join(save_dir, "bert_model.pt")
