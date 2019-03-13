@@ -75,13 +75,6 @@ def classification(
         if balance_weight:
             balance_weights = torch.Tensor(make_balanced_classes_weights(dataset.per_label_records_num))
 
-        criterion = CrossEntropyLoss(weight=balance_weights)
-
-        def process(batch, model, iter_bar, epoch, step):
-            input_ids, segment_ids, input_mask, label_id = batch
-            logits = model(input_ids, segment_ids, input_mask)
-            return criterion(logits.view(-1, label_num), label_id.view(-1))
-
         if balance_sample:
             indices = list(range(len(dataset)))
             num_samples = len(dataset)
@@ -90,6 +83,13 @@ def classification(
             sampler = WeightedRandomSampler(dataset, weights, num_samples)
         else:
             sampler = RandomSampler(dataset)
+
+        criterion = CrossEntropyLoss(weight=balance_weights)
+
+        def process(batch, model, iter_bar, epoch, step):
+            input_ids, segment_ids, input_mask, label_id = batch
+            logits = model(input_ids, segment_ids, input_mask)
+            return criterion(logits.view(-1, label_num), label_id.view(-1))
 
         helper.training(process, model, dataset, sampler, optimizer, batch_size, epoch, model_path, save_dir, per_save_epoch)
 
@@ -103,6 +103,15 @@ def classification(
         logger = None
         if log_dir is not None and log_dir is not '':
             logger = get_logger('eval', log_dir, False)
+
+        if balance_sample:
+            indices = list(range(len(dataset)))
+            num_samples = len(dataset)
+            weights = [1.0 / dataset.per_label_records_num[dataset[index][3].item()] for index in indices]
+            weights = torch.FloatTensor(weights)
+            sampler = WeightedRandomSampler(dataset, weights, num_samples)
+        else:
+            sampler = RandomSampler(dataset)
 
         def process(batch, model, iter_bar, step):
             input_ids, segment_ids, input_mask, label_id = batch
@@ -140,7 +149,7 @@ def classification(
             else:
                 print(classification_report(y_trues, y_preds))
 
-        helper.evaluate(process, model, dataset, batch_size, model_path, example_reports)
+        helper.evaluate(process, model, dataset, sampler, batch_size, model_path, example_reports)
 
 
 if __name__ == '__main__':

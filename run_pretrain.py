@@ -171,7 +171,7 @@ def bert_pretraining(
                 print(classification_report(y_lm_trues, y_lm_preds))
                 print(classification_report(y_ns_trues, y_ns_preds))
 
-        helper.evaluate(process, model, train_dataset, batch_size, model_path, example_reports)
+        helper.evaluate(process, model, train_dataset, sampler, batch_size, model_path, example_reports)
 
 
 if __name__ == '__main__':
