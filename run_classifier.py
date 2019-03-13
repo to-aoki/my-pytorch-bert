@@ -79,7 +79,7 @@ def classification(
             indices = list(range(len(dataset)))
             num_samples = len(dataset)
             weights = [1.0 / dataset.per_label_records_num[dataset[index][3].item()] for index in indices]
-            weights = torch.FloatTensor(weights)
+            weights = torch.FloatTensor(weights, device=torch.device(get_device()))
             sampler = WeightedRandomSampler(dataset, weights, num_samples)
         else:
             sampler = RandomSampler(dataset)
