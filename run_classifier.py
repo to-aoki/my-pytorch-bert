@@ -26,7 +26,7 @@ from torch.utils.data import RandomSampler, WeightedRandomSampler
 from finetuning import Classifier
 from class_csv_dataset import BertCsvDataset
 from helper import Helper
-from utils import save, load, get_logger, make_balanced_classes_weights
+from utils import save, load, get_logger, make_balanced_classes_weights, get_device
 
 
 def classification(
@@ -108,8 +108,9 @@ def classification(
             indices = list(range(len(dataset)))
             num_samples = len(dataset)
             weights = [1.0 / dataset.per_label_records_num[dataset[index][3].item()] for index in indices]
-            weights = torch.FloatTensor(weights)
+            weights = torch.FloatTensor(weights, device=torch.device(get_device()))
             sampler = WeightedRandomSampler(dataset, weights, num_samples)
+
         else:
             sampler = RandomSampler(dataset)
 
