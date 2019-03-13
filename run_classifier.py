@@ -73,14 +73,14 @@ def classification(
 
         balance_weights = None
         if balance_weight:
-            balance_weights = torch.FloatTensor(make_balanced_classes_weights(dataset.per_label_records_num),
+            balance_weights = torch.tensor(make_balanced_classes_weights(dataset.per_label_records_num),
                                            device=torch.device(get_device()))
 
         if balance_sample:
             indices = list(range(len(dataset)))
             num_samples = len(dataset)
             weights = [1.0 / dataset.per_label_records_num[dataset[index][3].item()] for index in indices]
-            weights = torch.FloatTensor(weights, device=torch.device(get_device()))
+            weights = torch.tensor(weights, device=torch.device(get_device()))
             sampler = WeightedRandomSampler(dataset, weights, num_samples)
         else:
             sampler = RandomSampler(dataset)
@@ -109,7 +109,7 @@ def classification(
             indices = list(range(len(dataset)))
             num_samples = len(dataset)
             weights = [1.0 / dataset.per_label_records_num[dataset[index][3].item()] for index in indices]
-            weights = torch.FloatTensor(weights, device=torch.device(get_device()))
+            weights = torch.tensor(weights, device=torch.device(get_device()))
             sampler = WeightedRandomSampler(dataset, weights, num_samples)
 
         else:
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size',  help='Batch size', nargs='?',
                         type=int, default=4)
     parser.add_argument('--max_pos', help='The maximum sequence length for BERT (slow as big).', nargs='?',
-                        type=int, default=512)
+                        type=int, default=128)
     parser.add_argument('--lr', help='Learning rate', nargs='?',
                         type=float, default=2e-5)
     parser.add_argument('--warmup_steps', help='Warm-up steps proportion.', nargs='?',
