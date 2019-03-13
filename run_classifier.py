@@ -73,7 +73,7 @@ def classification(
 
         balance_weights = None
         if balance_weight:
-            balance_weights = torch.Tensor(make_balanced_classes_weights(dataset.per_label_records_num),
+            balance_weights = torch.FloatTensor(make_balanced_classes_weights(dataset.per_label_records_num),
                                            device=torch.device(get_device()))
 
         if balance_sample:
