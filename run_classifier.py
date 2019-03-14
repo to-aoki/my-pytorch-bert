@@ -73,7 +73,7 @@ def classification(
 
         balance_weights = None
         if balance_weight:
-            balance_weights = torch.Tensor(make_balanced_classes_weights(dataset.per_label_records_num))
+            balance_weights = torch.tensor(make_balanced_classes_weights(dataset.per_label_records_num))
 
         criterion = CrossEntropyLoss(weight=balance_weights)
 
@@ -86,7 +86,7 @@ def classification(
             indices = list(range(len(dataset)))
             num_samples = len(dataset)
             weights = [1.0 / dataset.per_label_records_num[dataset[index][3].item()] for index in indices]
-            weights = torch.FloatTensor(weights)
+            weights = torch.tensor(weights)
             sampler = WeightedRandomSampler(weights, num_samples)
         else:
             sampler = RandomSampler(dataset)
