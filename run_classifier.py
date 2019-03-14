@@ -80,7 +80,8 @@ def classification(
         def process(batch, model, iter_bar, epoch, step):
             input_ids, segment_ids, input_mask, label_id = batch
             logits = model(input_ids, segment_ids, input_mask)
-            return criterion(logits.view(-1, label_num), label_id.view(-1))
+            loss = criterion(logits.view(-1, label_num), label_id.view(-1))
+            return loss
 
         if balance_sample:
             indices = list(range(len(dataset)))

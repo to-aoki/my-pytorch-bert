@@ -86,11 +86,11 @@ def bert_pretraining(
 
         def process(batch, model, iter_bar, epoch, step):
             input_ids, segment_ids, input_mask, next_sentence_labels, label_ids = batch
-            masked_lm_loss, next_sentence_loss = model(input_ids, segment_ids, input_mask)
+            masked_lm_logists, next_sentence_logits = model(input_ids, segment_ids, input_mask)
             lm_labels = label_ids.view(-1)
-            masked_lm_loss = criterion_lm(masked_lm_loss.view(-1, len(tokenizer)), lm_labels)
-            masked_lm_loss = masked_lm_loss.sum()/(len(lm_labels) + 1e-5)
-            next_sentence_loss = criterion_ns(next_sentence_loss.view(-1, 2), next_sentence_labels.view(-1))
+            numerator = criterion_lm(masked_lm_logists.view(-1, len(tokenizer)), lm_labels)
+            masked_lm_loss = numerator.sum()/(len(lm_labels) + 1e-5)
+            next_sentence_loss = criterion_ns(next_sentence_logits.view(-1, 2), next_sentence_labels.view(-1))
             return masked_lm_loss + next_sentence_loss
 
         helper.training(process, model, train_dataset, sampler, optimizer, batch_size,
