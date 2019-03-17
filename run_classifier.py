@@ -52,8 +52,6 @@ def classification(
     under_sampling_cycle=False,
     read_head=False
 ):
-    read_head=True
-    under_sampling_cycle=True
     if sp_model_path is not None:
         tokenizer = tokenization_sentencepiece.FullTokenizer(
             sp_model_path, vocab_path, do_lower_case=True)
@@ -181,7 +179,7 @@ if __name__ == '__main__':
     parser.add_argument('--log_dir', help='Logging file path.', nargs='?',
                         type=str, default=None)
     parser.add_argument('--batch_size',  help='Batch size', nargs='?',
-                        type=int, default=1)
+                        type=int, default=4)
     parser.add_argument('--max_pos', help='The maximum sequence length for BERT (slow as big).', nargs='?',
                         type=int, default=512)
     parser.add_argument('--lr', help='Learning rate', nargs='?',
