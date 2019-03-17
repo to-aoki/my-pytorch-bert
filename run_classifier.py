@@ -48,8 +48,12 @@ def classification(
     label_num=None,
     balance_weight=False,
     balance_sample=False,
+    under_sampling=False,
+    under_sampling_cycle=False,
     read_head=False
 ):
+    read_head=True
+    under_sampling_cycle=True
     if sp_model_path is not None:
         tokenizer = tokenization_sentencepiece.FullTokenizer(
             sp_model_path, vocab_path, do_lower_case=True)
@@ -57,7 +61,12 @@ def classification(
         tokenizer = tokenization.FullTokenizer(vocab_path, do_lower_case=True)
 
     config = models.Config.from_json(config_path, len(tokenizer), max_pos)
-    dataset = BertCsvDataset(dataset_path, tokenizer, max_pos, label_num, header_skip=not read_head)
+
+    if under_sampling_cycle:
+        under_sampling = True
+
+    dataset = BertCsvDataset(dataset_path, tokenizer, max_pos, label_num, under_sampling=under_sampling,
+                             header_skip=not read_head)
 
     model = Classifier(config, label_num)
 
@@ -92,13 +101,21 @@ def classification(
         else:
             sampler = RandomSampler(dataset)
 
-        helper.training(process, model, dataset, sampler, optimizer, batch_size, epoch, model_path, save_dir, per_save_epoch)
+        def epoch_dataset_adjust(dataset):
+            if under_sampling_cycle:
+                dataset.next_under_samples()
+            else:
+                pass
+
+        helper.training(process, model, dataset, sampler, optimizer, batch_size, epoch, model_path, save_dir,
+                        per_save_epoch, epoch_dataset_adjust)
 
         output_model_path = os.path.join(save_dir, "classifier.pt")
         save(model, output_model_path)
 
     elif mode == 'eval':
 
+        sampler = RandomSampler(dataset)
         criterion = CrossEntropyLoss()
         Example = namedtuple('Example', ('pred', 'true'))
         logger = None
@@ -141,7 +158,7 @@ def classification(
             else:
                 print(classification_report(y_trues, y_preds))
 
-        helper.evaluate(process, model, dataset, batch_size, model_path, example_reports)
+        helper.evaluate(process, model, dataset, sampler, batch_size, model_path, example_reports)
 
 
 if __name__ == '__main__':
@@ -164,7 +181,7 @@ if __name__ == '__main__':
     parser.add_argument('--log_dir', help='Logging file path.', nargs='?',
                         type=str, default=None)
     parser.add_argument('--batch_size',  help='Batch size', nargs='?',
-                        type=int, default=4)
+                        type=int, default=1)
     parser.add_argument('--max_pos', help='The maximum sequence length for BERT (slow as big).', nargs='?',
                         type=int, default=512)
     parser.add_argument('--lr', help='Learning rate', nargs='?',
@@ -183,7 +200,11 @@ if __name__ == '__main__':
     parser.add_argument('--balance_weight', action='store_true',
                         help='Use automatically adjust weights')
     parser.add_argument('--balance_sample', action='store_true',
-                        help='Use automatically adjust samples')
+                        help='Use automatically adjust samples(random)')
+    parser.add_argument('--under_sampling', action='store_true',
+                        help='Use automatically adjust under samples')
+    parser.add_argument('--under_sampling_cycle', action='store_true',
+                        help='Use automatically adjust under samples cycle peer')
     parser.add_argument('--read_head', action='store_true',
                         help='Use not include header TSV file')
 
@@ -191,4 +212,5 @@ if __name__ == '__main__':
     classification(args.config_path, args.dataset_path, args.pretrain_path, args.model_path, args.vocab_path,
                    args.sp_model_path, args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr,
                    args.warmup_steps, args.epoch, args.per_save_epoch, args.mode, args.label_num,
-                   args.balance_weight, args.balance_sample, args.read_head)
+                   args.balance_weight, args.balance_sample, args.under_sampling, args.under_sampling_cycle,
+                   args.read_head)

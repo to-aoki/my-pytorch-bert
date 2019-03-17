@@ -49,7 +49,8 @@ class Helper(object):
         epoch=20,
         model_file=None,
         save_dir='train/',
-        per_save_epoc=-1
+        per_save_epoc=-1,
+        epoch_dataset_adjust=None
     ):
 
         model.to(self.device)
@@ -87,6 +88,9 @@ class Helper(object):
             if per_save_epoc > 0 and (e + 1) % per_save_epoc is 0:
                 output_model_file = os.path.join(save_dir, "train_model_" + str(e) + "_" + str(global_step) + ".pt")
                 save(model, output_model_file, optimizer)
+
+            if epoch_dataset_adjust is not None:
+                epoch_dataset_adjust(dataset)
 
     def evaluate(
         self,
