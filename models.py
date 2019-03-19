@@ -76,12 +76,12 @@ class Embeddings(nn.Module):
     """Construct the embeddings from word, position and token_type embeddings."""
     def __init__(self, config):
         super().__init__()
-        self.word_embeddings = nn.Embedding(config.vocab_size, config.hidden_size)
-        self.position_embeddings = nn.Embedding(config.max_position_embeddings, config.hidden_size) 
-        self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size) 
+        self.word_embeddings = nn.Embedding(config.vocab_size, config.hidden_size, padding_idx=0)
+        self.position_embeddings = nn.Embedding(config.max_position_embeddings, config.hidden_size, padding_idx=0)
+        self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size, padding_idx=0)
 
         self.layer_norm = LayerNorm(config.hidden_size)
-        self.drop = nn.Dropout(config.hidden_dropout_prob)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
     def forward(self, input_ids, token_type_ids):
         max_position_embeddings = input_ids.size(1)
@@ -92,7 +92,7 @@ class Embeddings(nn.Module):
         embeddings = self.word_embeddings(input_ids) \
             + self.position_embeddings(position_ids) \
             + self.token_type_embeddings(token_type_ids)
-        return self.drop(self.layer_norm(embeddings))
+        return self.dropout(self.layer_norm(embeddings))
 
 
 class SelfAttention(nn.Module):
