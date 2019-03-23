@@ -61,15 +61,15 @@ class LayerNorm(nn.Module):
     """A layernorm module in the TF style (epsilon inside the square root)."""
     def __init__(self, hidden_size, eps=1e-12):
         super().__init__()
-        self.weight = nn.Parameter(torch.ones(hidden_size))  
-        self.bias = nn.Parameter(torch.zeros(hidden_size))
+        self.weight = nn.Parameter(torch.ones(hidden_size))   # gamma
+        self.bias = nn.Parameter(torch.zeros(hidden_size))    # beta
         self.variance_epsilon = eps
 
     def forward(self, x):
-        u = x.mean(-1, keepdim=True)
-        s = (x - u).pow(2).mean(-1, keepdim=True)
-        x = (x - u) / torch.sqrt(s + self.variance_epsilon)
-        return self.weight * x + self.bias
+        mean = x.mean(dim=-1, keepdim=True)
+        var = ((x - mean)**2).mean(dim=-1, keepdim=True)
+        std = (var + self.variance_epsilon).sqrt()
+        return self.weight * (x-mean)/std + self.bias
 
 
 class Embeddings(nn.Module):
@@ -83,7 +83,7 @@ class Embeddings(nn.Module):
         self.layer_norm = LayerNorm(config.hidden_size)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
-    def forward(self, input_ids, token_type_ids):
+    def forward(self, input_ids, token_type_ids=None):
         max_position_embeddings = input_ids.size(1)
         position_ids = torch.arange(max_position_embeddings, dtype=torch.long, device=input_ids.device)
         position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
@@ -115,11 +115,11 @@ class SelfAttention(nn.Module):
     def transpose_for_scores(self, x):
         new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
         x = x.view(*new_x_shape)
-        return x.permute(0, 2, 1, 3)
+        return x.transpose(2, 1)
 
     def forward(self, hidden_states, attention_mask, monitor=False):
         self.attn_data = {}  # for bertviz
-        mixed_query_layer = self.query(hidden_states)
+        mixed_query_layer = self.query(hidden_states).contiguous()
         mixed_key_layer = self.key(hidden_states)
         mixed_value_layer = self.value(hidden_states)
 
@@ -141,7 +141,8 @@ class SelfAttention(nn.Module):
         attention_probs = self.dropout(attention_probs)
 
         context_layer = torch.matmul(attention_probs, value_layer)
-        context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
+
+        context_layer = context_layer.transpose(2, 1).contiguous()
         new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,)
         context_layer = context_layer.view(*new_context_layer_shape)
 

@@ -230,7 +230,7 @@ class PretrainDataset(Dataset):
         :return: features
         """
 
-        target_max_pos = max_pos - 3
+        target_max_pos = max_pos - 3 if tokens_b else max_pos - 2
 
         # However, sequences to minimize the mismatch between pre-training and fine-tuning.
         if random() < short_seq_prob:
@@ -238,10 +238,12 @@ class PretrainDataset(Dataset):
         truncate_seq_pair(tokens_a, tokens_b, target_max_pos)
 
         # Add Special Tokens
-        tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]']
-        
+        tokens_a = ['[CLS]'] + tokens_a + ['[SEP]']
+        tokens_b = tokens_b + ['[SEP]'] if tokens_b else []
+        tokens = tokens_a + tokens_b
+
         # Add next sentence segment
-        segment_ids = [0]*(len(tokens_a)+2) + [1]*(len(tokens_b)+1) 
+        segment_ids = [0] * len(tokens_a) + [1] * len(tokens_b)
 
         # mask prediction calc
         mask_prediction = int(round(len(tokens) * masked_lm_prob))
@@ -259,7 +261,7 @@ class PretrainDataset(Dataset):
         # tokens indexing
         input_ids = self.tokenizer.convert_tokens_to_ids(tokens)
         input_mask = [1]*len(input_ids)
-        label_ids = self.tokenizer.convert_tokens_to_ids(['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]'])
+        label_ids = self.tokenizer.convert_tokens_to_ids(tokens_a+tokens_b)
 
         # zero padding
         num_zero_pad = max_pos - len(input_ids)

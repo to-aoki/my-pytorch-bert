@@ -59,23 +59,6 @@ class BertAdam(Optimizer):
                         b1=b1, b2=b2, e=e, max_grad_norm=max_grad_norm)
         super(BertAdam, self).__init__(params, defaults)
 
-    def get_lr(self):
-        lr = []
-        for group in self.param_groups:
-            for p in group['params']:
-                state = self.state[p]
-                if len(state) == 0:
-                    return [0]
-                if group['warmup_steps'] is not 0 and state['step'] < group['warmup_steps']:
-                    lr_scheduled = group['lr'] * state['step']/group['warmup_steps']
-                elif group['max_steps'] is not 0:
-                    global_step = min(state['step'], group['max_steps'])
-                    lr_scheduled = group['lr'] * (1 - global_step / group['max_steps'])
-                else:
-                    lr_scheduled = group['lr']
-                lr.append(lr_scheduled)
-        return lr
-
     def step(self, closure=None):
         """Performs a single optimization step.
         Arguments:
@@ -105,6 +88,7 @@ class BertAdam(Optimizer):
                     state['next_v'] = torch.zeros_like(p.data)
 
                 next_m, next_v = state['next_m'], state['next_v']
+
                 beta1, beta2 = group['b1'], group['b2']
 
                 # Add grad clipping
@@ -131,7 +115,7 @@ class BertAdam(Optimizer):
                     lr_scheduled = group['lr'] * state['step']/group['warmup_steps']
                 elif group['max_steps'] is not 0:
                     global_step = min(state['step'], group['max_steps'])
-                    lr_scheduled = group['lr'] * (1 - global_step / group['max_steps'])
+                    lr_scheduled = group['lr'] * (1 - global_step/group['max_steps'])
                 else:
                     lr_scheduled = group['lr']
 

@@ -154,7 +154,7 @@ def token_vocab_build(reader):
     return vocab
 
 
-def convert_by_vocab(vocab, items, unk_info):# load config from json file
+def convert_by_vocab(vocab, items, unk_info):
     """Converts a sequence of [tokens|ids] using the vocab."""
     output = []
     for item in items:
@@ -214,7 +214,7 @@ class SentencePieceTokenizer(object):
     """Runs SentencePiece tokenization (from raw text to tokens list)"""
 
     def __init__(self, model_file=None, do_lower_case=True):
-        if model_file == None:
+        if model_file is None:
             raise ValueError("You have to give a path of trained SentencePiece model.")        
         """Constructs a SentencePieceTokenizer."""
         self.tokenizer = sp.SentencePieceProcessor()
