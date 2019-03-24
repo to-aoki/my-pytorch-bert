@@ -19,7 +19,6 @@
 
 import copy
 import math
-import numpy as np
 import json
 
 from typing import NamedTuple
@@ -69,7 +68,7 @@ class LayerNorm(nn.Module):
         mean = x.mean(dim=-1, keepdim=True)
         var = ((x - mean)**2).mean(dim=-1, keepdim=True)
         std = (var + self.variance_epsilon).sqrt()
-        return self.weight * (x-mean)/std + self.bias
+        return self.weight * (x - mean)/std + self.bias
 
 
 class Embeddings(nn.Module):
@@ -85,7 +84,7 @@ class Embeddings(nn.Module):
 
     def forward(self, input_ids, token_type_ids=None):
         max_position_embeddings = input_ids.size(1)
-        position_ids = torch.arange(max_position_embeddings, dtype=torch.long, device=input_ids.device)
+        position_ids = torch.arange(max_position_embeddings,  dtype=torch.long, device=input_ids.device)
         position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
         if token_type_ids is None:
             token_type_ids = torch.zeros_like(input_ids)
@@ -196,9 +195,9 @@ class PositionWiseFeedForward(nn.Module):
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.layer_norm = LayerNorm(config.hidden_size, eps=eps)
 
-    def forward(self, hidden_states, attention_output):
-        hidden_states = gelu(self.intermediate(hidden_states))
-        hidden_states = self.dropout(self.output(hidden_states))
+    def forward(self, attention_output):
+        intermediate_output = gelu(self.intermediate(attention_output))
+        hidden_states = self.dropout(self.output(intermediate_output))
         return self.layer_norm(hidden_states + attention_output)
 
 
@@ -210,7 +209,7 @@ class TransformerBlock(nn.Module):
 
     def forward(self, hidden_states, attention_mask, monitor=False):
         attention_output = self.attention(hidden_states, attention_mask, monitor)
-        return self.pwff(hidden_states, attention_output)
+        return self.pwff(attention_output)
 
 
 class Encoder(nn.Module):
