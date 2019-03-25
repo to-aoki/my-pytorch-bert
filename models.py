@@ -57,7 +57,7 @@ def gelu(x):
 
 
 try:
-    from apex.normalization.fused_layer_norm import FusedLayerNorm as BertLayerNorm
+    from apex.normalization.fused_layer_norm import FusedLayerNorm as LayerNorm
 except ImportError:
 
     class LayerNorm(nn.Module):
