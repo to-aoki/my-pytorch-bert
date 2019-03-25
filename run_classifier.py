@@ -167,7 +167,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset_path', help='Dataset file (TSV file) path for classification.', required=True,
                         type=str)
     parser.add_argument('--pretrain_path', help='Pre-training PyTorch model path.', nargs='?',
-                        type=str, default='bert-wiki-ja/bert-wiki-ja.pt')
+                        type=str, default=None)
     parser.add_argument('--model_path', help='Classifier PyTorch model path.', nargs='?',
                         type=str, default=None)
     parser.add_argument('--vocab_path', help='Vocabulary file path for BERT to pre-training.', nargs='?',
