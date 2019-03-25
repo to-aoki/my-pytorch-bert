@@ -71,7 +71,8 @@ def classification(
     print('model params :', config)
     helper = Helper()
     if mode == 'train':
-        if pretrain_path is not None:
+
+        if model_path is None and pretrain_path is not None:
             load(model.bert, pretrain_path)
 
         max_steps = int(len(dataset) / batch_size * epoch)
@@ -170,10 +171,10 @@ if __name__ == '__main__':
                         type=str, default=None)
     parser.add_argument('--model_path', help='Classifier PyTorch model path.', nargs='?',
                         type=str, default=None)
-    parser.add_argument('--vocab_path', help='Vocabulary file path for BERT to pre-training.', nargs='?',
-                        type=str, default='bert-wiki-ja/wiki-ja.vocab')
+    parser.add_argument('--vocab_path', help='Vocabulary file path for BERT to pre-training.', nargs='?', required=True,
+                        type=str)
     parser.add_argument('--sp_model_path', help='Trained SentencePiece model path.', nargs='?',
-                        type=str, default='bert-wiki-ja/wiki-ja.model')
+                        type=str, default=None)
     parser.add_argument('--save_dir', help='Classification model saving directory path.', nargs='?',
                         type=str, default='classifier/')
     parser.add_argument('--log_dir', help='Logging file path.', nargs='?',

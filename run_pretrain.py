@@ -183,10 +183,10 @@ if __name__ == '__main__':
                         type=str, default='tests/sample_text.txt')
     parser.add_argument('--model_path', help='Pre-training PyTorch model path.', nargs='?',
                         type=str, default=None)
-    parser.add_argument('--vocab_path', help='Vocabulary file path for BERT to pre-training.', nargs='?',
-                        type=str, default='tests/sample_text.vocab')
+    parser.add_argument('--vocab_path', help='Vocabulary file path for BERT to pre-training.', nargs='?', required=True,
+                        type=str)
     parser.add_argument('--sp_model_path', help='Trained SentencePiece model path.', nargs='?',
-                        type=str, default='tests/sample_text.model')
+                        type=str, default=None)
     parser.add_argument('--save_dir', help='BERT pre-training model saving directory path.', nargs='?',
                         type=str, default='pretrain/')
     parser.add_argument('--log_dir', help='Logging file path.', nargs='?',

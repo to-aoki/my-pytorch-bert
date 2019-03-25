@@ -97,21 +97,21 @@ python run_pretrain.py \
 - epoch : 10
 
 1. [Pretrained BERT model and trained SentencePiece model](https://drive.google.com/drive/folders/1Zsm9DD40lrUVu6iAnIuTH2ODIkh-WM-O?usp=sharing) (PyTorch converted).
- ```
-                precision    recall  f1-score   support
+```
+    precision    recall  f1-score   support
 
-            0       0.98      0.92      0.95       178
-            1       0.95      0.94      0.95       172
-            2       0.99      0.98      0.99       176
-            3       0.97      0.89      0.93        95
-            4       0.97      1.00      0.98       158
-            5       0.94      0.98      0.96       174
-            6       0.94      1.00      0.97       167
-            7       0.98      0.98      0.98       190
-            8       0.96      0.96      0.96       163
+           0       0.99      0.92      0.95       178
+           1       0.95      0.97      0.96       172
+           2       0.99      0.97      0.98       176
+           3       0.95      0.92      0.93        95
+           4       0.98      0.99      0.98       158
+           5       0.92      0.98      0.95       174
+           6       0.97      1.00      0.98       167
+           7       0.98      0.99      0.99       190
+           8       0.99      0.96      0.97       163
 
-    micro avg       0.97      0.97      0.97      1473
-    macro avg       0.97      0.96      0.96      1473
+   micro avg       0.97      0.97      0.97      1473
+   macro avg       0.97      0.97      0.97      1473
 weighted avg       0.97      0.97      0.97      1473
 ```
 

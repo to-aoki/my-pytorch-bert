@@ -56,19 +56,23 @@ def gelu(x):
     return x * 0.5 * (1.0 + torch.erf(x / math.sqrt(2.0)))
 
 
-class LayerNorm(nn.Module):
-    """A layernorm module in the TF style (epsilon inside the square root)."""
-    def __init__(self, hidden_size, eps=1e-12):
-        super().__init__()
-        self.weight = nn.Parameter(torch.ones(hidden_size))   # gamma
-        self.bias = nn.Parameter(torch.zeros(hidden_size))    # beta
-        self.variance_epsilon = eps
+try:
+    from apex.normalization.fused_layer_norm import FusedLayerNorm as BertLayerNorm
+except ImportError:
 
-    def forward(self, x):
-        mean = x.mean(dim=-1, keepdim=True)
-        var = ((x - mean)**2).mean(dim=-1, keepdim=True)
-        std = (var + self.variance_epsilon).sqrt()
-        return self.weight * (x - mean)/std + self.bias
+    class LayerNorm(nn.Module):
+        """A layernorm module in the TF style (epsilon inside the square root)."""
+        def __init__(self, hidden_size, eps=1e-12):
+            super().__init__()
+            self.weight = nn.Parameter(torch.ones(hidden_size))   # gamma
+            self.bias = nn.Parameter(torch.zeros(hidden_size))    # beta
+            self.variance_epsilon = eps
+
+        def forward(self, x):
+            mean = x.mean(dim=-1, keepdim=True)
+            var = ((x - mean)**2).mean(dim=-1, keepdim=True)
+            std = (var + self.variance_epsilon).sqrt()
+            return self.weight * (x - mean)/std + self.bias
 
 
 class Embeddings(nn.Module):
