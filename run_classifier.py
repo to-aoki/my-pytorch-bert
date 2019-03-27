@@ -81,7 +81,8 @@ def classification(
 
         balance_weights = None
         if balance_weight:
-            balance_weights = torch.tensor(make_balanced_classes_weights(dataset.per_label_records_num))
+            balance_weights = torch.tensor(
+                make_balanced_classes_weights(dataset.per_label_records_num), device=helper.device)
 
         criterion = CrossEntropyLoss(weight=balance_weights)
 
