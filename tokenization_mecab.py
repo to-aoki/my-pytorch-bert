@@ -1,6 +1,6 @@
 # Author Toshihiko Aoki
 #
-# This file is based on https://github.com/google-research/bert/blob/master/tokenization.py and
+# This file is based on https://github.com/google-research/bert/blob/master/tokenization.py.
 # Mecab tokenizer.
 #
 # Copyright 2018 The Google AI Language Team Authors.
