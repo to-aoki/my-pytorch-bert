@@ -17,6 +17,7 @@ import os
 from collections import namedtuple
 import models
 import optimization
+import tokenization_mecab
 import tokenization_sentencepiece
 import tokenization
 import torch
@@ -50,13 +51,18 @@ def classification(
     balance_sample=False,
     under_sampling=False,
     under_sampling_cycle=False,
+    is_mecab=False,
     read_head=False
 ):
+
     if sp_model_path is not None:
         tokenizer = tokenization_sentencepiece.FullTokenizer(
             sp_model_path, vocab_path, do_lower_case=True)
     else:
-        tokenizer = tokenization.FullTokenizer(vocab_path, do_lower_case=True)
+        if is_mecab:
+            tokenizer = tokenization_mecab.FullTokenizer(vocab_path)
+        else:
+            tokenizer = tokenization.FullTokenizer(vocab_path, do_lower_case=True)
 
     config = models.Config.from_json(config_path, len(tokenizer), max_pos)
 
@@ -205,6 +211,8 @@ if __name__ == '__main__':
                         help='Use automatically adjust under samples')
     parser.add_argument('--under_sampling_cycle', action='store_true',
                         help='Use automatically adjust under samples cycle peer')
+    parser.add_argument('--use_mecab', action='store_true',
+                        help='Use Mecab Tokenizer')
     parser.add_argument('--read_head', action='store_true',
                         help='Use not include header TSV file')
 
@@ -213,4 +221,4 @@ if __name__ == '__main__':
                    args.sp_model_path, args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr,
                    args.warmup_steps, args.epoch, args.per_save_epoch, args.mode, args.label_num,
                    args.balance_weight, args.balance_sample, args.under_sampling, args.under_sampling_cycle,
-                   args.read_head)
+                   args.use_mecab, args.read_head)

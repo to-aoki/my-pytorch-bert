@@ -24,6 +24,7 @@ import optimization
 from pretrain_dataset import PretrainDataset
 from torch.utils.data import RandomSampler
 import tokenization_sentencepiece
+import tokenization_mecab
 import tokenization
 from helper import Helper
 from utils import save, get_logger
@@ -33,7 +34,7 @@ def bert_pretraining(
         config_path='config/bert_base.json',
         dataset_path='tests/sample_text.txt',
         model_path=None,
-        vocal_path='tests/sample_text.vocab',
+        vocab_path='tests/sample_text.vocab',
         sp_model_path='tests/sample_text.model',
         save_dir='pretrain/',
         log_dir=None,
@@ -43,23 +44,28 @@ def bert_pretraining(
         warmup_proportion=0.1,  # warmup_steps = len(dataset) / batch_size * epoch * warmup_proportion
         epoch=5,
         per_save_epoch=1,
-        mode='train'):
+        mode='train',
+        is_mecab=False
+):
 
     assert mode is not None and (mode == 'train' or mode == 'eval'), 'support mode train or eval.'
 
     if sp_model_path is not None:
         tokenizer = tokenization_sentencepiece.FullTokenizer(
-            sp_model_path, vocal_path, do_lower_case=True)
+            sp_model_path, vocab_path, do_lower_case=True)
     else:
-        tokenizer = tokenization.FullTokenizer(vocal_path, do_lower_case=True)
+        if is_mecab:
+            tokenizer = tokenization_mecab.FullTokenizer(vocab_path)
+        else:
+            tokenizer = tokenization.FullTokenizer(vocab_path, do_lower_case=True)
 
     if max_pos is None:
         # max_pos = statistics.median(all-sentence-tokens)
         import statistics
         with open(dataset_path, 'r', newline="\n", encoding="utf-8") as data:
             tokens = list(map(tokenizer.tokenize, data.readlines()))
-            max_pos = round(statistics.median(list(map(lambda x: len(x), tokens))))
-        max_pos = max_pos*2+3  # [CLS]a[SEP]b[SEP]
+            median_pos = round(statistics.median(list(map(lambda x: len(x), tokens))))
+        max_pos = median_pos*2+3  # [CLS]a[SEP]b[SEP]
         print("max_pos (median):", max_pos)
 
     train_dataset = PretrainDataset(
@@ -206,8 +212,10 @@ if __name__ == '__main__':
                         type=int, default=1)
     parser.add_argument('--mode', help='train or eval', nargs='?',
                         type=str, default="train")
+    parser.add_argument('--use_mecab', action='store_true',
+                        help='Use Mecab Tokenizer')
     args = parser.parse_args()
     bert_pretraining(args.config_path, args.dataset_path, args.model_path, args.vocab_path, args.sp_model_path,
                      args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr, args.warmup_steps,
-                     args.epoch, args.per_save_epoch, args.mode)
+                     args.epoch, args.per_save_epoch, args.mode, args.use_mecab)
 
