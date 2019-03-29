@@ -159,7 +159,7 @@ class FullTokenizer(object):
             self.inv_vocab[v] = k
 
     def tokenize(self, text):
-        split_tokens = self.tokenizer.tokenize(text)
+        split_tokens = self.tokenizer.tokenize(convert_to_unicode(text))
         return split_tokens
 
     def convert_tokens_to_ids(self, tokens):
