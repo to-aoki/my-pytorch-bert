@@ -22,6 +22,8 @@ import MeCab
 from random import randint
 from collections import Counter, OrderedDict
 from tqdm import tqdm
+import unicodedata
+from utils import replace_num_zero, replace_uri
 
 CONTROL_TOKENS = ['[UNK]', '[CLS]', '[SEP]', '[MASK]']
 
@@ -49,7 +51,7 @@ def create_vocab(text_file_path, create_file_path, min_freq=1, limit_vocab_lengt
 def text_to_vocab(reader, create_file_path, min_freq=1, limit_vocab_length=-1,
                   collect_futures=[], control_tokens=CONTROL_TOKENS):
 
-    mecab_tokenizer = MecabTokenizer(collect_futures=collect_futures)
+    mecab_tokenizer = MeCabTokenizer(collect_futures=collect_futures)
     min_freq = max(min_freq, 1)
     counter = Counter()
     for _, line in enumerate(tqdm(reader)):
@@ -78,13 +80,36 @@ def text_to_vocab(reader, create_file_path, min_freq=1, limit_vocab_length=-1,
     return size
 
 
-class MecabTokenizer(object):
+class MeCabTokenizer(object):
 
-    def __init__(self, args='', collect_futures=[]):
+    def __init__(self, args='',
+                 do_lower_case=True,
+                 do_normalize=True,
+                 form='NFKC',
+                 do_num_zero=True,
+                 do_convert_uri=True,
+                 replace_uri_word='[URI]',
+                 collect_futures=[]):
         self.tagger = MeCab.Tagger(args)
         self.collect_futures = collect_futures
+        self.do_lower_case = do_lower_case
+
+        self.do_normalize = do_normalize
+        self.form = form
+        self.do_num_zero = do_num_zero
+        self.do_convert_uri = do_convert_uri
+        self.replace_uri_word = replace_uri_word
 
     def tokenize(self, text):
+        if self.do_normalize:
+            text = unicodedata.normalize(self.form, text)
+        if self.do_num_zero:
+            text = replace_num_zero(text)
+        if self.do_lower_case:
+            text = text.lower()
+        if self.do_convert_uri:
+            text = replace_uri(text, self.replace_uri_word)
+
         tokens = []
         self.tagger.parse('')
         for chunk in self.tagger.parse(text.rstrip()).splitlines()[:-1]:  # skip EOS
@@ -148,14 +173,14 @@ class FullTokenizer(object):
     """Runs end-to-end tokenziation."""
 
     def __init__(self, vocab_file, control_tokens=CONTROL_TOKENS):
-        self.tokenizer = MecabTokenizer()
+        self.tokenizer = MeCabTokenizer()
         self.vocab = load_vocab(vocab_file)
         assert (0 < len(self.vocab))
         self.inv_vocab = {}
         self.control_len = 0
         for k, v in self.vocab.items():
             if v in control_tokens:
-                self.control_len += 1  # Control characters are focused at the top?
+                self.control_len += 1
             self.inv_vocab[v] = k
 
     def tokenize(self, text):

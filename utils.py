@@ -33,16 +33,20 @@ def make_balanced_classes_weights(per_label_records_num):
     return classes_weights
 
 
+def replace_num_zero(text):
+    replaced_text = re.sub(r'\d+', '0', text)
+    return replaced_text
+
+
 URI_REGEX = re.compile(
     r'\w+:(\/?\/?)[^\s]+\b',
     re.UNICODE)
 
 
-# "SentencePiece tokenizer" is not good at tokenize URI?
-def replace_uri(text, replacemnet='[URI]'):
+def replace_uri(text, replacement='[URI]'):
     return re.sub(
         URI_REGEX,
-        replacemnet,
+        replacement,
         text
     )
 
