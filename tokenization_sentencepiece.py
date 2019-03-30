@@ -184,7 +184,7 @@ class FullTokenizer(object):
     def __init__(self, model_file, vocab_file, do_lower_case=True,
                  do_normalize=True,
                  form='NFKC',
-                 do_num_zero=False,
+                 do_num_zero=True,
                  do_convert_uri=True,
                  replace_uri_word='link'):
         self.tokenizer = SentencePieceTokenizer(model_file, do_lower_case=do_lower_case)
