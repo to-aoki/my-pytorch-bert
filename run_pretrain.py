@@ -24,11 +24,9 @@ import optimization
 from pretrain_dataset import PretrainDataset
 from torch.utils.data import RandomSampler
 import tokenization_sentencepiece
-import tokenization_mecab
 import tokenization
 from helper import Helper
 from utils import save, get_logger
-
 
 def bert_pretraining(
         config_path='config/bert_base.json',
@@ -55,6 +53,7 @@ def bert_pretraining(
             sp_model_path, vocab_path, do_lower_case=True)
     else:
         if is_mecab:
+            import tokenization_mecab
             tokenizer = tokenization_mecab.FullTokenizer(vocab_path)
         else:
             tokenizer = tokenization.FullTokenizer(vocab_path, do_lower_case=True)

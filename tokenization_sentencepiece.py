@@ -32,6 +32,8 @@ import re
 import sentencepiece as sp
 import six
 from random import randint
+import unicodedata
+from utils import replace_num_zero, replace_uri
 
 
 def validate_case_matches_checkpoint(do_lower_case, init_checkpoint):
@@ -179,7 +181,12 @@ class FullTokenizer(object):
 
     """Runs end-to-end tokenziation."""
 
-    def __init__(self, model_file, vocab_file, do_lower_case=True, stopwords=[]):
+    def __init__(self, model_file, vocab_file, do_lower_case=True,
+                 do_normalize=True,
+                 form='NFKC',
+                 do_num_zero=True,
+                 do_convert_uri=True,
+                 replace_uri_word='link'):
         self.tokenizer = SentencePieceTokenizer(model_file, do_lower_case=do_lower_case)
         self.vocab = load_vocab(vocab_file)
         assert(0 < len(self.vocab))
@@ -189,13 +196,20 @@ class FullTokenizer(object):
             if self.tokenizer.tokenizer.is_control(v):
                 self.control_len += 1  # Control characters are focused at the top?
             self.inv_vocab[v] = k
-            for k in stopwords:
-                stopwords.remove(k)
-
-        self.stopwords = stopwords
+        self.do_normalize = do_normalize
+        self.form = form
+        self.do_num_zero = do_num_zero
+        self.do_convert_uri = do_convert_uri
+        self.replace_uri_word = replace_uri_word
 
     def tokenize(self, text):
-        split_tokens = self.tokenizer.tokenize(text,self.stopwords)
+        if self.do_normalize:
+            text = unicodedata.normalize(self.form, text)
+        if self.do_num_zero:
+            text = replace_num_zero(text)
+        if self.do_convert_uri:
+            text = replace_uri(text, self.replace_uri_word)
+        split_tokens = self.tokenizer.tokenize(text)
         return split_tokens
 
     def convert_tokens_to_ids(self, tokens):
@@ -229,16 +243,11 @@ class SentencePieceTokenizer(object):
     def __len__(self):
         return len(self.tokenizer)
 
-    def tokenize(self, text, stopwords=[]):
+    def tokenize(self, text):
         """Tokenizes a piece of text."""
         text = convert_to_unicode(text)
         if self.do_lower_case:
             text = text.lower()
         output_tokens = self.tokenizer.EncodeAsPieces(text)
-        if len(stopwords) == 0:
-            return output_tokens
-        for token in output_tokens:
-            if token in self.stopwords:
-                output_tokens.remove(token)
         return output_tokens
 

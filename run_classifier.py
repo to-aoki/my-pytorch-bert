@@ -17,7 +17,6 @@ import os
 from collections import namedtuple
 import models
 import optimization
-import tokenization_mecab
 import tokenization_sentencepiece
 import tokenization
 import torch
@@ -60,6 +59,7 @@ def classification(
             sp_model_path, vocab_path, do_lower_case=True)
     else:
         if is_mecab:
+            import tokenization_mecab
             tokenizer = tokenization_mecab.FullTokenizer(vocab_path)
         else:
             tokenizer = tokenization.FullTokenizer(vocab_path, do_lower_case=True)
