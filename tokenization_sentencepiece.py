@@ -179,7 +179,7 @@ class FullTokenizer(object):
 
     """Runs end-to-end tokenziation."""
 
-    def __init__(self, model_file, vocab_file, do_lower_case=True):
+    def __init__(self, model_file, vocab_file, do_lower_case=True, stopwords=[]):
         self.tokenizer = SentencePieceTokenizer(model_file, do_lower_case=do_lower_case)
         self.vocab = load_vocab(vocab_file)
         assert(0 < len(self.vocab))
@@ -189,9 +189,13 @@ class FullTokenizer(object):
             if self.tokenizer.tokenizer.is_control(v):
                 self.control_len += 1  # Control characters are focused at the top?
             self.inv_vocab[v] = k
+            for k in stopwords:
+                stopwords.remove(k)
+
+        self.stopwords = stopwords
 
     def tokenize(self, text):
-        split_tokens = self.tokenizer.tokenize(text)
+        split_tokens = self.tokenizer.tokenize(text,self.stopwords)
         return split_tokens
 
     def convert_tokens_to_ids(self, tokens):
@@ -225,11 +229,16 @@ class SentencePieceTokenizer(object):
     def __len__(self):
         return len(self.tokenizer)
 
-    def tokenize(self, text):
+    def tokenize(self, text, stopwords=[]):
         """Tokenizes a piece of text."""
         text = convert_to_unicode(text)
         if self.do_lower_case:
             text = text.lower()
         output_tokens = self.tokenizer.EncodeAsPieces(text)
+        if len(stopwords) == 0:
+            return output_tokens
+        for token in output_tokens:
+            if token in self.stopwords:
+                output_tokens.remove(token)
         return output_tokens
 

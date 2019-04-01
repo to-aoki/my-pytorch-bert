@@ -21,7 +21,17 @@ import random
 import logging
 import numpy as np
 import torch
-from itertools import takewhile, repeat
+
+
+def japanese_stopwords():
+    slothlib_stopwords = []
+    with open('dict/slothlib_include_Japanese.txt', "r", encoding='UTF-8') as reader:
+        for line in reader:
+            line = line.strip()
+            if line == '':
+                continue
+            slothlib_stopwords.append(line)
+    return slothlib_stopwords
 
 
 def make_balanced_classes_weights(per_label_records_num):
@@ -33,17 +43,17 @@ def make_balanced_classes_weights(per_label_records_num):
     return classes_weights
 
 
-URI_REGEX = re.compile(
-    r'\w+:(\/?\/?)[^\s]+\b',
-    re.UNICODE)
+def replace_num_zero(text):
+    replaced_text = re.sub(r'\d+', '0', text)
+    return replaced_text
 
 
-# "SentencePiece tokenizer" is not good at tokenize URI?
-def replace_uri(text, replacemnet='[URI]'):
+def replace_uri(text, replacement='[URI]'):
     return re.sub(
-        URI_REGEX,
-        replacemnet,
-        text
+        r'http\S+',
+        replacement,
+        text,
+        flags=re.MULTILINE
     )
 
 

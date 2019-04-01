@@ -26,8 +26,8 @@ from collections import defaultdict
 
 class BertCsvDataset(Dataset):
 
-    def __init__(self, file_path, tokenizer, max_pos, label_num, delimiter='\t',
-                 encoding='utf-8', header_skip=True, under_sampling=False, cash_text=False):
+    def __init__(self, file_path, tokenizer, max_pos, label_num, sentetense_a=[],sentetense_b=[], labels=[],
+                 delimiter='\t', encoding='utf-8', header_skip=True, under_sampling=False, cash_text=False):
         super().__init__()
         labels = []
         self.records = []
@@ -39,34 +39,15 @@ class BertCsvDataset(Dataset):
             for line in itertools.islice(lines, start, None):
                 assert len(line) > 1, 'require label and one sentence'
                 label = line[0]
+                sentence_a = line[1]
+                sentence_b = line[2] if len(line) > 2 else []
+
                 if label not in labels:
                     labels.append(label)
 
-                tokens_a = tokenizer.tokenize(line[1])
-                tokens_b = tokenizer.tokenize(line[2]) if len(line) > 2 else []
+                self.records.append(
+                    self.sentence_to_bert_ids(tokenizer, sentence_a, sentence_b, label, max_pos))
 
-                # truncate
-                max_seq_len = max_pos - 3 if tokens_b else max_pos - 2
-                truncate_seq_pair(tokens_a, tokens_b, max_seq_len)
-
-                # Add Special Tokens
-                tokens_a = ['[CLS]'] + tokens_a + ['[SEP]']
-                tokens_b = tokens_b + ['[SEP]'] if tokens_b else []
-
-                # Add next sentence segment
-                segment_ids = [0] * len(tokens_a) + [1] * len(tokens_b)
-
-                # tokens indexing
-                input_ids = tokenizer.convert_tokens_to_ids(tokens_a + tokens_b)
-                input_mask = [1] * len(input_ids)
-
-                # zero padding
-                num_zero_pad = max_pos - len(input_ids)
-                input_ids.extend([0] * num_zero_pad)
-                segment_ids.extend([0] * num_zero_pad)
-                input_mask.extend([0] * num_zero_pad)
-
-                self.records.append([input_ids, segment_ids, input_mask, label])
                 if cash_text:
                     self.text_records.append(line)
 
@@ -96,6 +77,34 @@ class BertCsvDataset(Dataset):
             self.origin_per_label_records_num = self.per_label_records_num
             self.per_label_records_num = [self.under_sample_num]*len(labels)
             self.sampling_index = 1
+
+    def sentence_to_bert_ids(self, tokenizer, sentence_a, sentence_b, label, max_pos):
+
+        tokens_a = tokenizer.tokenize(sentence_a)
+        tokens_b = tokenizer.tokenize(sentence_b) if len(sentence_b) > 0 else []
+
+        # truncate
+        max_seq_len = max_pos - 3 if tokens_b else max_pos - 2
+        truncate_seq_pair(tokens_a, tokens_b, max_seq_len)
+
+        # Add Special Tokens
+        tokens_a = ['[CLS]'] + tokens_a + ['[SEP]']
+        tokens_b = tokens_b + ['[SEP]'] if tokens_b else []
+
+        # Add next sentence segment
+        segment_ids = [0] * len(tokens_a) + [1] * len(tokens_b)
+
+        # tokens indexing
+        input_ids = tokenizer.convert_tokens_to_ids(tokens_a + tokens_b)
+        input_mask = [1] * len(input_ids)
+
+        # zero padding
+        num_zero_pad = max_pos - len(input_ids)
+        input_ids.extend([0] * num_zero_pad)
+        segment_ids.extend([0] * num_zero_pad)
+        input_mask.extend([0] * num_zero_pad)
+
+        return [input_ids, segment_ids, input_mask, label]
 
     def __len__(self):
         return len(self.records)
