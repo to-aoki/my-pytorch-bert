@@ -98,7 +98,7 @@ python run_pretrain.py \
 
 1. [Pretrained BERT model and trained SentencePiece model](https://drive.google.com/drive/folders/1Zsm9DD40lrUVu6iAnIuTH2ODIkh-WM-O?usp=sharing) (PyTorch converted).
 ```
-    precision    recall  f1-score   support
+              precision    recall  f1-score   support
 
            0       0.99      0.92      0.95       178
            1       0.95      0.97      0.96       172
