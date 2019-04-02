@@ -25,6 +25,7 @@ from tqdm import tqdm
 import unicodedata
 from utils import replace_num_zero, replace_uri, japanese_stopwords
 from math import log
+import os
 import sys
 
 CONTROL_TOKENS = ['[UNK]', '[CLS]', '[SEP]', '[MASK]']
@@ -258,17 +259,16 @@ if __name__ == '__main__':
             create_vocab(args.file_path, args.vocab_path, args.min_freq, args.limit_vocab_length)))
     elif args.convert_path is not None:
         tokenizer = MeCabTokenizer()
-        import os
         _, ext = os.path.splitext(args.file_path)
         with open(args.file_path, "r", encoding='utf-8') as reader:
-            with open(args.convert_path, 'w', encoding='utf-8', newline='\n') as writer:
+            with open(args.convert_path, 'w', encoding='utf-8', newline="\n") as writer:
                 if ext == '.tsv':
                     for line in reader:
                         split = line.split('\t')
-                        writer.write(split[1].strip() + '\t' + ' '.join(tokenizer.tokenize(split[0])) + '\n')
+                        writer.write(split[1].strip() + '\t' + ' '.join(tokenizer.tokenize(split[0])).strip() + '\n')
                 else:
                     for line in reader:
-                        writer.write(' '.join(tokenizer.tokenize(line)))
+                        writer.write(' '.join(tokenizer.tokenize(line)).strip() + '\n')
     else:
         tokenizer = MeCabTokenizer()
         with open(args.file_path, "r", encoding='utf-8') as reader:

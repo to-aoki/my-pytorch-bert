@@ -26,41 +26,49 @@ from collections import defaultdict
 
 class BertCsvDataset(Dataset):
 
-    def __init__(self, file_path, tokenizer, max_pos, label_num, sentetense_a=[],sentetense_b=[], labels=[],
+    def __init__(self, tokenizer, max_pos, label_num,
+                 file_path=None, sentence_a=[],sentence_b=[], labels=[],
                  delimiter='\t', encoding='utf-8', header_skip=True, under_sampling=False, cash_text=False):
         super().__init__()
-        labels = []
+        unique_labels = []
         self.records = []
         self.text_records = []
-        start = 1 if header_skip else 0
-        with open(file_path, "r", encoding=encoding) as f:
-            csv_reader = csv.reader(f, delimiter=delimiter, quotechar=None)
-            lines = tqdm(csv_reader, desc="Loading Dataset")
-            for line in itertools.islice(lines, start, None):
-                assert len(line) > 1, 'require label and one sentence'
-                label = line[0]
-                sentence_a = line[1]
-                sentence_b = line[2] if len(line) > 2 else []
 
-                if label not in labels:
-                    labels.append(label)
-
+        if len(sentence_a) != 0 and len(labels) != 0 and len(sentence_a) == len(labels):
+            unique_labels = list(set(labels))
+            if len(sentence_b) != len(sentence_a):
+                sentence_b = [None] * list(sentence_a)
+            for line_a, line_b, label in sentence_a, sentence_b, labels:
                 self.records.append(
-                    self.sentence_to_bert_ids(tokenizer, sentence_a, sentence_b, label, max_pos))
+                    BertCsvDataset.sentence_to_bert_ids(tokenizer, line_a, line_b, label, max_pos))
 
-                if cash_text:
-                    self.text_records.append(line)
+        else:
+            start = 1 if header_skip else 0
+            with open(file_path, "r", encoding=encoding) as f:
+                csv_reader = csv.reader(f, delimiter=delimiter, quotechar=None)
+                lines = tqdm(csv_reader, desc="Loading Dataset")
+                for line in itertools.islice(lines, start, None):
+                    assert len(line) > 1, 'require label and one sentence'
+                    label = line[0]
+                    sentence_a = line[1]
+                    sentence_b = line[2] if len(line) > 2 else None
 
+                    if label not in unique_labels:
+                        unique_labels.append(label)
+
+                    self.records.append(
+                        BertCsvDataset.sentence_to_bert_ids(tokenizer, sentence_a, sentence_b, label, max_pos))
+
+            assert label_num == len(unique_labels), 'label_num mismatch'
         if len(self.records) is 0:
             raise ValueError(file_path + 'were not includes documents.')
 
-        assert label_num == len(labels), 'label_num mismatch'
-        labels.sort()
-        self.per_label_records_num = [0]*len(labels)
+        unique_labels.sort()
+        self.per_label_records_num = [0]*len(unique_labels)
         self.per_label_records = defaultdict(list)
 
+        label_dict = {name: i for i, name in enumerate(unique_labels)}
         for record in self.records:
-            label_dict = {name: i for i, name in enumerate(labels)}
             record[3] = label_dict.get(record[3])  # to id
             self.per_label_records_num[record[3]] += 1
             if under_sampling:
@@ -78,10 +86,11 @@ class BertCsvDataset(Dataset):
             self.per_label_records_num = [self.under_sample_num]*len(labels)
             self.sampling_index = 1
 
-    def sentence_to_bert_ids(self, tokenizer, sentence_a, sentence_b, label, max_pos):
+    @staticmethod
+    def sentence_to_bert_ids(tokenizer, sentence_a, sentence_b, label, max_pos):
 
         tokens_a = tokenizer.tokenize(sentence_a)
-        tokens_b = tokenizer.tokenize(sentence_b) if len(sentence_b) > 0 else []
+        tokens_b = tokenizer.tokenize(sentence_b) if sentence_b is not None else []
 
         # truncate
         max_seq_len = max_pos - 3 if tokens_b else max_pos - 2
@@ -89,7 +98,7 @@ class BertCsvDataset(Dataset):
 
         # Add Special Tokens
         tokens_a = ['[CLS]'] + tokens_a + ['[SEP]']
-        tokens_b = tokens_b + ['[SEP]'] if tokens_b else []
+        tokens_b = tokens_b + ['[SEP]'] if len(tokens_b) > 0 else []
 
         # Add next sentence segment
         segment_ids = [0] * len(tokens_a) + [1] * len(tokens_b)

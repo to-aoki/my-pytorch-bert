@@ -69,7 +69,7 @@ def classification(
     if under_sampling_cycle:
         under_sampling = True
 
-    dataset = BertCsvDataset(dataset_path, tokenizer, max_pos, label_num, under_sampling=under_sampling,
+    dataset = BertCsvDataset(tokenizer, max_pos, label_num, dataset_path, under_sampling=under_sampling,
                              header_skip=not read_head)
 
     model = Classifier(config, label_num)
