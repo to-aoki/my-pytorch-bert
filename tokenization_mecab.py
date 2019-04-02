@@ -57,7 +57,7 @@ def text_to_vocab(
     mecab_tokenizer = MeCabTokenizer(collect_futures=collect_futures)
 
     min_freq = max(min_freq, 1) if not use_tfidf else min_freq
-    min_freq = min(max_freq, sys.maxsize) if not use_tfidf else max_freq
+    max_freq = min(max_freq, sys.maxsize) if not use_tfidf else max_freq
     counter = Counter()
     tfd = list()
     dft = Counter()
@@ -77,7 +77,6 @@ def text_to_vocab(
 
     sort_freq = sorted(counter.items(), key=lambda tup: tup[0])
     sort_freq.sort(key=lambda tup: tup[1], reverse=True)
-    use_tfidf=True
     if use_tfidf:
         size = len(tfd)
         tfidf_max = dict.fromkeys(dft.keys(), 0.)
