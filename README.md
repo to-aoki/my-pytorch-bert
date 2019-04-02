@@ -115,3 +115,8 @@ python run_pretrain.py \
 weighted avg       0.97      0.97      0.97      1473
 ```
 
+## Acknowledgments
+This project incorporates code from the following repos:
+* https://github.com/yoheikikuta/bert-japanese
+* https://github.com/huggingface/pytorch-pretrained-BERT
+* https://github.com/jessevig/bertviz
