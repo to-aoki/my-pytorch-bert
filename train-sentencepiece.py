@@ -16,7 +16,9 @@ class Config(NamedTuple):
 
     @classmethod
     def from_json(cls, file):
-        return cls(**json.load(open(file, "r", encoding="UTF-8")))
+        with open(file, "r", encoding="UTF-8") as reader:
+            config = json.load(reader)
+        return cls(**config)
 
 
 def _get_text_file(text_dir):

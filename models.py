@@ -1,7 +1,7 @@
 # This file is based on
 # https://github.com/huggingface/pytorch-pretrained-BERT/blob/master/pytorch_pretrained_bert/modeling.py.
 # changing class names and variables names for my understanding of BERT.
-# and Modified a bit to visualize with vertviz.
+# and Modified a bit to visualize with bertviz.
 #
 # Copyright 2018 The Google AI Language Team Authors and The HugginFace Inc. team.
 #
@@ -42,13 +42,14 @@ class Config(NamedTuple):
 
     @classmethod
     def from_json(cls, file, vocab_size=None, max_position_embeddings=None, type_vocab_size=None):
-        config = json.load(open(file, "r"))
-        if vocab_size is not None:
-            config['vocab_size'] = vocab_size
-        if max_position_embeddings is not None:
-            config['max_position_embeddings'] = max_position_embeddings
-        if type_vocab_size is not None:
-            config['type_vocab_size'] = type_vocab_size
+        with open(file, "r", encoding="UTF-8") as reader:
+            config = json.load(reader)
+            if vocab_size is not None:
+                config['vocab_size'] = vocab_size
+            if max_position_embeddings is not None:
+                config['max_position_embeddings'] = max_position_embeddings
+            if type_vocab_size is not None:
+                config['type_vocab_size'] = type_vocab_size
         return cls(**config)
 
 

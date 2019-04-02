@@ -252,7 +252,7 @@ if __name__ == '__main__':
     parser.add_argument('--limit_vocab_length', help='Word appearance frequency adopted as vocabulary', nargs='?',
                         type=int, default=-1)
     args = parser.parse_args()
-
+    args.vocab_path=None
     if args.vocab_path is not None:
         print('created : ' + args.vocab_path + ' , size :' + str(
             create_vocab(args.file_path, args.vocab_path, args.min_freq, args.limit_vocab_length)))

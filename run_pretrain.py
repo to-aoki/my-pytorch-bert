@@ -28,6 +28,7 @@ import tokenization
 from helper import Helper
 from utils import save, get_logger
 
+
 def bert_pretraining(
         config_path='config/bert_base.json',
         dataset_path='tests/sample_text.txt',

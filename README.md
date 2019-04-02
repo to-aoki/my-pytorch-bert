@@ -120,3 +120,6 @@ This project incorporates code from the following repos:
 * https://github.com/yoheikikuta/bert-japanese
 * https://github.com/huggingface/pytorch-pretrained-BERT
 * https://github.com/jessevig/bertviz
+
+This project incorporates dict from the following repos:
+* http://svn.sourceforge.jp/svnroot/slothlib/CSharp/Version1/SlothLib/NLP/Filter/StopWord/word/Japanese.txt
