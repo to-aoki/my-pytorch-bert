@@ -1,5 +1,6 @@
 from bertviz.visualization import AttentionVisualizer
-from bertviz.pytorch_pretrained_bert import BertTokenizer, BertModel, BertConfig
+from models import BertModel, Config
+from tokenization import FullTokenizer
 import numpy as np
 import unittest
 
@@ -7,9 +8,9 @@ import unittest
 class TestVisualization(unittest.TestCase):
 
     def setUp(self):
-        self.config = BertConfig.from_json_file('fixtures/config.json')
+        self.config = Config.from_json('fixtures/config.json')
         model = BertModel(self.config)
-        tokenizer = BertTokenizer('fixtures/vocab.txt')
+        tokenizer = FullTokenizer('fixtures/vocab.txt')
         self.attention_visualizer = AttentionVisualizer(model, tokenizer)
 
     def test_get_inputs(self):
@@ -37,6 +38,7 @@ class TestVisualization(unittest.TestCase):
         self.assertEqual(attn.shape, expected_attn_shape)
         sum_probs = attn.sum(axis=-1)
         self.assertTrue(np.allclose(sum_probs, 1))
+
 
 if __name__ == "__main__":
     unittest.main()

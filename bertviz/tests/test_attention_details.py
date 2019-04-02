@@ -1,5 +1,6 @@
 from bertviz.attention_details import AttentionDetailsData, _get_attention_details
-from bertviz.pytorch_pretrained_bert import BertTokenizer, BertModel, BertConfig
+from models import BertModel, Config
+from tokenization import FullTokenizer
 import numpy as np
 import unittest
 
@@ -7,9 +8,9 @@ import unittest
 class TestAttentionDetails(unittest.TestCase):
 
     def setUp(self):
-        self.config = BertConfig.from_json_file('fixtures/config.json')
+        self.config = Config.from_json('fixtures/config.json')
         model = BertModel(self.config)
-        tokenizer = BertTokenizer('fixtures/vocab.txt')
+        tokenizer = FullTokenizer('fixtures/vocab.txt')
         self.attention_details_data = AttentionDetailsData(model, tokenizer)
 
     def test_get_inputs(self):

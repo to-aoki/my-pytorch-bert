@@ -1,6 +1,7 @@
 from bertviz.visualization import AttentionVisualizer
 from bertviz.attention import _get_attentions
-from bertviz.pytorch_pretrained_bert import BertTokenizer, BertModel, BertConfig
+from models import BertModel, Config
+from tokenization import FullTokenizer
 import numpy as np
 import unittest
 
@@ -8,9 +9,9 @@ import unittest
 class TestAttention(unittest.TestCase):
 
     def setUp(self):
-        self.config = BertConfig.from_json_file('fixtures/config.json')
+        self.config = Config.from_json('fixtures/config.json')
         model = BertModel(self.config)
-        tokenizer = BertTokenizer('fixtures/vocab.txt')
+        tokenizer = FullTokenizer('fixtures/vocab.txt')
         self.attention_visualizer = AttentionVisualizer(model, tokenizer)
 
     def test_get_attentions(self):
