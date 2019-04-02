@@ -70,7 +70,7 @@ json-file example:
     "text_dir" : "tests/",
     "prefix" : "tests/sample_text",
     "vocab_size" : 100,
-    "ctl_symbols" : "[PAD],[CLS],[SEP],[MASK]"
+    "ctl_symbols" : "[CLS],[SEP],[MASK]"
 }
 ```
 

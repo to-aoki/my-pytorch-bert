@@ -182,8 +182,6 @@ class FullTokenizer(object):
     """Runs end-to-end tokenziation."""
 
     def __init__(self, model_file, vocab_file, do_lower_case=True,
-                 do_normalize=True,
-                 form='NFKC',
                  do_num_zero=True,
                  do_convert_uri=True,
                  replace_uri_word='link'):
@@ -196,15 +194,11 @@ class FullTokenizer(object):
             if self.tokenizer.tokenizer.is_control(v):
                 self.control_len += 1  # Control characters are focused at the top?
             self.inv_vocab[v] = k
-        self.do_normalize = do_normalize
-        self.form = form
         self.do_num_zero = do_num_zero
         self.do_convert_uri = do_convert_uri
         self.replace_uri_word = replace_uri_word
 
     def tokenize(self, text):
-        if self.do_normalize:
-            text = unicodedata.normalize(self.form, text)
         if self.do_num_zero:
             text = replace_num_zero(text)
         if self.do_convert_uri:
