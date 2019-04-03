@@ -257,8 +257,10 @@ if __name__ == '__main__':
     if args.vocab_path is not None:
         print('created : ' + args.vocab_path + ' , size :' + str(
             create_vocab(args.file_path, args.vocab_path, args.min_freq, args.limit_vocab_length)))
-    elif args.convert_path is not None:
-        tokenizer = MeCabTokenizer()
+        sys.exit(0)
+
+    tokenizer = MeCabTokenizer()
+    if args.convert_path is not None:
         _, ext = os.path.splitext(args.file_path)
         with open(args.file_path, "r", encoding='utf-8') as reader:
             with open(args.convert_path, 'w', encoding='utf-8', newline="\n") as writer:
@@ -270,7 +272,6 @@ if __name__ == '__main__':
                     for line in reader:
                         writer.write(' '.join(tokenizer.tokenize(line)).strip() + '\n')
     else:
-        tokenizer = MeCabTokenizer()
         with open(args.file_path, "r", encoding='utf-8') as reader:
             for line in reader:
                 print(' '.join(tokenizer.tokenize(line)))
