@@ -50,7 +50,7 @@ class Config(NamedTuple):
                 config['max_position_embeddings'] = max_position_embeddings
             if type_vocab_size is not None:
                 config['type_vocab_size'] = type_vocab_size
-            if config['hidden_act'] is not None:
+            if 'hidden_act' in config:
                 del config['hidden_act']
         return cls(**config)
 
