@@ -171,7 +171,10 @@ class FullTokenizer(object):
 
   def __init__(self, vocab_file, do_lower_case=True, use_jumanpp=False):
     self.vocab = load_vocab(vocab_file)
-    self.inv_vocab = {v: k for k, v in self.vocab.items()}
+    for k, v in self.vocab.items():
+      if k == '[MASK]':  # Control character [MASK] Last?
+        self.control_len = v+1
+      self.inv_vocab[v] = k
     if use_jumanpp:
       do_lower_case = False
     self.basic_tokenizer = BasicTokenizer(do_lower_case=do_lower_case, use_jumanpp=use_jumanpp)
@@ -192,8 +195,8 @@ class FullTokenizer(object):
     return convert_by_vocab(self.inv_vocab, ids)
 
   # add for get random word
-  def get_random_token(self):
-    return self.inv_vocab[randint(1, len(self.inv_vocab)-1)]
+  def get_random_token_id(self):
+    return randint(self.control_len+1, len(self.inv_vocab)-1)
 
   def __len__(self):
     return len(self.vocab)

@@ -28,7 +28,7 @@ from math import log
 import os
 import sys
 
-CONTROL_TOKENS = ['[UNK]', '[CLS]', '[SEP]', '[MASK]']
+CONTROL_TOKENS = ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']
 
 
 def convert_to_unicode(text):
@@ -199,7 +199,7 @@ def convert_by_vocab(vocab_dict, items, unk_info):
 
 def convert_tokens_to_ids(vocab, tokens):
     """Id of <unk> is assumed as 0"""
-    return convert_by_vocab(vocab, tokens, unk_info=0)
+    return convert_by_vocab(vocab, tokens, unk_info=1)
 
 
 def convert_ids_to_tokens(inv_vocab, ids):
@@ -232,8 +232,8 @@ class FullTokenizer(object):
         return convert_by_vocab(self.inv_vocab, ids, unk_info='[UNK]')
 
     # add for get random word
-    def get_random_token(self):
-        return self.inv_vocab[randint(self.control_len + 1, len(self.inv_vocab) - 1)]
+    def get_random_token_id(self):
+        return randint(self.control_len + 1, len(self.inv_vocab) - 1)
 
     def __len__(self):
         return len(self.vocab)

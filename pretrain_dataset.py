@@ -27,7 +27,7 @@ import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
 from utils import truncate_seq_pair
-
+import copy
 
 class PretrainDataset(Dataset):
     def __init__(self, corpus_path, tokenizer, max_pos,
@@ -49,6 +49,12 @@ class PretrainDataset(Dataset):
         self.num_docs = 0
         self.sample_to_doc = []  # map sample index to doc and line
 
+        # BERT reserved
+        # [PAD] is 0
+        self.cls_id = tokenizer.convert_tokens_to_ids(["[CLS]"])[0]
+        self.sep_id = tokenizer.convert_tokens_to_ids(["[SEP]"])[0]
+        self.mask_id = tokenizer.convert_tokens_to_ids(["[MASK]"])[0]
+
         # load samples into memory
         if on_memory:
             self.all_documents = []
@@ -68,7 +74,7 @@ class PretrainDataset(Dataset):
                         sample = {"doc_id": len(self.all_documents),
                                   "line": len(doc)}
                         self.sample_to_doc.append(sample)
-                        doc.append(line)
+                        doc.append(self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(line)))
                         self.corpus_lines += 1
 
             # FIX to last rows ""... . last line is not "" and EOF
@@ -114,13 +120,8 @@ class PretrainDataset(Dataset):
 
         t1, t2, is_next_label = self.random_sent(item)
 
-        # tokenize
-        tokens_a = self.tokenizer.tokenize(t1)
-        tokens_b = self.tokenizer.tokenize(t2)
-
         # transform sample to features
-        features = self.convert_example_to_features(tokens_a, tokens_b, is_next_label, self.max_pos)
-
+        features = self.convert_example_to_features(t1, t2, is_next_label, self.max_pos)
         return [torch.tensor(x, dtype=torch.long) for x in features]
 
     def random_sent(self, index):
@@ -174,6 +175,8 @@ class PretrainDataset(Dataset):
                     t2 = self.file.__next__().strip()
                     self.current_doc = self.current_doc+1
             self.line_buffer = t2
+            t1 = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(t1))
+            t2 = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(t2))
 
         return t1, t2
 
@@ -212,10 +215,11 @@ class PretrainDataset(Dataset):
             self.random_file.close()
             self.random_file = open(self.corpus_path, "r", encoding=self.encoding)
             line = self.random_file.__next__().strip()
+        line = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(line))
         return line
     
-    def get_random_word(self):
-        return self.tokenizer.get_random_token()
+    def get_random_token_id(self):
+        return self.tokenizer.get_random_token_id()
 
     def convert_example_to_features(self, tokens_a, tokens_b, is_next_label, max_pos, short_seq_prob=0.1, masked_lm_prob=0.15):
         """
@@ -238,30 +242,34 @@ class PretrainDataset(Dataset):
         truncate_seq_pair(tokens_a, tokens_b, target_max_pos)
 
         # Add Special Tokens
-        tokens_a = ['[CLS]'] + tokens_a + ['[SEP]']
-        tokens_b = tokens_b + ['[SEP]'] if tokens_b else []
-        tokens = tokens_a + tokens_b
+        tokens_a.insert(0, self.cls_id)
+        tokens_a.append(self.sep_id)
+        if len(tokens_b) != 0:
+            tokens_b.append(self.sep_id)
+        else:
+            tokens_b = []
 
+        tokens = copy.copy(tokens_a)
+        tokens.extend(copy.copy(tokens_b))
         # Add next sentence segment
         segment_ids = [0] * len(tokens_a) + [1] * len(tokens_b)
 
         # mask prediction calc
         mask_prediction = int(round(len(tokens) * masked_lm_prob))
 
-        mask_candidate_pos = [i for i, token in enumerate(tokens) if token != '[CLS]' and token != '[SEP]']
-        # masked
+        mask_candidate_pos = [i for i, token in enumerate(tokens) if token != self.cls_id and token != self.sep_id]
+        # masked and random token
         shuffle(mask_candidate_pos)
         for pos in mask_candidate_pos[:mask_prediction]:
             if random() < 0.8:    # 80%
-                tokens[pos] = '[MASK]'
+                tokens[pos] = self.mask_id
             elif random() < 0.5:  # 10%
-                tokens[pos] = self.get_random_word()
+                tokens[pos] = self.get_random_token_id()
             # 10% not mask and not modify
 
-        # tokens indexing
-        input_ids = self.tokenizer.convert_tokens_to_ids(tokens)
+        input_ids = tokens
         input_mask = [1]*len(input_ids)
-        label_ids = self.tokenizer.convert_tokens_to_ids(tokens_a+tokens_b)
+        label_ids = tokens_a+tokens_b
 
         # zero padding
         num_zero_pad = max_pos - len(input_ids)

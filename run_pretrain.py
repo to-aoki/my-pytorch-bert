@@ -107,7 +107,7 @@ def bert_pretraining(
 
     elif mode == 'eval':
 
-        assert model_path is not None and model_path is not '', '\"eval\" mode is model_path require'
+        assert model_path is not None and model_path is not '', '"eval" mode is model_path require'
 
         criterion_lm = NLLLoss(ignore_index=-1, reduction='none')
         criterion_ns = NLLLoss(ignore_index=-1)
