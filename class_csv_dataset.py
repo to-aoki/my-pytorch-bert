@@ -83,7 +83,7 @@ class BertCsvDataset(Dataset):
                 for sample in self.per_label_records[label_num][:self.under_sample_num]:
                     self.records.append(sample)
             self.origin_per_label_records_num = self.per_label_records_num
-            self.per_label_records_num = [self.under_sample_num]*len(labels)
+            self.per_label_records_num = [self.under_sample_num]*len(unique_labels)
             self.sampling_index = 1
 
     @staticmethod
