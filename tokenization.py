@@ -2,7 +2,7 @@
 #
 # Author Toshihiko Aoki
 # This file is based on https://github.com/google-research/bert/blob/master/tokenization.py.
-# Add get_random_token and len.
+# Add get_random_token and len and separated by jumanpp text input.
 #
 # Copyright 2018 The Google AI Language Team Authors.
 #
@@ -169,10 +169,12 @@ def whitespace_tokenize(text):
 class FullTokenizer(object):
   """Runs end-to-end tokenziation."""
 
-  def __init__(self, vocab_file, do_lower_case=True):
+  def __init__(self, vocab_file, do_lower_case=True, use_jumanpp=False):
     self.vocab = load_vocab(vocab_file)
     self.inv_vocab = {v: k for k, v in self.vocab.items()}
-    self.basic_tokenizer = BasicTokenizer(do_lower_case=do_lower_case)
+    if use_jumanpp:
+      do_lower_case = False
+    self.basic_tokenizer = BasicTokenizer(do_lower_case=do_lower_case, use_jumanpp=use_jumanpp)
     self.wordpiece_tokenizer = WordpieceTokenizer(vocab=self.vocab)
 
   def tokenize(self, text):
@@ -208,7 +210,7 @@ class BasicTokenizer(object):
     """
     self.do_lower_case = do_lower_case
 
-  def tokenize(self, text):
+  def tokenize(self, text, use_jumanpp=False):
     """Tokenizes a piece of text."""
     text = convert_to_unicode(text)
     text = self._clean_text(text)
@@ -219,7 +221,8 @@ class BasicTokenizer(object):
     # and generally don't have any Chinese data in them (there are Chinese
     # characters in the vocabulary because Wikipedia does have some Chinese
     # words in the English Wikipedia.).
-    text = self._tokenize_chinese_chars(text)
+    if not use_jumanpp:
+      text = self._tokenize_chinese_chars(text)
 
     orig_tokens = whitespace_tokenize(text)
     split_tokens = []
