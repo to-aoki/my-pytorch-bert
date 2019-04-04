@@ -9,7 +9,7 @@ And we add [bert-japanese](https://github.com/yoheikikuta/bert-japanese) as [Sen
 python load_tf_bert.py \
     --config_path=json-file \
     --tfmodel_path=bert-wiki-ja/model.ckpt-1400000 \
-    --vocab_num=32000 --output_path=bert-wiki-ja.pt
+    --output_path=pretrain/bert-wiki-ja.pt
 ```
 json-file example:
 ```
@@ -21,7 +21,7 @@ json-file example:
 	"intermediate_size": 3072,
 	"attention_probs_dropout_prob": 0.1,
 	"hidden_dropout_prob": 0.1,
-	"max_position_embeddings": 128,
+	"max_position_embeddings": 512,
 	"type_vocab_size": 2,
 	"initializer_range": 0.02
 }
