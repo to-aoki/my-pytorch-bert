@@ -72,10 +72,9 @@ def load_tf_bert(
     config_path='config/bert_base.json',
     tfmodel_path="multi_cased_L-12_H-768_A-12/bert_model.ckpt",
     vocab_num=119547,
-    max_pos=512,
-    output_path = "multi_caused_L-12_H-768_A-12.pt"
+    output_path="multi_caused_L-12_H-768_A-12.pt"
 ):
-    config = Config.from_json(config_path, vocab_num, max_pos)
+    config = Config.from_json(config_path, vocab_num)
     model = BertModel(config)
     load_from_google_bert_model(model, tfmodel_path)
     torch.save(model.state_dict(), output_path)
@@ -91,9 +90,7 @@ if __name__ == '__main__':
                         type=str)
     parser.add_argument('--vocab_num', help='Vocabulary numbers.', required=True,
                         type=int)
-    parser.add_argument('--max_pos', help='The maximum sequence length for BERT (slow as big).', nargs='?',
-                        type=int, default=512)
     parser.add_argument('--output_path', help='Output model path.', required=True,
                         type=str)
     args = parser.parse_args()
-    load_tf_bert(args.config_path, args.tfmodel_path, args.vocab_num, args.max_pos, args.output_path)
+    load_tf_bert(args.config_path, args.tfmodel_path, args.vocab_num, args.output_path)
