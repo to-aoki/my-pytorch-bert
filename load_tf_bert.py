@@ -69,12 +69,11 @@ def load_from_google_bert_model(model: BertModel, f):
 
 
 def load_tf_bert(
-    config_path='config/bert_base.json',
+    config_path='config/bert_config.json',
     tfmodel_path="multi_cased_L-12_H-768_A-12/bert_model.ckpt",
-    vocab_num=119547,
-    output_path="multi_caused_L-12_H-768_A-12.pt"
+    output_path="pretrain/multi_caused_L-12_H-768_A-12.pt"
 ):
-    config = Config.from_json(config_path, vocab_num)
+    config = Config.from_json(config_path)
     model = BertModel(config)
     load_from_google_bert_model(model, tfmodel_path)
     torch.save(model.state_dict(), output_path)
@@ -84,13 +83,11 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Convert from TensorFlow BERT to my-pytorch-bert model.',
                                      usage='%(prog)s [options]')
-    parser.add_argument('--config_path', help='JSON file path for defines networks.', nargs='?',
+    parser.add_argument('--config_path', help='JSON file path for defines BERT.', nargs='?',
                         type=str, default='config/bert_base.json')
     parser.add_argument('--tfmodel_path', help='TensorFlow model path.', required=True,
                         type=str)
-    parser.add_argument('--vocab_num', help='Vocabulary numbers.', required=True,
-                        type=int)
     parser.add_argument('--output_path', help='Output model path.', required=True,
                         type=str)
     args = parser.parse_args()
-    load_tf_bert(args.config_path, args.tfmodel_path, args.vocab_num, args.output_path)
+    load_tf_bert(args.config_path, args.tfmodel_path, args.output_path)
