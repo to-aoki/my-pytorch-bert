@@ -103,13 +103,14 @@ class BertCsvDataset(Dataset):
         # Add next sentence segment
         segment_ids = [0] * len(tokens_a) + [1] * len(tokens_b)
 
-        # tokens indexing
-        input_ids = tokenizer.convert_tokens_to_ids(tokens_a + tokens_b)
+        input_ids = tokens_a + tokens_b
         input_mask = [1] * len(input_ids)
 
         # zero padding
         num_zero_pad = max_pos - len(input_ids)
-        input_ids.extend([0] * num_zero_pad)
+        input_ids.extend(['[PAD]'] * num_zero_pad)
+        # tokens indexing
+        input_ids = tokenizer.convert_tokens_to_ids(input_ids)
         segment_ids.extend([0] * num_zero_pad)
         input_mask.extend([0] * num_zero_pad)
 
