@@ -214,12 +214,12 @@ class FullTokenizer(object):
 
     def convert_tokens_to_ids(self, tokens):
         """Id of <unk> is assumed as 0 accroding to sentencepiece"""
-        return convert_by_vocab(self.vocab, tokens, unk_info=3)  # <unk> = 0 -> [PAD]?
+        return convert_by_vocab(self.vocab, tokens, unk_info=0)
 
     def convert_ids_to_tokens(self, ids):
         """Token of unknown word is assumed as <unk> according to sentencepiece"""
-        return convert_by_vocab(self.inv_vocab, ids, unk_info="[PAD]")  # <unk> = 0 -> [PAD]?
-    
+        return convert_by_vocab(self.inv_vocab, ids, unk_info="<unk>")
+
     # add for get random word
     def get_random_token_id(self):
         return randint(self.control_len+1, len(self.inv_vocab)-1)

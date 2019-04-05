@@ -49,8 +49,8 @@ class PretrainDataset(Dataset):
         self.num_docs = 0
         self.sample_to_doc = []  # map sample index to doc and line
 
-        # BERT reserved
-        # [PAD] is 0
+        # BERT reserved tokens
+        self.pad_id = tokenizer.convert_tokens_to_ids(["[PAD]"])[0]
         self.cls_id = tokenizer.convert_tokens_to_ids(["[CLS]"])[0]
         self.sep_id = tokenizer.convert_tokens_to_ids(["[SEP]"])[0]
         self.mask_id = tokenizer.convert_tokens_to_ids(["[MASK]"])[0]
@@ -273,9 +273,9 @@ class PretrainDataset(Dataset):
 
         # zero padding
         num_zero_pad = max_pos - len(input_ids)
-        input_ids.extend([0]*num_zero_pad)
+        input_ids.extend([self.pad_id]*num_zero_pad)
         segment_ids.extend([0]*num_zero_pad)
         input_mask.extend([0]*num_zero_pad)
-        label_ids.extend([0]*num_zero_pad)
+        label_ids.extend([self.pad_id]*num_zero_pad)
 
         return [input_ids,  segment_ids, input_mask, is_next_label, label_ids]
