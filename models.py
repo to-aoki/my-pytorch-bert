@@ -123,7 +123,7 @@ class SelfAttention(nn.Module):
         x = x.view(*new_x_shape)
         return x.transpose(2, 1)
 
-    def forward(self, hidden_states, attention_mask, monitor=False):
+    def forward(self, hidden_states, attention_mask):
         self.attn_data = {}  # for bertviz
         mixed_query_layer = self.query(hidden_states).contiguous()
         mixed_key_layer = self.key(hidden_states)
@@ -187,8 +187,8 @@ class Attention(nn.Module):
         self.self_attention = SelfAttention(config)
         self.output = SelfOutput(config)
 
-    def forward(self, input_tensor, attention_mask, monitor=False):
-        self_attention_output = self.self_attention(input_tensor, attention_mask, monitor)
+    def forward(self, input_tensor, attention_mask):
+        self_attention_output = self.self_attention(input_tensor, attention_mask)
         attention_output = self.output(self_attention_output, input_tensor)
         return attention_output
 
@@ -214,8 +214,8 @@ class TransformerBlock(nn.Module):
         self.attention = Attention(config)
         self.pwff = PositionWiseFeedForward(config)
 
-    def forward(self, hidden_states, attention_mask, monitor=False):
-        attention_output = self.attention(hidden_states, attention_mask, monitor)
+    def forward(self, hidden_states, attention_mask):
+        attention_output = self.attention(hidden_states, attention_mask)
         return self.pwff(attention_output)
 
 
@@ -225,13 +225,14 @@ class Encoder(nn.Module):
         layer = TransformerBlock(config)
         self.blocks_layer = nn.ModuleList([copy.deepcopy(layer) for _ in range(config.num_hidden_layers)])
         self.attn_data_list = []
+        self.monitor = False
 
-    def forward(self, hidden_states, attention_mask, monitor=False):
+    def forward(self, hidden_states, attention_mask):
         self.attn_data_list = []
         for layer_module in self.blocks_layer:
-            hidden_states = layer_module(hidden_states, attention_mask, monitor)
-            if monitor:
-                self.attn_data_list.append(layer_module.attention.self_attention.monitor())
+            hidden_states = layer_module(hidden_states, attention_mask)
+            if self.monitor:
+                self.attn_data_list.append(layer_module.attention.self_attention)
         return hidden_states
     
     # for vertviz
@@ -261,7 +262,7 @@ class BertModel(nn.Module):
         if isinstance(module, nn.Linear) and module.bias is not None:
             module.bias.data.zero_()
 
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, monitor=False):
+    def forward(self, input_ids, token_type_ids=None, attention_mask=None):
         if attention_mask is None:
             attention_mask = torch.ones_like(input_ids)
         if token_type_ids is None:
@@ -284,7 +285,7 @@ class BertModel(nn.Module):
         extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
 
         embedding_output = self.embeddings(input_ids, token_type_ids)
-        hidden_states = self.encoder(embedding_output, extended_attention_mask, monitor)
+        hidden_states = self.encoder(embedding_output, extended_attention_mask)
         pooled_output = torch.tanh(self.pool(hidden_states[:, 0]))
 
         return hidden_states, pooled_output
