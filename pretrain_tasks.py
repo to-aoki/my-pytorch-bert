@@ -18,6 +18,7 @@
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from models import gelu, LayerNorm, BertModel
 
@@ -50,7 +51,7 @@ class MaskedLM(nn.Module):
     def forward(self, hidden_states, word_embeddings_weight):
         hidden_states = gelu(self.dense(hidden_states))
         hidden_states = self.layer_norm(hidden_states)
-        return torch.matmul(hidden_states, word_embeddings_weight.transpose(0, 1)) + self.bias
+        return F.linear(hidden_states, word_embeddings_weight, bias=self.bias)
 
 
 class NextSentencePrediction(nn.Module):
