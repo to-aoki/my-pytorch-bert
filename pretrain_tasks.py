@@ -28,12 +28,12 @@ class BertPretrainingTasks(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.bert = BertModel(config)
-        self.masked_lm = MaskedLM(config, self.bert.embeddings.word_embeddings)
+        self.masked_lm = MaskedLM(config, self.bert.embeddings.word_embeddings.weight.size(0))
         self.next_sentence_prediction = NextSentencePrediction(config)
 
     def forward(self, input_ids, segment_ids, input_mask):
         hidden_state, pooled_output = self.bert(input_ids, segment_ids, input_mask)
-        loss_lm = self.masked_lm.forward(hidden_state)
+        loss_lm = self.masked_lm.forward(hidden_state, self.bert.embeddings.word_embeddings.weight)
         loss_nsp = self.next_sentence_prediction(pooled_output)
         return loss_lm, loss_nsp
 
@@ -41,20 +41,16 @@ class BertPretrainingTasks(nn.Module):
 class MaskedLM(nn.Module):
     """Bert Pre-training #1 : Masked LM"""
 
-    def __init__(self, config, word_embeddings):
+    def __init__(self, config, n_vocab):
         super().__init__()
-        n_vocab = word_embeddings.weight.size(0)
-        self.n_vocab = n_vocab
         self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         self.layer_norm = LayerNorm(config.hidden_size, eps=1e-12)
-        self.decoder = nn.Linear(config.hidden_size, n_vocab)
-        self.decoder.weight = word_embeddings.weight
-        self.decoder.bias = nn.Parameter(torch.zeros(n_vocab))
+        self.bias = nn.Parameter(torch.zeros(n_vocab))
 
-    def forward(self, hidden_states):
+    def forward(self, hidden_states, word_embeddings_weight):
         hidden_states = gelu(self.dense(hidden_states))
         hidden_states = self.layer_norm(hidden_states)
-        return self.decoder(hidden_states)
+        return hidden_states @ word_embeddings_weight.transpose(0, 1) + self.bias
 
 
 class NextSentencePrediction(nn.Module):
