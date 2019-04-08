@@ -50,7 +50,7 @@ class MaskedLM(nn.Module):
     def forward(self, hidden_states, word_embeddings_weight):
         hidden_states = gelu(self.dense(hidden_states))
         hidden_states = self.layer_norm(hidden_states)
-        return hidden_states @ word_embeddings_weight.transpose(0, 1) + self.bias
+        return torch.matmul(hidden_states, word_embeddings_weight.transpose(0, 1)) + self.bias
 
 
 class NextSentencePrediction(nn.Module):
