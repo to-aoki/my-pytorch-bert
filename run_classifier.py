@@ -119,7 +119,8 @@ def classification(
         helper.training(process, model, dataset, sampler, optimizer, batch_size, epoch, model_path, save_dir,
                         per_save_epoch, epoch_dataset_adjust)
 
-        output_model_path = os.path.join(save_dir, "classifier.pt")
+        name, _ = os.path.splitext(os.path.basename(dataset_path))
+        output_model_path = os.path.join(save_dir, name + "_classifier.pt")
         save(model, output_model_path)
 
     elif mode == 'eval':

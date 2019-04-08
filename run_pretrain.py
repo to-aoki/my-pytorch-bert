@@ -102,8 +102,11 @@ def bert_pretraining(
         helper.training(process, model, train_dataset, sampler, optimizer, batch_size,
                         epoch, model_path, save_dir, per_save_epoch)
 
-        output_model_path = os.path.join(save_dir, "bert_model.pt")
+        name, _ = os.path.splitext(os.path.basename(dataset_path))
+        output_model_path = os.path.join(save_dir, name + "_bert.pt")
         save(model.bert, output_model_path)
+        output_model_path = os.path.join(save_dir, name + "_pretrain.pt")
+        save(model, output_model_path)
 
     elif mode == 'eval':
 
