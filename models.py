@@ -162,10 +162,6 @@ class SelfAttention(nn.Module):
             }
 
         return context_layer
-    
-    # for vertviz
-    def monitor(self):
-        return self.attn_data
 
 
 class SelfOutput(nn.Module):
@@ -226,7 +222,12 @@ class Encoder(nn.Module):
         layer = TransformerBlock(config)
         self.blocks_layer = nn.ModuleList([copy.deepcopy(layer) for _ in range(config.num_hidden_layers)])
         self.attn_data_list = []
-        self.enable_monitor = False
+        self.attn_monitor = False
+
+    def enable_monitor(self):
+        self.attn_monitor = True
+        for layer_module in self.blocks_layer:
+            layer_module.attention.self_attention.enable_monitor = True
 
     def forward(self, hidden_states, attention_mask):
         self.attn_data_list = []
@@ -236,7 +237,7 @@ class Encoder(nn.Module):
                 self.attn_data_list.append(layer_module.attention.self_attention)
         return hidden_states
     
-    # for vertviz
+    # for bertviz
     def monitor(self):
         return self.attn_data_list
 

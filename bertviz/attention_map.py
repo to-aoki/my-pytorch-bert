@@ -31,7 +31,8 @@ class AttentionMapData:
     def get_data(self, sentence_a, sentence_b):
         tokens_tensor, token_type_tensor, tokens_a, tokens_b = self._get_inputs(sentence_a, sentence_b)
         # mod for my model
-        self.model(tokens_tensor, token_type_ids=token_type_tensor, monitor=True)
+        self.model.encoder.enable_monitor()
+        self.model(tokens_tensor, token_type_ids=token_type_tensor)
         attn_data_list = self.model.encoder.monitor()
         attn_tensor = torch.stack([attn_data['attn_probs'] for attn_data in attn_data_list])
         return tokens_a, tokens_b, attn_tensor.data.numpy()
