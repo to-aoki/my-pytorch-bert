@@ -135,7 +135,14 @@ class BertAdam(Optimizer):
 
 
 # add for optimizer initializer
-def get_optimizer(model, lr=5e-5, warmup_steps=0, max_steps=0, decoy=0.01, no_decay=('bias', 'layer_norm')):
+def get_optimizer(
+        model,
+        lr=5e-5,
+        warmup_steps=0,
+        max_steps=0,
+        decoy=0.01,
+        no_decay=('bias', 'layer_norm', 'LayerNorm')
+):
     param_optimizer = list(model.named_parameters())
     optimizer_grouped_parameters = [
         {'params': [p for n, p in param_optimizer if _do_use_weight_decay(n, no_decay)], 'weight_decay_rate': decoy},

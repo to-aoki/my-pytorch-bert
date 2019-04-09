@@ -27,8 +27,8 @@ from collections import defaultdict
 class BertCsvDataset(Dataset):
 
     def __init__(self, tokenizer, max_pos, label_num,
-                 file_path=None, sentence_a=[],sentence_b=[], labels=[],
-                 delimiter='\t', encoding='utf-8', header_skip=True, under_sampling=False, cash_text=False):
+                 file_path=None, sentence_a=[], sentence_b=[], labels=[],
+                 delimiter='\t', encoding='utf-8', header_skip=True, under_sampling=False):
         super().__init__()
         unique_labels = []
         self.records = []
