@@ -233,8 +233,8 @@ class Encoder(nn.Module):
         self.attn_data_list = []
         for layer_module in self.blocks_layer:
             hidden_states = layer_module(hidden_states, attention_mask)
-            if self.enable_monitor:
-                self.attn_data_list.append(layer_module.attention.self_attention)
+            if self.attn_monitor:
+                self.attn_data_list.append(layer_module.attention.self_attention.attn_data)
         return hidden_states
     
     # for bertviz
