@@ -22,6 +22,7 @@ import tokenization
 import torch
 from torch.nn import CrossEntropyLoss
 from torch.utils.data import RandomSampler, WeightedRandomSampler
+import preprocessing
 
 from finetuning import Classifier
 from class_csv_dataset import BertCsvDataset
@@ -55,24 +56,33 @@ def classification(
     read_head=False
 ):
 
+    preprocessor = preprocessing.Pipeline([
+        preprocessing.ToUnicode(),
+        preprocessing.Normalize(),
+        preprocessing.LowerCase(),
+        preprocessing.ReplaceNumber(),
+        preprocessing.ReplaceURI(),
+    ])
+
     if sp_model_path is not None:
         tokenizer = tokenization_sentencepiece.FullTokenizer(
-            sp_model_path, vocab_path, do_lower_case=True)
+            sp_model_path, vocab_path, preprocessor=preprocessor)
     else:
         if use_mecab:
             import tokenization_mecab
             tokenizer = tokenization_mecab.FullTokenizer(vocab_path)
         elif use_jumanapp:
-            tokenizer = tokenization.FullTokenizer(vocab_path,  do_lower_case=True, use_jumanapp=True)
+            tokenizer = tokenization.FullTokenizer(vocab_path, preprocessor=preprocessor)
         else:
-            tokenizer = tokenization.FullTokenizer(vocab_path, do_lower_case=True)
+            tokenizer = tokenization.FullTokenizer(vocab_path, preprocessor=preprocessor)
 
     config = models.Config.from_json(config_path, len(tokenizer), max_pos)
 
     if under_sampling_cycle:
         under_sampling = True
 
-    dataset = BertCsvDataset(tokenizer, max_pos, label_num, dataset_path, under_sampling=under_sampling,
+    dataset = BertCsvDataset(tokenizer, max_pos, label_num, dataset_path,
+                             under_sampling=under_sampling,
                              header_skip=not read_head)
 
     model = Classifier(config, label_num)

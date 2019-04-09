@@ -43,20 +43,6 @@ def make_balanced_classes_weights(per_label_records_num):
     return classes_weights
 
 
-def replace_num_zero(text):
-    replaced_text = re.sub(r'\d+', '0', text)
-    return replaced_text
-
-
-def replace_uri(text, replacement='[URI]'):
-    return re.sub(
-        r'http\S+',
-        replacement,
-        text,
-        flags=re.MULTILINE
-    )
-
-
 def get_one_hot(x, depth):
     """get One-Hot tensor."""
     converted = x.view(-1, 1)

@@ -25,6 +25,7 @@ from pretrain_dataset import PretrainDataset
 from torch.utils.data import RandomSampler
 import tokenization_sentencepiece
 import tokenization
+import preprocessing
 from helper import Helper
 from utils import save, get_logger
 
@@ -49,15 +50,23 @@ def bert_pretraining(
 
     assert mode is not None and (mode == 'train' or mode == 'eval'), 'support mode train or eval.'
 
+    preprocessor = preprocessing.Pipeline([
+        preprocessing.ToUnicode(),
+        preprocessing.Normalize(),
+        preprocessing.LowerCase(),
+        preprocessing.ReplaceNumber(),
+        preprocessing.ReplaceURI(),
+    ])
+
     if sp_model_path is not None:
         tokenizer = tokenization_sentencepiece.FullTokenizer(
-            sp_model_path, vocab_path, do_lower_case=True)
+            sp_model_path, vocab_path, preprocessor=preprocessor)
     else:
         if is_mecab:
             import tokenization_mecab
-            tokenizer = tokenization_mecab.FullTokenizer(vocab_path)
+            tokenizer = tokenization_mecab.FullTokenizer(vocab_path, preprocessor=preprocessor)
         else:
-            tokenizer = tokenization.FullTokenizer(vocab_path, do_lower_case=True)
+            tokenizer = tokenization.FullTokenizer(vocab_path, preprocessor=preprocessor)
 
     if max_pos is None:
         # max_pos = statistics.median(all-sentence-tokens)
@@ -201,7 +210,7 @@ if __name__ == '__main__':
     parser.add_argument('--log_dir', help='Logging file path.', nargs='?',
                         type=str, default=None)
     parser.add_argument('--batch_size',  help='Batch size', nargs='?',
-                        type=int, default=2)
+                        type=int, default=4)
     parser.add_argument('--max_pos', help='The maximum sequence length for BERT (slow as big).', nargs='?',
                         type=int, default=128)
     parser.add_argument('--lr', help='Learning rate', nargs='?',

@@ -170,22 +170,20 @@ def whitespace_tokenize(text):
 class FullTokenizer(object):
   """Runs end-to-end tokenziation."""
 
-  def __init__(self, vocab_file, do_lower_case=True, use_jumanpp=False):
+  def __init__(self, vocab_file, preprocessor=None, use_jumanpp=False):
     self.vocab = load_vocab(vocab_file)
     self.inv_vocab = {}
     for k, v in self.vocab.items():
       if k == '[MASK]':  # Control character [MASK] Last?
         self.control_len = v+1
       self.inv_vocab[v] = k
-    if use_jumanpp:
-      do_lower_case = False
-    self.basic_tokenizer = BasicTokenizer(do_lower_case=do_lower_case)
+    self.basic_tokenizer = BasicTokenizer(preprocessor=preprocessor, use_jumanpp=use_jumanpp)
     self.wordpiece_tokenizer = WordpieceTokenizer(vocab=self.vocab)
     self.use_jumanpp=use_jumanpp
 
   def tokenize(self, text):
     split_tokens = []
-    for token in self.basic_tokenizer.tokenize(text, self.use_jumanpp):
+    for token in self.basic_tokenizer.tokenize(text):
       for sub_token in self.wordpiece_tokenizer.tokenize(token):
         split_tokens.append(sub_token)
 
@@ -208,15 +206,18 @@ class FullTokenizer(object):
 class BasicTokenizer(object):
   """Runs basic tokenization (punctuation splitting, lower casing, etc.)."""
 
-  def __init__(self, do_lower_case=True):
+  def __init__(self, preprocessor=None, use_jumanpp=False):
     """Constructs a BasicTokenizer.
 
     Args:
-      do_lower_case: Whether to lower case the input.
+      preprocessor: Whether to preprocessing the input.
     """
-    self.do_lower_case = do_lower_case
+    self.preprocessor = preprocessor
+    self.use_jumanpp = use_jumanpp
+    if not self.use_jumanpp:
+      del self.preprocessor['LowerCase']
 
-  def tokenize(self, text, use_jumanpp=False):
+  def tokenize(self, text):
     """Tokenizes a piece of text."""
     text = convert_to_unicode(text)
     text = self._clean_text(text)
@@ -227,13 +228,13 @@ class BasicTokenizer(object):
     # and generally don't have any Chinese data in them (there are Chinese
     # characters in the vocabulary because Wikipedia does have some Chinese
     # words in the English Wikipedia.).
-    if not use_jumanpp:
+    if not self.use_jumanpp:
       text = self._tokenize_chinese_chars(text)
-
+    text = self.preprocessor(text) if self.preprocessor is not None else text
     orig_tokens = whitespace_tokenize(text)
     split_tokens = []
     for token in orig_tokens:
-      if self.do_lower_case:
+      if not self.use_jumanpp:
         token = token.lower()
         token = self._run_strip_accents(token)
       split_tokens.extend(self._run_split_on_punc(token))

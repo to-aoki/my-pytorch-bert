@@ -22,11 +22,11 @@ import MeCab
 from random import randint
 from collections import Counter, OrderedDict
 from tqdm import tqdm
-import unicodedata
-from utils import replace_num_zero, replace_uri, japanese_stopwords
+from utils import japanese_stopwords
 from math import log
 import os
 import sys
+import preprocessing
 
 CONTROL_TOKENS = ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']
 
@@ -112,37 +112,19 @@ def text_to_vocab(
 class MeCabTokenizer(object):
 
     def __init__(self, args='',
-                 do_lower_case=True,
-                 do_normalize=True,
-                 form='NFKC',
-                 do_num_zero=True,
-                 do_convert_uri=True,
-                 replace_uri_word='[URI]',
+                 preprocessor=None,
                  lemmatize=True,
                  stopwords=japanese_stopwords(),
                  collect_futures=[]):
         self.tagger = MeCab.Tagger(args)
         self.tagger.parse('')
         self.collect_futures = collect_futures
-        self.do_lower_case = do_lower_case
-        self.do_normalize = do_normalize
-        self.form = form
-        self.do_num_zero = do_num_zero
-        self.do_convert_uri = do_convert_uri
-        self.replace_uri_word = replace_uri_word
+        self.preprocessor = preprocessor
         self.lemmatize = lemmatize
         self.stopwords = stopwords
 
     def tokenize(self, text):
-        if self.do_normalize:
-            text = unicodedata.normalize(self.form, text)
-        if self.do_num_zero:
-            text = replace_num_zero(text)
-        if self.do_lower_case:
-            text = text.lower()
-        if self.do_convert_uri:
-            text = replace_uri(text, self.replace_uri_word)
-
+        text = self.preprocessor(text) if self.preprocessor is not None else text
         tokens = []
         for chunk in self.tagger.parse(text.rstrip()).splitlines()[:-1]:  # skip EOS
             if chunk == '' or '\t' not in chunk:  # often there is not include tab
@@ -210,8 +192,8 @@ def convert_ids_to_tokens(inv_vocab, ids):
 class FullTokenizer(object):
     """Runs end-to-end tokenziation."""
 
-    def __init__(self, vocab_file, control_tokens=CONTROL_TOKENS):
-        self.tokenizer = MeCabTokenizer()
+    def __init__(self, vocab_file, preprocessor=None, control_tokens=CONTROL_TOKENS):
+        self.tokenizer = MeCabTokenizer(preprocessor=preprocessor)
         self.vocab = load_vocab(vocab_file)
         assert (0 < len(self.vocab))
         self.inv_vocab = {}
@@ -253,13 +235,21 @@ if __name__ == '__main__':
     parser.add_argument('--limit_vocab_length', help='Word appearance frequency adopted as vocabulary', nargs='?',
                         type=int, default=-1)
     args = parser.parse_args()
-    args.vocab_path=None
+    args.vocab_path = None
     if args.vocab_path is not None:
         print('created : ' + args.vocab_path + ' , size :' + str(
             create_vocab(args.file_path, args.vocab_path, args.min_freq, args.limit_vocab_length)))
         sys.exit(0)
 
-    tokenizer = MeCabTokenizer()
+    preprocessor = preprocessing.Pipeline([
+        preprocessing.ToUnicode(),
+        preprocessing.Normalize(),
+        preprocessing.LowerCase(),
+        preprocessing.ReplaceNumber(),
+        preprocessing.ReplaceURI(),
+    ])
+
+    tokenizer = MeCabTokenizer(preprocessor=preprocessor)
     if args.convert_path is not None:
         _, ext = os.path.splitext(args.file_path)
         with open(args.file_path, "r", encoding='utf-8') as reader:
