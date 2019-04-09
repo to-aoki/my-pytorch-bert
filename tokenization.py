@@ -135,7 +135,8 @@ def load_vocab(vocab_file):
       token = convert_to_unicode(reader.readline())
       if not token:
         break
-      token = token.strip()
+      token = token.split("\t")
+      token = token[0].strip()
       vocab[token] = index
       index += 1
   return vocab
@@ -171,18 +172,20 @@ class FullTokenizer(object):
 
   def __init__(self, vocab_file, do_lower_case=True, use_jumanpp=False):
     self.vocab = load_vocab(vocab_file)
+    self.inv_vocab = {}
     for k, v in self.vocab.items():
       if k == '[MASK]':  # Control character [MASK] Last?
         self.control_len = v+1
       self.inv_vocab[v] = k
     if use_jumanpp:
       do_lower_case = False
-    self.basic_tokenizer = BasicTokenizer(do_lower_case=do_lower_case, use_jumanpp=use_jumanpp)
+    self.basic_tokenizer = BasicTokenizer(do_lower_case=do_lower_case)
     self.wordpiece_tokenizer = WordpieceTokenizer(vocab=self.vocab)
+    self.use_jumanpp=use_jumanpp
 
   def tokenize(self, text):
     split_tokens = []
-    for token in self.basic_tokenizer.tokenize(text):
+    for token in self.basic_tokenizer.tokenize(text, self.use_jumanpp):
       for sub_token in self.wordpiece_tokenizer.tokenize(token):
         split_tokens.append(sub_token)
 
