@@ -25,9 +25,8 @@ from pretrain_dataset import PretrainDataset
 from torch.utils.data import RandomSampler
 import tokenization_sentencepiece
 import tokenization
-import preprocessing
 from helper import Helper
-from utils import save, get_logger
+from utils import save, get_logger, default_preprocessor
 
 
 def bert_pretraining(
@@ -50,13 +49,7 @@ def bert_pretraining(
 
     assert mode is not None and (mode == 'train' or mode == 'eval'), 'support mode train or eval.'
 
-    preprocessor = preprocessing.Pipeline([
-        preprocessing.ToUnicode(),
-        preprocessing.Normalize(),
-        preprocessing.LowerCase(),
-        preprocessing.ReplaceNumber(),
-        preprocessing.ReplaceURI(),
-    ])
+    preprocessor = default_preprocessor()
 
     if sp_model_path is not None:
         tokenizer = tokenization_sentencepiece.FullTokenizer(

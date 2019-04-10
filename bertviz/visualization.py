@@ -20,12 +20,14 @@
 
 import torch
 
+
 class AttentionVisualizer:
 
     def __init__(self, model, tokenizer):
         self.model = model
         self.tokenizer = tokenizer
         self.model.eval()
+        self.model.encoder.enable_monitor()
 
     def get_viz_data(self, sentence_a, sentence_b):
         tokens_tensor, token_type_tensor, tokens_a, tokens_b = self._get_inputs(sentence_a, sentence_b)
@@ -43,7 +45,7 @@ class AttentionVisualizer:
         return tokens_tensor, token_type_tensor, tokens_a_delim, tokens_b_delim
 
     def _get_attention(self, tokens_tensor, token_type_tensor):
-        self.model(tokens_tensor, token_type_ids=token_type_tensor, monitor=True)
+        self.model(tokens_tensor, token_type_ids=token_type_tensor)
         attn_data_list = self.model.encoder.monitor()
         attn_tensor = torch.stack([attn_data['attn_probs'] for attn_data in attn_data_list])
         return attn_tensor.data.numpy()

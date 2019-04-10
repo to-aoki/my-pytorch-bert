@@ -22,12 +22,11 @@ import tokenization
 import torch
 from torch.nn import CrossEntropyLoss
 from torch.utils.data import RandomSampler, WeightedRandomSampler
-import preprocessing
 
 from finetuning import Classifier
 from class_csv_dataset import BertCsvDataset
 from helper import Helper
-from utils import save, load, get_logger, make_balanced_classes_weights
+from utils import save, load, get_logger, make_balanced_classes_weights, default_preprocessor
 
 
 def classification(
@@ -56,13 +55,7 @@ def classification(
     read_head=False
 ):
 
-    preprocessor = preprocessing.Pipeline([
-        preprocessing.ToUnicode(),
-        preprocessing.Normalize(),
-        preprocessing.LowerCase(),
-        preprocessing.ReplaceNumber(),
-        preprocessing.ReplaceURI(),
-    ])
+    preprocessor = default_preprocessor
 
     if sp_model_path is not None:
         tokenizer = tokenization_sentencepiece.FullTokenizer(

@@ -16,11 +16,21 @@
 """Utility Functions"""
 
 import os
-import re
+import preprocessing
 import random
 import logging
 import numpy as np
 import torch
+
+
+def default_preprocessor():
+    return preprocessing.Pipeline([
+        preprocessing.ToUnicode(),
+        preprocessing.Normalize(),
+        preprocessing.LowerCase(),
+        preprocessing.ReplaceNumber(),
+        preprocessing.ReplaceURI(),
+    ])
 
 
 def japanese_stopwords():
