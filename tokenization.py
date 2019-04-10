@@ -214,8 +214,6 @@ class BasicTokenizer(object):
     """
     self.preprocessor = preprocessor
     self.use_jumanpp = use_jumanpp
-    if not self.use_jumanpp:
-      del self.preprocessor['LowerCase']
 
   def tokenize(self, text):
     """Tokenizes a piece of text."""
@@ -235,7 +233,6 @@ class BasicTokenizer(object):
     split_tokens = []
     for token in orig_tokens:
       if not self.use_jumanpp:
-        token = token.lower()
         token = self._run_strip_accents(token)
       split_tokens.extend(self._run_split_on_punc(token))
 
