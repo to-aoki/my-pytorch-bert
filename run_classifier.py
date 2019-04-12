@@ -55,7 +55,7 @@ def classification(
     read_head=False
 ):
 
-    preprocessor = default_preprocessor
+    preprocessor = default_preprocessor()
 
     if sp_model_path is not None:
         tokenizer = tokenization_sentencepiece.FullTokenizer(
