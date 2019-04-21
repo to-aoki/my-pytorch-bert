@@ -2,7 +2,6 @@
 #
 # Author Toshihiko Aoki
 # This file is based on https://github.com/google-research/bert/blob/master/tokenization.py.
-# Add get_random_token and len and separated by jumanpp text input.
 #
 # Copyright 2018 The Google AI Language Team Authors.
 #
@@ -170,16 +169,15 @@ def whitespace_tokenize(text):
 class FullTokenizer(object):
   """Runs end-to-end tokenziation."""
 
-  def __init__(self, vocab_file, preprocessor=None, use_jumanpp=False):
+  def __init__(self, vocab_file, preprocessor=None):
     self.vocab = load_vocab(vocab_file)
     self.inv_vocab = {}
     for k, v in self.vocab.items():
       if k == '[MASK]':  # Control character [MASK] Last?
         self.control_len = v+1
       self.inv_vocab[v] = k
-    self.basic_tokenizer = BasicTokenizer(preprocessor=preprocessor, use_jumanpp=use_jumanpp)
+    self.basic_tokenizer = BasicTokenizer(preprocessor=preprocessor)
     self.wordpiece_tokenizer = WordpieceTokenizer(vocab=self.vocab)
-    self.use_jumanpp=use_jumanpp
 
   def tokenize(self, text):
     split_tokens = []
@@ -206,14 +204,13 @@ class FullTokenizer(object):
 class BasicTokenizer(object):
   """Runs basic tokenization (punctuation splitting, lower casing, etc.)."""
 
-  def __init__(self, preprocessor=None, use_jumanpp=False):
+  def __init__(self, preprocessor=None):
     """Constructs a BasicTokenizer.
 
     Args:
       preprocessor: Whether to preprocessing the input.
     """
     self.preprocessor = preprocessor
-    self.use_jumanpp = use_jumanpp
 
   def tokenize(self, text):
     """Tokenizes a piece of text."""
@@ -226,14 +223,12 @@ class BasicTokenizer(object):
     # and generally don't have any Chinese data in them (there are Chinese
     # characters in the vocabulary because Wikipedia does have some Chinese
     # words in the English Wikipedia.).
-    if not self.use_jumanpp:
-      text = self._tokenize_chinese_chars(text)
+    text = self._tokenize_chinese_chars(text)
     text = self.preprocessor(text) if self.preprocessor is not None else text
     orig_tokens = whitespace_tokenize(text)
     split_tokens = []
     for token in orig_tokens:
-      if not self.use_jumanpp:
-        token = self._run_strip_accents(token)
+      token = self._run_strip_accents(token)
       split_tokens.extend(self._run_split_on_punc(token))
 
     output_tokens = whitespace_tokenize(" ".join(split_tokens))

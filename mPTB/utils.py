@@ -59,8 +59,7 @@ def get_tokenizer(
     preprocessor=None,
     vocab_path=None,
     sp_model_path=None,
-    use_mecab=False,
-    use_jumanpp_vocab=False
+    use_mecab=False
 ):
     if preprocessor is None:
         preprocessor = default_preprocessor()

@@ -17,14 +17,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import six
 import MeCab
 from random import randint
 from collections import Counter, OrderedDict
 from tqdm import tqdm
-from .utils import japanese_stopwords
 from math import log
-import os
 import sys
 from .preprocessing import *
 
@@ -45,10 +42,10 @@ def convert_to_unicode(text):
 
 
 def create_vocab(text_file_path, create_file_path, min_freq=0, limit_vocab_length=-1,
-                 collect_futures=[], control_tokens=CONTROL_TOKENS):
+                 use_tfidf=False, collect_futures=[], control_tokens=CONTROL_TOKENS):
     with open(text_file_path, "r", encoding='utf-8') as reader:
         return text_to_vocab(reader, create_file_path, min_freq=min_freq, limit_vocab_length=limit_vocab_length,
-                             collect_futures=collect_futures, control_tokens=control_tokens)
+                             use_tfidf=use_tfidf, collect_futures=collect_futures, control_tokens=control_tokens)
 
 
 def text_to_vocab(
@@ -111,11 +108,13 @@ def text_to_vocab(
 
 class MeCabTokenizer(object):
 
-    def __init__(self, args='-d /usr/lib/x86_64-linux-gnu/mecab/dic/mecab-ipadic-neologd',
-                 preprocessor=None,
-                 lemmatize=True,
-                 stopwords=[],
-                 collect_futures=[]):
+    def __init__(
+        self, args='-d /usr/lib/x86_64-linux-gnu/mecab/dic/mecab-ipadic-neologd',
+        preprocessor=None,
+        lemmatize=True,
+        stopwords=[],
+        collect_futures=[]
+    ):
         self.tagger = MeCab.Tagger(args)
         self.tagger.parse('')
         self.collect_futures = collect_futures
@@ -219,50 +218,4 @@ class FullTokenizer(object):
 
     def __len__(self):
         return len(self.vocab)
-
-
-if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser(description='for MeCab Tokenizer vocab file generate.', usage='%(prog)s [options]')
-    parser.add_argument('--file_path', help='Original text file path', required=True,
-                        type=str)
-    parser.add_argument('--vocab_path', help='Output vocab file path.', nargs='?',
-                        type=str, default=None)
-    parser.add_argument('--convert_path', help='Output convert file path.', nargs='?',
-                        type=str, default=None)
-    parser.add_argument('--min_freq', help='Word appearance frequency adopted as vocabulary', nargs='?',
-                        type=int, default=1)
-    parser.add_argument('--limit_vocab_length', help='Word appearance frequency adopted as vocabulary', nargs='?',
-                        type=int, default=-1)
-    args = parser.parse_args()
-    args.vocab_path = None
-    if args.vocab_path is not None:
-        print('created : ' + args.vocab_path + ' , size :' + str(
-            create_vocab(args.file_path, args.vocab_path, args.min_freq, args.limit_vocab_length)))
-        sys.exit(0)
-
-    preprocessor = Pipeline([
-        ToUnicode(),
-        Normalize(),
-        LowerCase(),
-        ReplaceNumber(),
-        ReplaceURI(),
-    ])
-
-    tokenizer = MeCabTokenizer(preprocessor=preprocessor)
-    if args.convert_path is not None:
-        _, ext = os.path.splitext(args.file_path)
-        with open(args.file_path, "r", encoding='utf-8') as reader:
-            with open(args.convert_path, 'w', encoding='utf-8', newline="\n") as writer:
-                if ext == '.tsv':
-                    for line in reader:
-                        split = line.split('\t')
-                        writer.write(split[1].strip() + '\t' + ' '.join(tokenizer.tokenize(split[0])).strip() + '\n')
-                else:
-                    for line in reader:
-                        writer.write(' '.join(tokenizer.tokenize(line)).strip() + '\n')
-    else:
-        with open(args.file_path, "r", encoding='utf-8') as reader:
-            for line in reader:
-                print(' '.join(tokenizer.tokenize(line)))
 

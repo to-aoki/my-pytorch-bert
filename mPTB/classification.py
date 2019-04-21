@@ -43,12 +43,11 @@ class BertClassifierEstimator(object):
         label_num=-1,
         hidden_size=-1,
         use_mecab=False,
-        use_jumanpp_vocab=False,
         under_sampling=False
     ):
         if tokenizer is None:
             self.tokenizer = get_tokenizer(
-                vocab_path=vocab_path, sp_model_path=sp_model_path, use_mecab=use_mecab, use_jumanpp_vocab=use_jumanpp_vocab)
+                vocab_path=vocab_path, sp_model_path=sp_model_path, use_mecab=use_mecab)
         else:
             self.tokenizer = tokenizer
 
