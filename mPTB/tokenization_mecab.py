@@ -22,11 +22,11 @@ import MeCab
 from random import randint
 from collections import Counter, OrderedDict
 from tqdm import tqdm
-from utils import japanese_stopwords
+from .utils import japanese_stopwords
 from math import log
 import os
 import sys
-import preprocessing
+from .preprocessing import *
 
 CONTROL_TOKENS = ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']
 
@@ -111,10 +111,10 @@ def text_to_vocab(
 
 class MeCabTokenizer(object):
 
-    def __init__(self, args='',
+    def __init__(self, args='-d /usr/lib/x86_64-linux-gnu/mecab/dic/mecab-ipadic-neologd',
                  preprocessor=None,
                  lemmatize=True,
-                 stopwords=japanese_stopwords(),
+                 stopwords=[],
                  collect_futures=[]):
         self.tagger = MeCab.Tagger(args)
         self.tagger.parse('')
@@ -241,12 +241,12 @@ if __name__ == '__main__':
             create_vocab(args.file_path, args.vocab_path, args.min_freq, args.limit_vocab_length)))
         sys.exit(0)
 
-    preprocessor = preprocessing.Pipeline([
-        preprocessing.ToUnicode(),
-        preprocessing.Normalize(),
-        preprocessing.LowerCase(),
-        preprocessing.ReplaceNumber(),
-        preprocessing.ReplaceURI(),
+    preprocessor = Pipeline([
+        ToUnicode(),
+        Normalize(),
+        LowerCase(),
+        ReplaceNumber(),
+        ReplaceURI(),
     ])
 
     tokenizer = MeCabTokenizer(preprocessor=preprocessor)

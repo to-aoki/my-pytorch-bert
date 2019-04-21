@@ -16,20 +16,74 @@
 """Utility Functions"""
 
 import os
-import preprocessing
 import random
 import logging
 import numpy as np
 import torch
+from .preprocessing import *
+
+
+def to_bert_ids(
+    max_pos, tokenizer, sentence_a, sentence_b,
+    cls_token='[CLS]', sep_token='[SEP]', pad_token='[PAD]'
+):
+    tokens_a = tokenizer.tokenize(sentence_a)
+    tokens_b = tokenizer.tokenize(sentence_b) if sentence_b is not None else []
+
+    # max_pos truncate
+    max_seq_len = max_pos - 3 if tokens_b else max_pos - 2
+    truncate_seq_pair(tokens_a, tokens_b, max_seq_len)
+
+    # Add Special Tokens
+    tokens_a = [cls_token] + tokens_a + [sep_token]
+    tokens_b = tokens_b + [sep_token] if len(tokens_b) > 0 else []
+
+    # input ids build
+    input_ids = tokens_a + tokens_b
+    segment_ids = [0] * len(tokens_a) + [1] * len(tokens_b)
+    input_mask = [1] * len(input_ids)
+
+    # padding
+    num_zero_pad = max_pos - len(input_ids)
+    input_ids.extend([pad_token] * num_zero_pad)
+    segment_ids.extend([0] * num_zero_pad)
+    input_mask.extend([0] * num_zero_pad)
+
+    # tokens indexing
+    input_ids = tokenizer.convert_tokens_to_ids(input_ids)
+
+    return [input_ids, segment_ids, input_mask]
+
+
+def get_tokenizer(
+    preprocessor=None,
+    vocab_path=None,
+    sp_model_path=None,
+    use_mecab=False,
+    use_jumanpp_vocab=False
+):
+    if preprocessor is None:
+        preprocessor = default_preprocessor()
+
+    if sp_model_path is not None and vocab_path is not None:
+        from .tokenization_sentencepiece import FullTokenizer
+        return FullTokenizer(sp_model_path, vocab_path, preprocessor=preprocessor)
+    elif vocab_path is not None:
+        if use_mecab:
+            from .tokenization_mecab import FullTokenizer
+            return FullTokenizer(vocab_path, preprocessor=preprocessor)
+        else:
+            from .tokenization import FullTokenizer
+            return FullTokenizer(vocab_path, preprocessor=preprocessor, use_jumanpp=use_jumanpp_vocab)
 
 
 def default_preprocessor():
-    return preprocessing.Pipeline([
-        preprocessing.ToUnicode(),
-        preprocessing.Normalize(),
-        preprocessing.LowerCase(),
-        preprocessing.ReplaceNumber(),
-        preprocessing.ReplaceURI(),
+    return Pipeline([
+        ToUnicode(),
+        Normalize(),
+        LowerCase(),
+        ReplaceNumber(),
+        ReplaceURI(),
     ])
 
 

@@ -44,14 +44,14 @@ class Config(NamedTuple):
     def from_json(cls, file, vocab_size=None, max_position_embeddings=None, type_vocab_size=None):
         with open(file, "r", encoding="UTF-8") as reader:
             config = json.load(reader)
-            if vocab_size is not None:
+            if vocab_size is not None and vocab_size > 0:
                 config['vocab_size'] = vocab_size
-            if max_position_embeddings is not None:
+            if max_position_embeddings is not None and max_position_embeddings > 0:
                 config['max_position_embeddings'] = max_position_embeddings
-            if type_vocab_size is not None:
+            if type_vocab_size is not None and type_vocab_size > 0:
                 config['type_vocab_size'] = type_vocab_size
             if 'hidden_act' in config:
-                del config['hidden_act']
+                del config['hidden_act']  # my model used only gelu function
         return cls(**config)
 
 
@@ -62,7 +62,6 @@ def gelu(x):
 try:
     from apex.normalization.fused_layer_norm import FusedLayerNorm as LayerNorm
 except ImportError:
-
     class LayerNorm(nn.Module):
         """A layernorm module in the TF style (epsilon inside the square root)."""
         def __init__(self, hidden_size, eps=1e-12):

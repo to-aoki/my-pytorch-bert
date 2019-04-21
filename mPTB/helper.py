@@ -16,9 +16,9 @@
 import os
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, SequentialSampler
 from tqdm import tqdm
-from utils import set_seeds, save, load, get_device
+from . utils import set_seeds, save, load, get_device
 
 
 class Helper(object):
@@ -38,7 +38,10 @@ class Helper(object):
 
         print("device: {} num_gpu: {}".format(self.device, self.num_gpu))
 
-    def training(
+    def load_model(self, model, model_path, optimizer=None):
+        load(model, model_path, self.device, optimizer)
+
+    def train(
         self,
         process,
         model,
@@ -56,15 +59,14 @@ class Helper(object):
         model.to(self.device)
         if self.num_gpu > 1:
             model = torch.nn.DataParallel(model)
-
         if model_file is not None and model_file is not '':
             # warmup_steps over-ride
             load(model, model_file, self.device, optimizer)
+        model.train()
 
         global_step = optimizer.get_step()
         dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
 
-        model.train()
         for e in range(epoch):
             total_loss = 0.0
             total_steps = 0
@@ -92,6 +94,8 @@ class Helper(object):
             if epoch_dataset_adjust is not None:
                 epoch_dataset_adjust(dataset)
 
+        return total_loss / total_steps
+
     def evaluate(
         self,
         process,
@@ -99,8 +103,12 @@ class Helper(object):
         dataset,
         sampler,
         batch_size,
-        model_file,
-        examples_reports=None
+        model_file=None,
+        examples_reports=None,
+        compute_epoch_score=None,
+        epoch_dataset_adjust=None,
+        epoch=1,
+        evaluate_score=None,
     ):
 
         model.to(self.device)
@@ -109,29 +117,79 @@ class Helper(object):
 
         if model_file is not None:
             load(model, model_file, self.device)
+            print('loaded ; ' + str(model_file))
 
-        global_step = 0
+        model.eval()
+        dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
+        scores = []
+        for e in range(epoch):
+            global_step = 0
+            total_loss = 0.0
+            total_steps = 0
+            examples = []
+            iter_bar = tqdm(dataloader, desc="E-{:0=2} : XX.XXXX avg loss ".format(e), position=0)
+            for step, batch in enumerate(iter_bar):
+                batch = tuple(t.to(self.device) for t in batch)
+                with torch.no_grad():
+                    loss, example = process(batch, model, iter_bar, step)
+                examples.append(example)
+                if self.num_gpu > 1:
+                    loss = loss.mean()
+
+                total_loss += loss.item()
+                total_steps += 1
+                iter_bar.set_description("E-{:0=2} : {:2.4f} avg loss ".format(e, total_loss / total_steps))
+                global_step += 1
+
+            if examples_reports is not None:
+                examples_reports(examples)
+
+            if compute_epoch_score is not None:
+                epoch_score = compute_epoch_score(examples)
+            else:
+                epoch_score = total_loss / total_steps  # default loss
+
+            scores.append(epoch_score)
+
+            if epoch_dataset_adjust is not None:
+                epoch_dataset_adjust(dataset)
+
+        if evaluate_score is not None:
+            score = evaluate_score(scores)
+        else:
+            from statistics import mean
+            score = mean(scores)  # default mean loss
+
+        return score
+
+    def predict(
+        self,
+        process,
+        model,
+        dataset,
+        sampler=None,
+        batch_size=1,
+        model_file=None
+    ):
+
+        model.to(self.device)
+        if self.num_gpu > 1:
+            model = torch.nn.DataParallel(model)
+        if model_file is not None:
+            load(model, model_file, self.device)
+        model.eval()
+
+        if sampler is None:
+            sampler = SequentialSampler(dataset)
 
         dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
 
-        model.eval()
-        total_loss = 0.0
-        total_steps = 0
-        examples = []
+        predicts = []
         iter_bar = tqdm(dataloader, desc="XX.XXXX avg loss ", position=0)
         for step, batch in enumerate(iter_bar):
             batch = tuple(t.to(self.device) for t in batch)
             with torch.no_grad():
-                loss, example = process(batch, model, iter_bar, step)
-            examples.append(example)
-            if self.num_gpu > 1:
-                loss = loss.mean()
-
-            total_loss += loss.item()
-            total_steps += 1
-            iter_bar.set_description("{:2.4f} avg loss ".format(total_loss / total_steps))
-            global_step += 1
-
-        if examples_reports is not None:
-            examples_reports(examples)
+                predict = process(batch, model, iter_bar, step)
+                predicts.append(predict)
+        return predicts
 

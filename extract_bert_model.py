@@ -13,9 +13,10 @@
 # limitations under the License.
 """Extract Bert Model."""
 
-from models import Config
-from pretrain_tasks import BertPretrainingTasks
-from utils import load, save, get_device
+
+from mPTB.models import Config
+from mPTB.pretrain_tasks import BertPretrainingTasks
+from mPTB.utils import load, save, get_device
 
 
 def extract_model(

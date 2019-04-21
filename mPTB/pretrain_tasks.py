@@ -19,7 +19,7 @@
 import torch
 import torch.nn as nn
 
-from models import gelu, LayerNorm, BertModel
+from .models import gelu, LayerNorm, BertModel
 
 
 class BertPretrainingTasks(nn.Module):

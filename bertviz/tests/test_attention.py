@@ -1,7 +1,7 @@
 from bertviz.visualization import AttentionVisualizer
 from bertviz.attention import _get_attentions
-from models import BertModel, Config
-from tokenization import FullTokenizer
+from mPTB.models import BertModel, Config
+from mPTB.tokenization import FullTokenizer
 import numpy as np
 import unittest
 
@@ -37,6 +37,7 @@ class TestAttention(unittest.TestCase):
         all = np.concatenate((top_half, bottom_half), axis=-2)
         self.assertEqual(all.shape, attn_squeezed.shape)
         self.assertTrue(np.allclose(all, attn_squeezed, atol=1e-06))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,7 +1,6 @@
-import sys
 import unittest
-from pretrain_dataset import PretrainDataset
-from tokenization_sentencepiece import FullTokenizer
+from mPTB.pretrain_dataset import PretrainDataset
+from mPTB.tokenization_sentencepiece import FullTokenizer
 
 
 class PretrainDatasetTestCase(unittest.TestCase):
@@ -9,14 +8,13 @@ class PretrainDatasetTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.tokenizer = FullTokenizer(
-            "sample_text.model", "sample_text.vocab", do_lower_case=True)
+            "sample_text.model", "sample_text.vocab")
 
     def test_instance(self):
         dataset = PretrainDataset(
-            "sample_text.txt",
             self.tokenizer,
             max_pos=128,
-            corpus_lines=None,
+            dataset_path="sample_text.txt",
             on_memory=True
         )
         delim_return = 0
@@ -32,47 +30,41 @@ class PretrainDatasetTestCase(unittest.TestCase):
     def test_empty_file_load(self):
         with self.assertRaises(ValueError):
             PretrainDataset(
-                "empty.txt",
                 self.tokenizer,
                 max_pos=128,
-                corpus_lines=None,
+                dataset_path="empty.txt",
                 on_memory=True
             )
 
     def test_not_found_file_load(self):
         with self.assertRaises(FileNotFoundError):
             PretrainDataset(
-                "not_found_text.txt",
                 self.tokenizer,
                 max_pos=128,
-                corpus_lines=None,
+                dataset_path="not_found_text.txt",
                 on_memory=True
             )
 
     def test_last_row_empty_file_load(self):
-        dataset1 = PretrainDataset(
-            "sample_text.txt",
+        sample_text = PretrainDataset(
             self.tokenizer,
             max_pos=128,
-            corpus_lines=None,
+            dataset_path="sample_text.txt",
             on_memory=True
         )
-        dataset2 = PretrainDataset(
-            "last_row_empty.txt",
+        last_row_empty = PretrainDataset(
             self.tokenizer,
             max_pos=128,
-            corpus_lines=None,
+            dataset_path="last_row_empty.txt",
             on_memory=True
         )
-        self.assertEqual(len(dataset1), len(dataset2))
-
+        self.assertEqual(len(sample_text), len(last_row_empty))
 
     def test_get_item_one(self):
         dataset = PretrainDataset(
-            "sample_text.txt",
             self.tokenizer,
             max_pos=128,
-            corpus_lines=None,
+            dataset_path="sample_text.txt",
             on_memory=True
         )
         self.assertIsNotNone(dataset.__getitem__(1))
@@ -80,10 +72,9 @@ class PretrainDatasetTestCase(unittest.TestCase):
     def test_get_item_use_not_item_index(self):
         with self.assertRaises(AssertionError):
             dataset = PretrainDataset(
-                "sample_text.txt",
                 self.tokenizer,
                 max_pos=128,
-                corpus_lines=None,
+                dataset_path="sample_text.txt",
                 on_memory=True
             )
             dataset.__getitem__([1, 2])

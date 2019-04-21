@@ -13,176 +13,46 @@
 # limitations under the License.
 """Bert pre-training."""
 
-import os
-from collections import namedtuple
-import torch.nn.functional as F
-from torch.nn import CrossEntropyLoss, NLLLoss
-
-import models 
-import pretrain_tasks
-import optimization
-from pretrain_dataset import PretrainDataset
-from torch.utils.data import RandomSampler
-import tokenization_sentencepiece
-import tokenization
-from helper import Helper
-from utils import save, get_logger, default_preprocessor
+from mPTB.pretrain import BertPretrainEstimator
 
 
 def bert_pretraining(
-        config_path='config/bert_base.json',
-        dataset_path='tests/sample_text.txt',
-        model_path=None,
-        vocab_path='tests/sample_text.vocab',
-        sp_model_path='tests/sample_text.model',
-        save_dir='pretrain/',
-        log_dir=None,
-        batch_size=2,
-        max_pos=128,
-        lr=5e-5,
-        warmup_proportion=0.1,  # warmup_steps = len(dataset) / batch_size * epoch * warmup_proportion
-        epoch=5,
-        per_save_epoch=1,
-        mode='train',
-        is_mecab=False
+    config_path='config/bert_base.json',
+    dataset_path='tests/sample_text.txt',
+    model_path=None,
+    vocab_path='tests/sample_text.vocab',
+    sp_model_path='tests/sample_text.model',
+    save_dir='pretrain/',
+    log_dir=None,
+    batch_size=2,
+    max_pos=128,
+    lr=5e-5,
+    warmup_proportion=0.1,  # warmup_steps = len(dataset) / batch_size * epoch * warmup_proportion
+    epoch=5,
+    per_save_epoch=1,
+    mode='train',
+    use_mecab=False
 ):
 
-    assert mode is not None and (mode == 'train' or mode == 'eval'), 'support mode train or eval.'
-
-    preprocessor = default_preprocessor()
-
-    if sp_model_path is not None:
-        tokenizer = tokenization_sentencepiece.FullTokenizer(
-            sp_model_path, vocab_path, preprocessor=preprocessor)
-    else:
-        if is_mecab:
-            import tokenization_mecab
-            tokenizer = tokenization_mecab.FullTokenizer(vocab_path, preprocessor=preprocessor)
-        else:
-            tokenizer = tokenization.FullTokenizer(vocab_path, preprocessor=preprocessor)
-
-    if max_pos is None:
-        # max_pos = statistics.median(all-sentence-tokens)
-        import statistics
-        with open(dataset_path, 'r', newline="\n", encoding="utf-8") as data:
-            tokens = list(map(tokenizer.tokenize, data.readlines()))
-            median_pos = round(statistics.median(list(map(lambda x: len(x), tokens))))
-        max_pos = median_pos*2+3  # [CLS]a[SEP]b[SEP]
-        print("max_pos (median):", max_pos)
-
-    train_dataset = PretrainDataset(
-        dataset_path,
-        tokenizer,
+    estimataor = BertPretrainEstimator(
+        config_path=config_path,
         max_pos=max_pos,
-        corpus_lines=None,
-        on_memory=True
+        vocab_path=vocab_path,
+        sp_model_path=sp_model_path,
+        dataset_path=dataset_path,
+        use_mecab=use_mecab
     )
 
-    sampler = RandomSampler(train_dataset)
-
-    config = models.Config.from_json(config_path, len(tokenizer), max_pos)
-    print('model params :', config)
-    model = pretrain_tasks.BertPretrainingTasks(config)
-    helper = Helper()
-
     if mode == 'train':
-        max_steps = int(len(train_dataset) / batch_size * epoch)
-        warmup_steps = int(max_steps * warmup_proportion)
-        optimizer = optimization.get_optimizer(model, lr, warmup_steps, max_steps)
-        criterion_lm = CrossEntropyLoss(ignore_index=-1, reduction='none')
-        criterion_ns = CrossEntropyLoss(ignore_index=-1)
-
-        def process(batch, model, iter_bar, epoch, step):
-            input_ids, segment_ids, input_mask, next_sentence_labels, label_ids = batch
-            masked_lm_logists, next_sentence_logits = model(input_ids, segment_ids, input_mask)
-            lm_labels = label_ids.view(-1)
-            numerator = criterion_lm(masked_lm_logists.view(-1, len(tokenizer)), lm_labels)
-            masked_lm_loss = numerator.sum()/(len(lm_labels) + 1e-5)
-            next_sentence_loss = criterion_ns(next_sentence_logits.view(-1, 2), next_sentence_labels.view(-1))
-            return masked_lm_loss + next_sentence_loss
-
-        helper.training(process, model, train_dataset, sampler, optimizer, batch_size,
-                        epoch, model_path, save_dir, per_save_epoch)
-
-        name, _ = os.path.splitext(os.path.basename(dataset_path))
-        output_model_path = os.path.join(save_dir, name + "_bert.pt")
-        save(model.bert, output_model_path)
-        output_model_path = os.path.join(save_dir, name + "_pretrain.pt")
-        save(model, output_model_path)
-
-    elif mode == 'eval':
-
-        assert model_path is not None and model_path is not '', '"eval" mode is model_path require'
-
-        criterion_lm = NLLLoss(ignore_index=-1, reduction='none')
-        criterion_ns = NLLLoss(ignore_index=-1)
-        Example = namedtuple('Example', ('lm_pred', 'lm_true', 'ns_pred', 'ns_true'))
-
-        logger = None
-        if log_dir is not None and log_dir is not '':
-            logger = get_logger('eval', log_dir, False)
-
-        def process(batch, model, iter_bar, step):
-            input_ids, segment_ids, input_mask, next_sentence_labels, label_ids = batch
-            masked_lm_loss, next_sentence_loss = model(input_ids, segment_ids, input_mask)
-
-            masked_lm_probs = F.log_softmax(masked_lm_loss.view(-1, len(tokenizer)), 1)
-            masked_lm_predictions = masked_lm_probs.max(1, False)
-            lm_labels = label_ids.view(-1)
-
-            ns_probs = F.log_softmax(next_sentence_loss.view(-1, 2), 1)
-            ns_predictions = ns_probs.max(1, False)
-            ns_labels = next_sentence_labels.view(-1)
-
-            example = Example(
-                masked_lm_predictions[1].tolist(), lm_labels.tolist(),
-                ns_predictions[1].tolist(), ns_labels.tolist())
-
-            masked_lm_loss = criterion_lm(masked_lm_probs, lm_labels)
-            masked_lm_loss = masked_lm_loss.sum()/(len(lm_labels) + 1e-5)
-            next_sentence_loss = criterion_ns(ns_probs, ns_labels)
-
-            return masked_lm_loss + next_sentence_loss, example
-
-        def example_reports(examples):
-            if examples is None or len(examples) is 0:
-                return
-            try:
-                from sklearn.metrics import classification_report
-                from sklearn.exceptions import UndefinedMetricWarning
-                import warnings
-                warnings.filterwarnings("ignore", category=UndefinedMetricWarning)
-            except ImportError:
-                import warnings
-                warnings.warn('sklearn.metrics.classification_report failed to import', ImportWarning)
-                return
-
-            y_lm_preds, y_lm_trues, y_ns_preds, y_ns_trues = [], [], [], []
-            for lm_pred, lm_true, ns_pred, ns_true in examples:
-                for p in lm_pred:
-                    y_lm_preds.append(p)
-                for t in lm_true:
-                    y_lm_trues.append(t)
-                for p in ns_pred:
-                    y_ns_preds.append(p)
-                for t in ns_true:
-                    y_ns_trues.append(t)
-
-            if logger is not None:
-                lm_reports = classification_report(y_lm_trues, y_lm_preds, output_dict=True)
-                for k, v in lm_reports.items():
-                    for ck, cv in v.items():
-                        logger.info(str(k) + "," + str(ck) + "," + str(cv))
-
-                ns_reports = classification_report(y_ns_trues, y_ns_preds, output_dict=True)
-                for k, v in ns_reports.items():
-                    for ck, cv in v.items():
-                        logger.info(str(k) + "," + str(ck) + "," + str(cv))
-            else:
-                print(classification_report(y_lm_trues, y_lm_preds))
-                print(classification_report(y_ns_trues, y_ns_preds))
-
-        helper.evaluate(process, model, train_dataset, sampler, batch_size, model_path, example_reports)
+        estimataor.train(
+            traing_model_path=model_path, batch_size=batch_size, epoch=epoch, per_save_epoch=per_save_epoch,
+            lr=lr, warmup_proportion=warmup_proportion, save_dir=save_dir
+        )
+        score = estimataor.evaluate(batch_size=batch_size, log_dir=log_dir)
+        print(score)
+    else:
+        score = estimataor.evaluate(model_path=model_path, batch_size=batch_size, log_dir=log_dir)
+        print(score)
 
 
 if __name__ == '__main__':

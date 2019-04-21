@@ -20,23 +20,28 @@
 # limitations under the License.
 """for BERT pre-training dataset."""
 
+import os
 from random import random
 from random import randint, shuffle, randrange
 
 import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
-from utils import truncate_seq_pair
+from .utils import truncate_seq_pair
 import copy
 
+
 class PretrainDataset(Dataset):
-    def __init__(self, corpus_path, tokenizer, max_pos,
-                 encoding="utf-8", corpus_lines=None,  on_memory=True):
-        self.corpus_path = corpus_path
+
+    def __init__(self, tokenizer, max_pos, dataset_path=None, documents=[], encoding="utf-8", on_memory=True):
         self.tokenizer = tokenizer
         self.max_pos = max_pos
+
+        if dataset_path is None and len(documents) == 0:
+            raise ValueError('dataset_path or documents require.')
+        self.dataset_path = dataset_path
+
         self.on_memory = on_memory
-        self.corpus_lines = corpus_lines  # number of non-empty lines in input corpus
         self.encoding = encoding
         self.current_doc = 0  # to avoid random sentence from same doc
 
@@ -50,33 +55,23 @@ class PretrainDataset(Dataset):
         self.sample_to_doc = []  # map sample index to doc and line
 
         # BERT reserved tokens
-        self.pad_id = tokenizer.convert_tokens_to_ids(["[PAD]"])[0]
-        self.cls_id = tokenizer.convert_tokens_to_ids(["[CLS]"])[0]
-        self.sep_id = tokenizer.convert_tokens_to_ids(["[SEP]"])[0]
-        self.mask_id = tokenizer.convert_tokens_to_ids(["[MASK]"])[0]
+        self.pad_id = self.tokenizer.convert_tokens_to_ids(["[PAD]"])[0]
+        self.cls_id = self.tokenizer.convert_tokens_to_ids(["[CLS]"])[0]
+        self.sep_id = self.tokenizer.convert_tokens_to_ids(["[SEP]"])[0]
+        self.mask_id = self.tokenizer.convert_tokens_to_ids(["[MASK]"])[0]
 
+        self.corpus_lines = 0
         # load samples into memory
-        if on_memory:
+        if len(documents) > 0 or on_memory:
             self.all_documents = []
             doc = []
-            self.corpus_lines = 0
-            with open(corpus_path, "r", encoding=encoding) as f:
-                for line in tqdm(f, desc="Loading Dataset", total=corpus_lines):
-                    line = line.strip()
-                    if line == "":
-                        if len(doc) > 0:  # FIX to last rows ""...
-                            self.all_documents.append(doc)
-                            doc = []
-                            # remove last added sample because there won't be a subsequent line anymore in the doc
-                            self.sample_to_doc.pop()
-                    else:
-                        # store as one sample
-                        sample = {"doc_id": len(self.all_documents),
-                                  "line": len(doc)}
-                        self.sample_to_doc.append(sample)
-                        doc.append(self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(line)))
-                        self.corpus_lines += 1
-
+            if len(documents) > 0:
+                for text in documents:
+                    doc = self._load_text(doc, text)
+            else:
+                with open(dataset_path, "r", encoding=encoding) as reader:
+                    for text in tqdm(reader, desc="Loading Dataset", total=self.corpus_lines):
+                        doc = self._load_text(doc, text)
             # FIX to last rows ""... . last line is not "" and EOF
             if len(doc) > 0:
                 self.all_documents.append(doc)
@@ -85,25 +80,40 @@ class PretrainDataset(Dataset):
             self.num_docs = len(self.all_documents)
 
             if len(self.all_documents) is 0:
-                raise ValueError(corpus_path + ' were not includes documents.')
+                raise ValueError(dataset_path + ' were not includes documents.')
 
         # load samples later lazily from disk
         else:
-            if self.corpus_lines is None:
-                with open(corpus_path, "r", encoding=encoding) as f:
-                    self.corpus_lines = 0
-                    for line in tqdm(f, desc="Loading Dataset", total=corpus_lines):
-                        if line.strip() is "":
-                            self.num_docs += 1
-                        else:
-                            self.corpus_lines += 1
-
-                    # if doc does not end with empty line
-                    if line.strip() is not "":
+            with open(dataset_path, "r", encoding=encoding) as reader:
+                for line in tqdm(reader, desc="Loading Dataset", total=self.corpus_lines):
+                    if line.strip() == "":
                         self.num_docs += 1
+                    else:
+                        self.corpus_lines += 1
 
-            self.file = open(corpus_path, "r", encoding=encoding)
-            self.random_file = open(corpus_path, "r", encoding=encoding)
+                # if doc does not end with empty line
+                if line.strip() != "":
+                    self.num_docs += 1
+
+            self.file = open(dataset_path, "r", encoding=encoding)
+            self.random_file = open(dataset_path, "r", encoding=encoding)
+
+    def _load_text(self, doc, text):
+        text = text.strip()
+        if text == "":
+            if len(doc) > 0:  # FIX to last rows ""...
+                self.all_documents.append(doc)
+                doc = []
+                # remove last added sample because there won't be a subsequent line anymore in the doc
+                self.sample_to_doc.pop()
+        else:
+            # store as one sample
+            sample = {"doc_id": len(self.all_documents), "line": len(doc)}
+            self.sample_to_doc.append(sample)
+            tokens = self.tokenizer.tokenize(text) if self.tokenizer is not None else text
+            doc.append(self.tokenizer.convert_tokens_to_ids(tokens))
+            self.corpus_lines += 1
+        return doc
 
     def __len__(self):
         # last line of doc won't be used, because there's no "nextSentence". Additionally, we start counting at 0.
@@ -116,7 +126,7 @@ class PretrainDataset(Dataset):
             # after one epoch we start again from beginning of file
             if cur_id != 0 and (cur_id % len(self) == 0):
                 self.file.close()
-                self.file = open(self.corpus_path, "r", encoding=self.encoding)
+                self.file = open(self.dataset_path, "r", encoding=self.encoding)
 
         t1, t2, is_next_label = self.random_sent(item)
 
@@ -213,7 +223,7 @@ class PretrainDataset(Dataset):
                 line = self.random_file.__next__().strip()
         except StopIteration:
             self.random_file.close()
-            self.random_file = open(self.corpus_path, "r", encoding=self.encoding)
+            self.random_file = open(self.dataset_path, "r", encoding=self.encoding)
             line = self.random_file.__next__().strip()
         line = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(line))
         return line
@@ -221,7 +231,8 @@ class PretrainDataset(Dataset):
     def get_random_token_id(self):
         return self.tokenizer.get_random_token_id()
 
-    def convert_example_to_features(self, tokens_a, tokens_b, is_next_label, max_pos, short_seq_prob=0.1, masked_lm_prob=0.15):
+    def convert_example_to_features(
+            self, tokens_a, tokens_b, is_next_label, max_pos, short_seq_prob=0.1, masked_lm_prob=0.15):
         """
         Convert a raw sample (pair of sentences as tokenized strings) into a proper training sample with
         IDs, LM labels, input_mask, CLS and SEP tokens etc.
@@ -236,23 +247,25 @@ class PretrainDataset(Dataset):
 
         target_max_pos = max_pos - 3 if tokens_b else max_pos - 2
 
+        tokens_a_ids = copy.copy(tokens_a)
+        tokens_b_ids =copy.copy(tokens_b)
         # However, sequences to minimize the mismatch between pre-training and fine-tuning.
         if random() < short_seq_prob:
             target_max_pos = randint(2, target_max_pos)
-        truncate_seq_pair(tokens_a, tokens_b, target_max_pos)
+        truncate_seq_pair(tokens_a_ids, tokens_b_ids, target_max_pos)
 
         # Add Special Tokens
-        tokens_a.insert(0, self.cls_id)
-        tokens_a.append(self.sep_id)
-        if len(tokens_b) != 0:
-            tokens_b.append(self.sep_id)
+        tokens_a_ids.insert(0, self.cls_id)
+        tokens_b_ids.append(self.sep_id)
+        if len(tokens_b_ids) != 0:
+            tokens_b_ids.append(self.sep_id)
         else:
-            tokens_b = []
+            tokens_b_ids = []
 
-        tokens = copy.copy(tokens_a)
-        tokens.extend(copy.copy(tokens_b))
+        tokens = copy.copy(tokens_a_ids)
+        tokens.extend(copy.copy(tokens_b_ids))
         # Add next sentence segment
-        segment_ids = [0] * len(tokens_a) + [1] * len(tokens_b)
+        segment_ids = [0] * len(tokens_a_ids) + [1] * len(tokens_b_ids)
 
         # mask prediction calc
         mask_prediction = int(round(len(tokens) * masked_lm_prob))
@@ -269,7 +282,7 @@ class PretrainDataset(Dataset):
 
         input_ids = tokens
         input_mask = [1]*len(input_ids)
-        label_ids = tokens_a+tokens_b
+        label_ids = tokens_a_ids+tokens_b_ids
 
         # zero padding
         num_zero_pad = max_pos - len(input_ids)
@@ -279,3 +292,8 @@ class PretrainDataset(Dataset):
         label_ids.extend([self.pad_id]*num_zero_pad)
 
         return [input_ids,  segment_ids, input_mask, is_next_label, label_ids]
+
+    def __str__(self):
+        name, _ = os.path.splitext(os.path.basename(self.dataset_path))
+        return name
+

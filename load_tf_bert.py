@@ -18,7 +18,7 @@
 import tensorflow as tf
 import torch
 import numpy as np
-from models import Config, BertModel
+from mPTB.models import BertModel, Config
 
 
 def copy_tf_tensor(checkpoint_dir, tf_name, pyt_attr):

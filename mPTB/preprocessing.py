@@ -26,11 +26,11 @@ class Pipeline(object):
         return text
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + '('
-        for t in self.transforms:
+        format_string = self.__class__.__name__ + '['
+        for p in self.preprocessors:
             format_string += '\n'
-            format_string += '    {0}'.format(t)
-            format_string += '\n)'
+            format_string += '    {0}'.format(p)
+        format_string += '\n]'
         return format_string
 
     def __delitem__(self, key):
@@ -53,11 +53,8 @@ class ToUnicode(object):
         else:
             raise ValueError("Not running on Python 3")
 
-    def __str__(self):
-        return self.__class__.__name__
-
     def __repr__(self):
-        return self.__class__.__name__ + '()'
+        return self.__class__.__name__
 
 
 class Normalize(object):
@@ -68,11 +65,8 @@ class Normalize(object):
     def __call__(self, text):
         return unicodedata.normalize(self.form, text)
 
-    def __str__(self):
-        return self.__class__.__name__
-
     def __repr__(self):
-        return self.__class__.__name__ + '()'
+        return self.__class__.__name__
 
 
 class LowerCase(object):
@@ -80,11 +74,8 @@ class LowerCase(object):
     def __call__(self, text):
         return text.lower()
 
-    def __str__(self):
-        return self.__class__.__name__
-
     def __repr__(self):
-        return self.__class__.__name__ + '()'
+        return self.__class__.__name__
 
 
 class ReplaceNumber(object):
@@ -95,11 +86,8 @@ class ReplaceNumber(object):
     def __call__(self, text):
         return re.sub(r'\d+', self.replacement, text)
 
-    def __str__(self):
-        return self.__class__.__name__
-
     def __repr__(self):
-        return self.__class__.__name__ + '()'
+        return self.__class__.__name__
 
 
 class ReplaceURI(object):
@@ -115,8 +103,5 @@ class ReplaceURI(object):
             flags=re.MULTILINE
         )
 
-    def __str__(self):
-        return self.__class__.__name__
-
     def __repr__(self):
-        return self.__class__.__name__ + '()'
+        return self.__class__.__name__

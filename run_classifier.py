@@ -13,39 +13,28 @@
 # limitations under the License.
 """Bert classifier."""
 
-import os
-from collections import namedtuple
-import models
-import optimization
-import tokenization_sentencepiece
-import tokenization
-import torch
-from torch.nn import CrossEntropyLoss
-from torch.utils.data import RandomSampler, WeightedRandomSampler
 
-from finetuning import Classifier
-from class_csv_dataset import BertCsvDataset
-from helper import Helper
-from utils import save, load, get_logger, make_balanced_classes_weights, default_preprocessor
+from mPTB.classification import BertClassifierEstimator
 
 
 def classification(
     config_path='config/bert_base.json',
-    dataset_path='data/livedoor_train_class.tsv',
-    pretrain_path='collections/bert-wiki-ja.pt',
+    train_dataset_path='tests/sample_text_class.txt',
+    eval_dataset_path='tests/sample_text_class.txt',
+    pretrain_path='pretrain/bert.pt',
     model_path=None,
-    vocab_path='collections/wiki-ja.vocab',
-    sp_model_path='collections/wiki-ja.model',
+    vocab_path='tests/sample_text.vocab',
+    sp_model_path='tests/sample_text.model',
     save_dir='classifier/',
     log_dir=None,
     batch_size=2,
-    max_pos=512,
+    max_pos=128,
     lr=5e-5,
     warmup_proportion=0.1,  # warmup_steps = len(dataset) / batch_size * epoch * warmup_proportion
     epoch=5,
     per_save_epoch=1,
     mode='train',
-    label_num=None,
+    label_num=-1,
     balance_weight=False,
     balance_sample=False,
     under_sampling=False,
@@ -55,123 +44,54 @@ def classification(
     read_head=False
 ):
 
-    preprocessor = default_preprocessor()
-
-    if sp_model_path is not None:
-        tokenizer = tokenization_sentencepiece.FullTokenizer(
-            sp_model_path, vocab_path, preprocessor=preprocessor)
-    else:
-        if use_mecab:
-            import tokenization_mecab
-            tokenizer = tokenization_mecab.FullTokenizer(vocab_path)
-        elif use_jumanapp:
-            tokenizer = tokenization.FullTokenizer(vocab_path, preprocessor=preprocessor)
-        else:
-            tokenizer = tokenization.FullTokenizer(vocab_path, preprocessor=preprocessor)
-
-    config = models.Config.from_json(config_path, len(tokenizer), max_pos)
-
-    if under_sampling_cycle:
-        under_sampling = True
-
-    dataset = BertCsvDataset(tokenizer, max_pos, label_num, dataset_path,
-                             under_sampling=under_sampling,
-                             header_skip=not read_head)
-
-    model = Classifier(config, label_num)
-
-    print('model params :', config)
-    helper = Helper()
     if mode == 'train':
+        estimataor = BertClassifierEstimator(
+            config_path=config_path,
+            max_pos=max_pos,
+            vocab_path=vocab_path,
+            sp_model_path=sp_model_path,
+            pretrain_path=pretrain_path,
+            dataset_path=train_dataset_path,
+            header_skip=not read_head,
+            label_num=label_num,
+            use_mecab=use_mecab,
+            use_jumanpp_vocab=use_jumanapp,
+            under_sampling=under_sampling
+        )
 
-        if model_path is None and pretrain_path is not None:
-            load(model.bert, pretrain_path)
+        estimataor.train(
+            traing_model_path=model_path,
+            batch_size=batch_size,
+            epoch=epoch,
+            lr=lr, warmup_proportion=warmup_proportion,
+            balance_weight=balance_weight,
+            balance_sample=balance_sample,
+            under_sampling_cycle=under_sampling_cycle,
+            save_dir=save_dir,
+            per_save_epoch=per_save_epoch
+        )
+        eval_data_set = estimataor.get_dataset(
+            dataset_path=eval_dataset_path, header_skip=not read_head)
+        score = estimataor.evaluate(dataset=eval_data_set, batch_size=batch_size, log_dir=log_dir)
+        print(score)
 
-        max_steps = int(len(dataset) / batch_size * epoch)
-        warmup_steps = int(max_steps * warmup_proportion)
-        optimizer = optimization.get_optimizer(model, lr, warmup_steps, max_steps)
-
-        balance_weights = None
-        if balance_weight:
-            balance_weights = torch.tensor(
-                make_balanced_classes_weights(dataset.per_label_records_num), device=helper.device)
-
-        criterion = CrossEntropyLoss(weight=balance_weights)
-
-        def process(batch, model, iter_bar, epoch, step):
-            input_ids, segment_ids, input_mask, label_id = batch
-            logits = model(input_ids, segment_ids, input_mask)
-            loss = criterion(logits.view(-1, label_num), label_id.view(-1))
-            return loss
-
-        if balance_sample:
-            indices = list(range(len(dataset)))
-            num_samples = len(dataset)
-            weights = [1.0 / dataset.per_label_records_num[dataset[index][3].item()] for index in indices]
-            weights = torch.tensor(weights)
-            sampler = WeightedRandomSampler(weights, num_samples)
-        else:
-            sampler = RandomSampler(dataset)
-
-        def epoch_dataset_adjust(dataset):
-            if under_sampling_cycle:
-                dataset.next_under_samples()
-            else:
-                pass
-
-        helper.training(process, model, dataset, sampler, optimizer, batch_size, epoch, model_path, save_dir,
-                        per_save_epoch, epoch_dataset_adjust)
-
-        name, _ = os.path.splitext(os.path.basename(dataset_path))
-        output_model_path = os.path.join(save_dir, name + "_classifier.pt")
-        save(model, output_model_path)
-
-    elif mode == 'eval':
-
-        sampler = RandomSampler(dataset)
-        criterion = CrossEntropyLoss()
-        Example = namedtuple('Example', ('pred', 'true'))
-        logger = None
-        if log_dir is not None and log_dir is not '':
-            logger = get_logger('eval', log_dir, False)
-
-        def process(batch, model, iter_bar, step):
-            input_ids, segment_ids, input_mask, label_id = batch
-            logits = model(input_ids, segment_ids, input_mask)
-            loss = criterion(logits.view(-1, label_num), label_id.view(-1))
-            _, label_pred = logits.max(1)
-            example = Example(label_pred.tolist(), label_id.tolist())
-            return loss, example
-
-        def example_reports(examples):
-            if examples is None or len(examples) is 0:
-                return
-            try:
-                from sklearn.metrics import classification_report
-                from sklearn.exceptions import UndefinedMetricWarning
-                import warnings
-                warnings.filterwarnings("ignore", category=UndefinedMetricWarning)
-            except ImportError:
-                import warnings
-                warnings.warn('sklearn.metrics.classification_report failed to import', ImportWarning)
-                return
-
-            y_preds, y_trues = [], []
-            for preds, trues in examples:
-                for p in preds:
-                    y_preds.append(p)
-                for t in trues:
-                    y_trues.append(t)
-
-            if logger is not None:
-                classify_reports = classification_report(y_trues, y_preds, output_dict=True)
-                for k, v in classify_reports.items():
-                    for ck, cv in v.items():
-                        logger.info(str(k) + "," + str(ck) + "," + str(cv))
-            else:
-                print(classification_report(y_trues, y_preds))
-
-        helper.evaluate(process, model, dataset, sampler, batch_size, model_path, example_reports)
+    else:
+        estimataor = BertClassifierEstimator(
+            config_path=config_path,
+            max_pos=max_pos,
+            vocab_path=vocab_path,
+            sp_model_path=sp_model_path,
+            pretrain_path=pretrain_path,
+            model_path=model_path,
+            dataset_path=eval_dataset_path,
+            header_skip=not read_head,
+            label_num=label_num,
+            use_mecab=use_mecab,
+            use_jumanpp_vocab=use_jumanapp,
+            under_sampling=under_sampling
+        )
+        score = estimataor.evaluate(batch_size=batch_size, log_dir=log_dir)
+        print(score)
 
 
 if __name__ == '__main__':
@@ -179,8 +99,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='BERT classification.', usage='%(prog)s [options]')
     parser.add_argument('--config_path', help='JSON file path for defines networks.', nargs='?',
                         type=str, default='config/bert_base.json')
-    parser.add_argument('--dataset_path', help='Dataset file (TSV file) path for classification.', required=True,
-                        type=str)
+    parser.add_argument('--train_dataset_path', help='Training Dataset file (TSV file) path for classification.', nargs='?',
+                        type=str,  default=None)
+    parser.add_argument('--eval_dataset_path', help='Evaluate Dataset file (TSV file) path for classification.', nargs='?',
+                        type=str,  default=None)
     parser.add_argument('--pretrain_path', help='Pre-training PyTorch model path.', nargs='?',
                         type=str, default=None)
     parser.add_argument('--model_path', help='Classifier PyTorch model path.', nargs='?',
@@ -208,8 +130,8 @@ if __name__ == '__main__':
                         type=int, default=1)
     parser.add_argument('--mode', help='train or eval', nargs='?',
                         type=str, default='train')
-    parser.add_argument('--label_num', help='labels number', required=True,
-                        type=int)
+    parser.add_argument('--label_num', help='labels number', nargs='?',
+                        type=int, default=-1)
     parser.add_argument('--balance_weight', action='store_true',
                         help='Use automatically adjust weights')
     parser.add_argument('--balance_sample', action='store_true',
@@ -226,7 +148,7 @@ if __name__ == '__main__':
                         help='Use not include header TSV file')
 
     args = parser.parse_args()
-    classification(args.config_path, args.dataset_path, args.pretrain_path, args.model_path, args.vocab_path,
+    classification(args.config_path, args.train_dataset_path, args.eval_dataset_path, args.pretrain_path, args.model_path, args.vocab_path,
                    args.sp_model_path, args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr,
                    args.warmup_steps, args.epoch, args.per_save_epoch, args.mode, args.label_num,
                    args.balance_weight, args.balance_sample, args.under_sampling, args.under_sampling_cycle,
