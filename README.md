@@ -32,7 +32,7 @@ config json-file example:
 ```
 python run_classifier.py \
  --config_path=config/bert_base.json  \
- --dataset_path=/content/drive/My\ Drive/data/sample_train.tsv \
+ --train_dataset_path=/content/drive/My\ Drive/data/sample_train.tsv \
  --pretrain_path=/content/drive/My\ Drive/pretrain/bert.pt \
  --vocab_path=/content/drive/My\ Drive/data/sample.vocab \
  --sp_model_path=/content/drive/My\ Drive/data/sample.model \
@@ -47,15 +47,34 @@ python run_classifier.py \
  --label_num=9
 ```
 
+### Selection of Tokenizer to use (when --sp_model_path not use)
+```
+python run_classifier.py \
+ --config_path=config/bert_base.json  \
+ --train_dataset_path=/content/drive/My\ Drive/data/sample_train.tsv \
+ --pretrain_path=/content/drive/My\ Drive/pretrain/bert.pt \
+ --vocab_path=/content/drive/My\ Drive/data/sample.vocab \
+ --save_dir=classifier/  \
+ --batch_size=4  \
+ --max_pos=512  \
+ --lr=2e-5  \
+ --warmup_steps=0.1  \
+ --epoch=10  \
+ --per_save_epoch=1 \
+ --mode=train \
+ --label_num=9
+ --tokenizer=mecab
+```
+tokenizer= mecab | juman | other-strings (google-bert basic tokenizer)
+
 ### How to Classifier evaluate
 ```
 python run_classifier.py \
  --config_path=config/bert_base.json \
- --dataset_path=/content/drive/My\ Drive/data/sample_eval.tsv \
+ --eval_dataset_path=/content/drive/My\ Drive/data/sample_eval.tsv \
  --model_path=/content/drive/My\ Drive/classifier/classifier.pt \
  --vocab_path=/content/drive/My\ Drive/data/sample.vocab \
  --sp_model_path=/content/drive/My\ Drive/data/sample.model \
- --batch_size=4 \
  --max_pos=512 \
  --mode=eval \
  --label_num=9
