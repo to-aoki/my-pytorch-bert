@@ -50,8 +50,17 @@ class Config(NamedTuple):
                 config['max_position_embeddings'] = max_position_embeddings
             if type_vocab_size is not None and type_vocab_size > 0:
                 config['type_vocab_size'] = type_vocab_size
+            # my model used
             if 'hidden_act' in config:
-                del config['hidden_act']  # my model used only gelu function
+                del config['hidden_act']  # gelu funtion only
+            if 'directionality' in config:
+                del config['directionality']
+            delete_keys =[]
+            for key in config.keys():
+                if key.startswith("pooler"):
+                    delete_keys.append(key)
+            for key in delete_keys:
+                del config[key]
         return cls(**config)
 
 
