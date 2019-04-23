@@ -23,6 +23,7 @@ from random import randint
 from collections import OrderedDict
 from tqdm import tqdm
 from .preprocessing import *
+from .utils import separate_japanese_doc
 
 CONTROL_TOKENS = ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']
 
@@ -57,19 +58,28 @@ class JumanTokenizer(object):
     def tokenize(self, text):
         text = self.preprocessor(text) if self.preprocessor is not None else text
         text = han_to_zen(text)  # Japanese_L-12_H-768_A-12_E-30_BPE use zenkaku.
+        sentences = separate_japanese_doc(text.strip())  # separated 。、？！．，
         tokens = []
-        if len(text.encode()) > 4096:
-            import warnings
-            warnings.warn('juman / pyknp input text max 4096 bytes. over input ;' + text)
-            while len(text.encode()) > 4096:
-                text = text[:-1]
-        for mrph in self.jumanpp.analysis(text):
-            token = mrph.midasi.strip()
-            if token == '':
+        for sentence in sentences:
+            if sentence == '':
                 continue
-            if token in self.stopwords:
-                continue
-            tokens.append(token)
+            loop_sentence = sentence
+            is_tokenize_continue = True
+            while is_tokenize_continue:
+                sub_text = loop_sentence
+                while len(sub_text.encode()) > 4096:  # juman tokenizer max text input
+                    sub_text = sub_text[:-1]
+                for mrph in self.jumanpp.analysis(sub_text):
+                    token = mrph.midasi.strip()
+                    if token == '':
+                        continue
+                    if token in self.stopwords:
+                        continue
+                    tokens.append(token)
+                is_tokenize_continue = False
+                if len(loop_sentence) != len(sub_text):
+                    is_tokenize_continue = True
+                    loop_sentence = loop_sentence[len(sub_text)-1:]
         return tokens
 
 

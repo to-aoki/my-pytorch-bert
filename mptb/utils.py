@@ -24,6 +24,10 @@ import torch
 from .preprocessing import *
 
 
+def separate_japanese_doc(text, separater='^。、？！。，'):
+    return re.findall(r'[^'+separater+']+(?:['+separater+']|$)', text)
+
+
 class Timer(object):
     def __init__(self, verbose=False):
         self.verbose = verbose
