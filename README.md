@@ -47,7 +47,7 @@ python run_classifier.py \
  --label_num=9
 ```
 
-### Selection of Tokenizer to use (when --sp_model_path not use)
+### Selection of Tokenizer to use 
 ```
 python run_classifier.py \
  --config_path=config/bert_base.json  \
@@ -65,7 +65,9 @@ python run_classifier.py \
  --label_num=9
  --tokenizer=mecab
 ```
-tokenizer= mecab | juman | other-strings (google-bert basic tokenizer)
+'--tokenizer' becomes effective when '--sp_model_path' option is not attached.
+
+tokenizer : mecab | juman | other-strings (google-bert basic tokenizer)
 
 ### How to Classifier evaluate
 ```
