@@ -24,6 +24,7 @@ from collections import OrderedDict
 from tqdm import tqdm
 from .preprocessing import *
 from .utils import separate_japanese_doc
+from .tokenization import WordpieceTokenizer, BasicTokenizer
 
 CONTROL_TOKENS = ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']
 
@@ -97,10 +98,9 @@ def load_vocab(vocab_file):
 
 def token_vocab_build(reader):
     vocab_dict = OrderedDict()
-    index = 0
-    for _, word in enumerate(tqdm(reader)):
+    for index, word in enumerate(tqdm(reader)):
+        word = word.rstrip()
         vocab_dict[word] = index
-        index += 1
     return vocab_dict
 
 
@@ -138,8 +138,15 @@ class FullTokenizer(object):
                 self.control_len += 1
             self.inv_vocab[v] = k
 
+        self.basic_tokenizer = BasicTokenizer()
+        self.wordpiece_tokenizer = WordpieceTokenizer(vocab=self.vocab)
+
     def tokenize(self, text):
-        split_tokens = self.tokenizer.tokenize(convert_to_unicode(text))
+        split_tokens = []
+        text = ' '.join(self.tokenizer.tokenize(convert_to_unicode(text)))
+        for sub_token in self.basic_tokenizer.tokenize(text, is_juman=True):
+            for sub_sub_token in self.wordpiece_tokenizer.tokenize(sub_token):
+                split_tokens.append(sub_sub_token)
         return split_tokens
 
     def convert_tokens_to_ids(self, tokens):

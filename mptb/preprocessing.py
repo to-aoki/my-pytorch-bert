@@ -25,7 +25,7 @@ class Pipeline(object):
             text = p(text)
         return text
 
-    def __repr__(self):
+    def __str__(self):
         format_string = self.__class__.__name__ + '['
         for p in self.preprocessors:
             format_string += '\n'
@@ -53,7 +53,7 @@ class ToUnicode(object):
         else:
             raise ValueError("Not running on Python 3")
 
-    def __repr__(self):
+    def __str__(self):
         return self.__class__.__name__
 
 
@@ -65,7 +65,7 @@ class Normalize(object):
     def __call__(self, text):
         return unicodedata.normalize(self.form, text)
 
-    def __repr__(self):
+    def __str__(self):
         return self.__class__.__name__
 
 
@@ -74,7 +74,7 @@ class LowerCase(object):
     def __call__(self, text):
         return text.lower()
 
-    def __repr__(self):
+    def __str__(self):
         return self.__class__.__name__
 
 
@@ -86,13 +86,13 @@ class ReplaceNumber(object):
     def __call__(self, text):
         return re.sub(r'\d+', self.replacement, text)
 
-    def __repr__(self):
+    def __str__(self):
         return self.__class__.__name__
 
 
 class ReplaceURI(object):
 
-    def __init__(self, replacement='[URI]'):
+    def __init__(self, replacement='link'):
         self.replacement = replacement
 
     def __call__(self, text):
@@ -103,5 +103,5 @@ class ReplaceURI(object):
             flags=re.MULTILINE
         )
 
-    def __repr__(self):
+    def __str__(self):
         return self.__class__.__name__

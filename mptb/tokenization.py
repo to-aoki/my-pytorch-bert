@@ -212,7 +212,7 @@ class BasicTokenizer(object):
     """
     self.preprocessor = preprocessor
 
-  def tokenize(self, text):
+  def tokenize(self, text, is_juman=False):
     """Tokenizes a piece of text."""
     text = convert_to_unicode(text)
     text = self._clean_text(text)
@@ -223,7 +223,8 @@ class BasicTokenizer(object):
     # and generally don't have any Chinese data in them (there are Chinese
     # characters in the vocabulary because Wikipedia does have some Chinese
     # words in the English Wikipedia.).
-    text = self._tokenize_chinese_chars(text)
+    if not is_juman:
+      text = self._tokenize_chinese_chars(text)
     text = self.preprocessor(text) if self.preprocessor is not None else text
     orig_tokens = whitespace_tokenize(text)
     split_tokens = []
