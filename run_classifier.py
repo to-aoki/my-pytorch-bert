@@ -39,7 +39,7 @@ def classification(
     balance_sample=False,
     under_sampling=False,
     under_sampling_cycle=False,
-    use_mecab=False,
+    tokenizer_name='google',
     read_head=False
 ):
 
@@ -53,7 +53,7 @@ def classification(
             dataset_path=train_dataset_path,
             header_skip=not read_head,
             label_num=label_num,
-            use_mecab=use_mecab,
+            tokenizer_name=tokenizer_name,
             under_sampling=under_sampling
         )
 
@@ -137,8 +137,10 @@ if __name__ == '__main__':
                         help='Use automatically adjust under samples')
     parser.add_argument('--under_sampling_cycle', action='store_true',
                         help='Use automatically adjust under samples cycle peer')
-    parser.add_argument('--use_mecab', action='store_true',
-                        help='Use Mecab Tokenizer')
+    parser.add_argument('--tokenizer', nargs='?', type=str, default='google',
+                        help=
+                        'Select from the following name groups tokenizer that uses only vocabulary files.(mecab, juman)'
+                        )
     parser.add_argument('--read_head', action='store_true',
                         help='Use not include header TSV file')
 
@@ -147,4 +149,4 @@ if __name__ == '__main__':
                    args.sp_model_path, args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr,
                    args.warmup_steps, args.epoch, args.per_save_epoch, args.mode, args.label_num,
                    args.balance_weight, args.balance_sample, args.under_sampling, args.under_sampling_cycle,
-                   args.use_mecab, args.read_head)
+                   args.tokenizer, args.read_head)

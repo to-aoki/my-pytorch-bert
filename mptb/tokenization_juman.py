@@ -22,7 +22,6 @@ from mojimoji import han_to_zen
 from random import randint
 from collections import OrderedDict
 from tqdm import tqdm
-import os
 from .preprocessing import *
 
 CONTROL_TOKENS = ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']
@@ -59,7 +58,12 @@ class JumanTokenizer(object):
         text = self.preprocessor(text) if self.preprocessor is not None else text
         text = han_to_zen(text)  # Japanese_L-12_H-768_A-12_E-30_BPE use zenkaku.
         tokens = []
-        for mrph in self.jumanpp.analysis(text.rstrip()):
+        if len(text.encode()) > 4096:
+            import warnings
+            warnings.warn('juman / pyknp input text max 4096 bytes. over input ;' + text)
+            while len(text.encode()) > 4096:
+                text = text[:-1]
+        for mrph in self.jumanpp.analysis(text):
             token = mrph.midasi.strip()
             if token == '':
                 continue

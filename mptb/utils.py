@@ -76,7 +76,7 @@ def get_tokenizer(
     preprocessor=None,
     vocab_path=None,
     sp_model_path=None,
-    use_mecab=False
+    name='google'
 ):
     if preprocessor is None:
         preprocessor = default_preprocessor()
@@ -85,12 +85,17 @@ def get_tokenizer(
         from .tokenization_sentencepiece import FullTokenizer
         return FullTokenizer(sp_model_path, vocab_path, preprocessor=preprocessor)
     elif vocab_path is not None:
-        if use_mecab:
+        name = name.lower()
+        if name == 'mecab':
             from .tokenization_mecab import FullTokenizer
             return FullTokenizer(vocab_path, preprocessor=preprocessor)
+        elif name == 'juman':
+            from .tokenization_juman import FullTokenizer
+            return FullTokenizer(vocab_path, preprocessor=preprocessor)
+        # google bert tokenizer use
         else:
             from .tokenization import FullTokenizer
-            return FullTokenizer(vocab_path, preprocessor=preprocessor, use_jumanpp=use_jumanpp_vocab)
+            return FullTokenizer(vocab_path, preprocessor=preprocessor)
 
 
 def default_preprocessor():

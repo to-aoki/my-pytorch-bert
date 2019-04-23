@@ -66,7 +66,6 @@ class ClassDataset(Dataset):
 
                     if label not in unique_labels:
                         unique_labels.append(label)
-
                     bert_ids = to_bert_ids(max_pos, tokenizer, sentence_a, sentence_b)
                     bert_ids.append(label)
                     self.records.append(bert_ids)

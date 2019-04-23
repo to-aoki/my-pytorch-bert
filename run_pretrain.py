@@ -31,7 +31,7 @@ def bert_pretraining(
     epoch=5,
     per_save_epoch=1,
     mode='train',
-    use_mecab=False
+    tokenizer_name='google'
 ):
 
     estimataor = BertPretrainEstimator(
@@ -40,7 +40,7 @@ def bert_pretraining(
         vocab_path=vocab_path,
         sp_model_path=sp_model_path,
         dataset_path=dataset_path,
-        use_mecab=use_mecab
+        tokenizer_name=tokenizer_name
     )
 
     if mode == 'train':
@@ -87,10 +87,12 @@ if __name__ == '__main__':
                         type=int, default=1)
     parser.add_argument('--mode', help='train or eval', nargs='?',
                         type=str, default="train")
-    parser.add_argument('--use_mecab', action='store_true',
-                        help='Use Mecab Tokenizer')
+    parser.add_argument('--tokenizer', nargs='?', type=str, default='google',
+                        help=
+                        'Select from the following name groups tokenizer that uses only vocabulary files.(mecab, juman)'
+                        )
     args = parser.parse_args()
     bert_pretraining(args.config_path, args.dataset_path, args.model_path, args.vocab_path, args.sp_model_path,
                      args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr, args.warmup_steps,
-                     args.epoch, args.per_save_epoch, args.mode, args.use_mecab)
+                     args.epoch, args.per_save_epoch, args.mode, args.tokenizer)
 

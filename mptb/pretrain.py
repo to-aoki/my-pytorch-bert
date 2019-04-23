@@ -38,12 +38,12 @@ class BertPretrainEstimator(object):
         sp_model_path=None,
         model_path=None,
         dataset_path=None,
-        use_mecab=False
+        tokenizer_name='google'
     ):
 
         if tokenizer is None:
             self.tokenizer = get_tokenizer(
-                vocab_path=vocab_path, sp_model_path=sp_model_path, use_mecab=use_mecab)
+                vocab_path=vocab_path, sp_model_path=sp_model_path, name=tokenizer_name)
         else:
             self.tokenizer = tokenizer
 

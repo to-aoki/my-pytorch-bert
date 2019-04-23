@@ -42,12 +42,12 @@ class BertClassifierEstimator(object):
         header_skip=True,
         label_num=-1,
         hidden_size=-1,
-        use_mecab=False,
+        tokenizer_name='google',
         under_sampling=False
     ):
         if tokenizer is None:
             self.tokenizer = get_tokenizer(
-                vocab_path=vocab_path, sp_model_path=sp_model_path, use_mecab=use_mecab)
+                vocab_path=vocab_path, sp_model_path=sp_model_path, name=tokenizer_name)
         else:
             self.tokenizer = tokenizer
 
