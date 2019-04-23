@@ -7,11 +7,12 @@ And we add [bert-japanese](https://github.com/yoheikikuta/bert-japanese) as [Sen
 ### How to convert from TensorFlow model to my model
 ```
 python load_tf_bert.py \
-    --config_path=json-file \
-    --tfmodel_path=bert-wiki-ja/model.ckpt-1400000 \
-    --output_path=pretrain/bert-wiki-ja.pt
+    --config_path=multi_cased_L-12_H-768_A-12/bert_config.json \
+    --tfmodel_path=multi_cased_L-12_H-768_A-12/model.ckpt-1400000 \
+    --output_path=pretrain/multi_cased_L-12_H-768_A-12.pt
 ```
-json-file example:
+
+config json-file example:
 ```
 {
 	"vocab_size": 32000,
@@ -70,7 +71,7 @@ json-file example:
     "text_dir" : "tests/",
     "prefix" : "tests/sample_text",
     "vocab_size" : 100,
-    "ctl_symbols" : "[PAD], [CLS],[SEP],[MASK]"
+    "ctl_symbols" : "[PAD],[CLS],[SEP],[MASK]"
 }
 ```
 
