@@ -1,6 +1,6 @@
 from bertviz.visualization import AttentionVisualizer
-from mPTB.models import BertModel, Config
-from mPTB.tokenization import FullTokenizer
+from mptb import BertModel, Config
+from mptb.tokenization import FullTokenizer
 import numpy as np
 import unittest
 

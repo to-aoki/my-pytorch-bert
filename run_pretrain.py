@@ -13,7 +13,7 @@
 # limitations under the License.
 """Bert pre-training."""
 
-from mPTB.pretrain import BertPretrainEstimator
+from mptb import BertPretrainEstimator
 
 
 def bert_pretraining(

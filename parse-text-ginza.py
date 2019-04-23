@@ -13,8 +13,8 @@
 # limitations under the License.
 """Ginza Tokenizer Test."""
 
-from mPTB.tokenization_ginza import *
-from mPTB.preprocessing import *
+from mptb.tokenization_ginza import GinzaTokenizer
+from mptb.preprocessing import *
 import os
 
 if __name__ == '__main__':

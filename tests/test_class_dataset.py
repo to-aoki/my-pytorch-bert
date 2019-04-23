@@ -1,7 +1,7 @@
 import sys
 import unittest
-from mPTB.class_dataset import ClassDataset
-from mPTB.tokenization_sentencepiece import FullTokenizer
+from mptb.class_dataset import ClassDataset
+from mptb.tokenization_sentencepiece import FullTokenizer
 
 
 class ClassDatasetTestCase(unittest.TestCase):

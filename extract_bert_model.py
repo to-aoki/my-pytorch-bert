@@ -14,22 +14,20 @@
 """Extract Bert Model."""
 
 
-from mPTB.models import Config
-from mPTB.pretrain_tasks import BertPretrainingTasks
-from mPTB.utils import load, save, get_device
+from mptb import Config
+from mptb.pretrain_tasks import BertPretrainingTasks
+from mptb.utils import load, save, get_device
 
 
 def extract_model(
     config_path='config/bert_base.json',
-    model_path="pretrain/oops_google_colab_session_timeout.pt",
-    output_path="collections//bert_only_model.pt",
-    only_bert=True
+    model_path="pretrain/pretran_on_the_way.pt",
+    output_path="pretrain/bert_only_model.pt",
 ):
     config = Config.from_json(config_path)
     model = BertPretrainingTasks(config)
     load(model, model_path, get_device())
-    if only_bert:
-        model = model.bert
+    model = model.bert
     save(model, output_path)
 
 
@@ -42,6 +40,5 @@ if __name__ == '__main__':
                         type=str)
     parser.add_argument('--output_path', help='Output model path.', required=True,
                         type=str)
-    parser.add_argument('--bert', action='store_true')
     args = parser.parse_args()
-    extract_model(args.config_path, args.model_path, args.output_path, args.bert)
+    extract_model(args.config_path, args.model_path, args.output_path)

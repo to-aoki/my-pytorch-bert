@@ -14,7 +14,7 @@
 """Bert classifier."""
 
 
-from mPTB.classification import BertClassifierEstimator
+from mptb import BertClassifierEstimator
 
 
 def classification(

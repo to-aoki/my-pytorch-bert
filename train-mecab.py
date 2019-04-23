@@ -13,8 +13,8 @@
 # limitations under the License.
 """MeCab vocab builder."""
 
-from mPTB.tokenization_mecab import *
-from mPTB.preprocessing import *
+from mptb.tokenization_mecab import *
+from mptb.preprocessing import *
 
 if __name__ == '__main__':
     import argparse

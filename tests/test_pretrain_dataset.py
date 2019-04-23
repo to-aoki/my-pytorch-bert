@@ -1,6 +1,6 @@
 import unittest
-from mPTB.pretrain_dataset import PretrainDataset
-from mPTB.tokenization_sentencepiece import FullTokenizer
+from mptb.pretrain_dataset import PretrainDataset
+from mptb.tokenization_sentencepiece import FullTokenizer
 
 
 class PretrainDatasetTestCase(unittest.TestCase):
