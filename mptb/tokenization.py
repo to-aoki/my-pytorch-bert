@@ -2,6 +2,7 @@
 #
 # Author Toshihiko Aoki
 # This file is based on https://github.com/google-research/bert/blob/master/tokenization.py.
+# Add Juman/pyknp Tokenizer use flag.
 #
 # Copyright 2018 The Google AI Language Team Authors.
 #
@@ -229,7 +230,8 @@ class BasicTokenizer(object):
     orig_tokens = whitespace_tokenize(text)
     split_tokens = []
     for token in orig_tokens:
-      token = self._run_strip_accents(token)
+      if not is_juman:
+        token = self._run_strip_accents(token)
       split_tokens.extend(self._run_split_on_punc(token))
 
     output_tokens = whitespace_tokenize(" ".join(split_tokens))

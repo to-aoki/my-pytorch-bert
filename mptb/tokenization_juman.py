@@ -143,10 +143,10 @@ class FullTokenizer(object):
 
     def tokenize(self, text):
         split_tokens = []
-        text = ' '.join(self.tokenizer.tokenize(convert_to_unicode(text)))
-        for sub_token in self.basic_tokenizer.tokenize(text, is_juman=True):
-            for sub_sub_token in self.wordpiece_tokenizer.tokenize(sub_token):
-                split_tokens.append(sub_sub_token)
+        for juman_token in self.tokenizer.tokenize(convert_to_unicode(text)):
+            for sub_token in self.basic_tokenizer.tokenize(juman_token, is_juman=True):
+                for sub_sub_token in self.wordpiece_tokenizer.tokenize(sub_token):
+                    split_tokens.append(sub_sub_token)
         return split_tokens
 
     def convert_tokens_to_ids(self, tokens):
