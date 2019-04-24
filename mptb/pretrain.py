@@ -27,7 +27,7 @@ from .helper import Helper
 from .utils import save, get_logger, get_tokenizer
 
 
-class BertPretrainEstimator(object):
+class BertPretrainier(object):
 
     def __init__(
         self,

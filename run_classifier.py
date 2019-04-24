@@ -11,10 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Bert classifier."""
+"""Bert classifierBertClassifier."""
 
 
-from mptb import BertClassifierEstimator
+from mptb import BertClassifier
 
 
 def classification(
@@ -46,7 +46,7 @@ def classification(
     if under_sampling_cycle:
         under_sampling = True
     if mode == 'train':
-        estimator = BertClassifierEstimator(
+        estimator = BertClassifier(
             config_path=config_path,
             max_pos=max_pos,
             vocab_path=vocab_path,
@@ -79,7 +79,7 @@ def classification(
         print(score)
 
     else:
-        estimator = BertClassifierEstimator(
+        estimator = BertClassifier(
             config_path=config_path,
             max_pos=max_pos,
             vocab_path=vocab_path,

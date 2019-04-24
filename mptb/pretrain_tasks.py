@@ -33,9 +33,9 @@ class BertPretrainingTasks(nn.Module):
 
     def forward(self, input_ids, segment_ids, input_mask):
         hidden_state, pooled_output = self.bert(input_ids, segment_ids, input_mask)
-        loss_lm = self.masked_lm.forward(hidden_state, self.bert.embeddings.word_embeddings.weight)
-        loss_nsp = self.next_sentence_prediction(pooled_output)
-        return loss_lm, loss_nsp
+        logits_lm = self.masked_lm.forward(hidden_state, self.bert.embeddings.word_embeddings.weight)
+        logits_nsp = self.next_sentence_prediction(pooled_output)
+        return logits_lm, logits_nsp
 
 
 class MaskedLM(nn.Module):

@@ -5,5 +5,5 @@ from .finetuning import *
 from .helper import Helper
 from .models import Config, BertModel
 from .optimization import BertAdam
-from .pretrain import BertPretrainEstimator
-from .classification import BertClassifierEstimator
+from .pretrain import BertPretrainier
+from .classification import BertClassifier

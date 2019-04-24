@@ -13,7 +13,7 @@
 # limitations under the License.
 """Bert pre-training."""
 
-from mptb import BertPretrainEstimator
+from mptb import BertPretrainier
 
 
 def bert_pretraining(
@@ -34,7 +34,7 @@ def bert_pretraining(
     tokenizer_name='google'
 ):
 
-    estimator = BertPretrainEstimator(
+    estimator = BertPretrainier(
         config_path=config_path,
         max_pos=max_pos,
         vocab_path=vocab_path,

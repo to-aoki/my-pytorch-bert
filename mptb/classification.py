@@ -27,7 +27,7 @@ from .helper import Helper
 from .utils import save, load, get_logger, make_balanced_classes_weights, get_tokenizer
 
 
-class BertClassifierEstimator(object):
+class BertClassifier(object):
 
     def __init__(
         self,
