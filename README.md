@@ -115,10 +115,10 @@ python run_pretrain.py \
 
 
 ### Classification result of my-pytorch-bert
-- Dataset : [livedoor ニュースコーパス](https://www.rondhuit.com/download.html)  6(training):2(evaluate)
-- epoch : 10
+- Dataset : [livedoor ニュースコーパス](https://www.rondhuit.com/download.html)  6(training): 2(test) 2(dev un-use) 
+- train epoch : 10
 
-1. [Pretrained BERT model and trained SentencePiece model](https://drive.google.com/drive/folders/1Zsm9DD40lrUVu6iAnIuTH2ODIkh-WM-O?usp=sharing) (PyTorch converted).
+1. [Pretrained BERT model and trained SentencePiece model](https://drive.google.com/drive/folders/1Zsm9DD40lrUVu6iAnIuTH2ODIkh-WM-O?usp=sharing) (model converted).
 ```
               precision    recall  f1-score   support
 
@@ -136,6 +136,27 @@ python run_pretrain.py \
    macro avg       0.97      0.97      0.97      1473
 weighted avg       0.97      0.97      0.97      1473
 ```
+
+2. [BERT日本語Pretrainedモデル](http://nlp.ist.i.kyoto-u.ac.jp/DLcounter/lime.cgi?down=http://nlp.ist.i.kyoto-u.ac.jp/nl-resource/JapaneseBertPretrainedModel/Japanese_L-12_H-768_A-12_E-30_BPE.zip&name=Japanese_L-12_H-768_A-12_E-30_BPE.zip) (model converted).
+
+```
+              precision    recall  f1-score   support
+
+           0       0.98      0.92      0.95       178
+           1       0.92      0.94      0.93       172
+           2       0.98      0.96      0.97       176
+           3       0.93      0.83      0.88        95
+           4       0.97      0.99      0.98       158
+           5       0.91      0.97      0.94       174
+           6       0.95      0.98      0.96       167
+           7       0.97      0.99      0.98       190
+           8       0.97      0.96      0.96       163
+
+   micro avg       0.95      0.95      0.95      1473
+   macro avg       0.95      0.95      0.95      1473
+weighted avg       0.95      0.95      0.95      1473
+```
+
 
 ## Acknowledgments
 This project incorporates code from the following repos:

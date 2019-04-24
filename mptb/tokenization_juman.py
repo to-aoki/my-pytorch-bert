@@ -99,7 +99,7 @@ def load_vocab(vocab_file):
 def token_vocab_build(reader):
     vocab_dict = OrderedDict()
     for index, word in enumerate(tqdm(reader)):
-        word = word.rstrip()
+        word = word.rstrip('\n')
         vocab_dict[word] = index
     return vocab_dict
 
