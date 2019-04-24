@@ -43,6 +43,8 @@ def classification(
     read_head=False
 ):
 
+    if under_sampling_cycle:
+        under_sampling = True
     if mode == 'train':
         estimator = BertClassifierEstimator(
             config_path=config_path,
