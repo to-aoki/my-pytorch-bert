@@ -137,7 +137,7 @@ python run_pretrain.py \
 weighted avg       0.97      0.97      0.97      1473
 ```
 
-2. [BERT日本語Pretrainedモデル](http://nlp.ist.i.kyoto-u.ac.jp/DLcounter/lime.cgi?down=http://nlp.ist.i.kyoto-u.ac.jp/nl-resource/JapaneseBertPretrainedModel/Japanese_L-12_H-768_A-12_E-30_BPE.zip&name=Japanese_L-12_H-768_A-12_E-30_BPE.zip) (model converted).
+2. [BERT日本語Pretrainedモデル](http://nlp.ist.i.kyoto-u.ac.jp/index.php?BERT%E6%97%A5%E6%9C%AC%E8%AA%9EPretrained%E3%83%A2%E3%83%87%E3%83%AB) (model converted).
 
 ```
               precision    recall  f1-score   support
