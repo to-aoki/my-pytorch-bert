@@ -44,7 +44,7 @@ def classification(
 ):
 
     if mode == 'train':
-        estimataor = BertClassifierEstimator(
+        estimator = BertClassifierEstimator(
             config_path=config_path,
             max_pos=max_pos,
             vocab_path=vocab_path,
@@ -57,7 +57,7 @@ def classification(
             under_sampling=under_sampling
         )
 
-        estimataor.train(
+        estimator.train(
             traing_model_path=model_path,
             batch_size=batch_size,
             epoch=epoch,
@@ -68,13 +68,16 @@ def classification(
             save_dir=save_dir,
             per_save_epoch=per_save_epoch
         )
-        eval_data_set = estimataor.get_dataset(
+        if eval_dataset_path is None:
+            return
+
+        eval_data_set = estimator.get_dataset(
             dataset_path=eval_dataset_path, header_skip=not read_head)
-        score = estimataor.evaluate(dataset=eval_data_set, batch_size=batch_size, log_dir=log_dir)
+        score = estimator.evaluate(dataset=eval_data_set, batch_size=batch_size, log_dir=log_dir)
         print(score)
 
     else:
-        estimataor = BertClassifierEstimator(
+        estimator = BertClassifierEstimator(
             config_path=config_path,
             max_pos=max_pos,
             vocab_path=vocab_path,
@@ -84,10 +87,10 @@ def classification(
             dataset_path=eval_dataset_path,
             header_skip=not read_head,
             label_num=label_num,
-            use_mecab=use_mecab,
+            tokenizer_name=tokenizer_name,
             under_sampling=under_sampling
         )
-        score = estimataor.evaluate(batch_size=batch_size, log_dir=log_dir)
+        score = estimator.evaluate(batch_size=batch_size, log_dir=log_dir)
         print(score)
 
 

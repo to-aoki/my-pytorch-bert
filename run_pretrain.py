@@ -34,7 +34,7 @@ def bert_pretraining(
     tokenizer_name='google'
 ):
 
-    estimataor = BertPretrainEstimator(
+    estimator = BertPretrainEstimator(
         config_path=config_path,
         max_pos=max_pos,
         vocab_path=vocab_path,
@@ -44,14 +44,14 @@ def bert_pretraining(
     )
 
     if mode == 'train':
-        estimataor.train(
+        estimator.train(
             traing_model_path=model_path, batch_size=batch_size, epoch=epoch, per_save_epoch=per_save_epoch,
             lr=lr, warmup_proportion=warmup_proportion, save_dir=save_dir
         )
-        score = estimataor.evaluate(batch_size=batch_size, log_dir=log_dir)
+        score = estimator.evaluate(batch_size=batch_size, log_dir=log_dir)
         print(score)
     else:
-        score = estimataor.evaluate(model_path=model_path, batch_size=batch_size, log_dir=log_dir)
+        score = estimator.evaluate(model_path=model_path, batch_size=batch_size, log_dir=log_dir)
         print(score)
 
 
