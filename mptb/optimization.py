@@ -164,10 +164,19 @@ def get_optimizer(
         try:
             from apex.optimizers import FP16_Optimizer
             from apex.optimizers import FusedAdam
+
             optimizer = FusedAdam(optimizer_grouped_parameters,
                                   lr=lr,
                                   bias_correction=False,
                                   max_grad_norm=1.0)
+
+            def get_step(self):
+                state = self.optimizer.state[((self.optimizer.param_groups[0])['params'])[0]]
+                if 'step' in state:
+                    return state['step']
+                return 0
+
+            FP16_Optimizer.get_step = get_step
             return FP16_Optimizer(optimizer, dynamic_loss_scale=True)
         except ImportError:
             raise ImportError(

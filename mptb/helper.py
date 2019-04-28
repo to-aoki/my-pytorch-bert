@@ -62,13 +62,12 @@ class Helper(object):
         if self.fp16:
             model.half()
         model.to(self.device)
-        if self.num_gpu > 1:
+        if self.num_gpu > 1:  # not test
             model = torch.nn.DataParallel(model)
         if model_file is not None and model_file is not '':
             # warmup_steps over-ride
             load(model, model_file, self.device, optimizer)
         model.train()
-
         global_step = optimizer.get_step()
         dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
 
