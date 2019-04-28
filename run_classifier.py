@@ -70,8 +70,7 @@ def classification(
             balance_sample=balance_sample,
             under_sampling_cycle=under_sampling_cycle,
             save_dir=save_dir,
-            per_save_epoch=per_save_epoch,
-            fp16=fp16
+            per_save_epoch=per_save_epoch
         )
         if eval_dataset_path is None:
             return
@@ -93,7 +92,8 @@ def classification(
             header_skip=not read_head,
             label_num=label_num,
             tokenizer_name=tokenizer_name,
-            under_sampling=under_sampling
+            under_sampling=under_sampling,
+            fp16=fp16
         )
         score = estimator.evaluate(batch_size=batch_size, log_dir=log_dir)
         print(score)
