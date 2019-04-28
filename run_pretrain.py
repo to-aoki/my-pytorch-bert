@@ -31,7 +31,8 @@ def bert_pretraining(
     epoch=5,
     per_save_epoch=1,
     mode='train',
-    tokenizer_name='google'
+    tokenizer_name='google',
+    fp16=False
 ):
 
     estimator = BertPretrainier(
@@ -40,7 +41,8 @@ def bert_pretraining(
         vocab_path=vocab_path,
         sp_model_path=sp_model_path,
         dataset_path=dataset_path,
-        tokenizer_name=tokenizer_name
+        tokenizer_name=tokenizer_name,
+        fp16=fp16
     )
 
     if mode == 'train':
@@ -91,8 +93,10 @@ if __name__ == '__main__':
                         help=
                         'Select from the following name groups tokenizer that uses only vocabulary files.(mecab, juman)'
                         )
+    parser.add_argument('--fp16', action='store_true',
+                        help='Use nVidia fp16(require apex module)')
     args = parser.parse_args()
     bert_pretraining(args.config_path, args.dataset_path, args.model_path, args.vocab_path, args.sp_model_path,
                      args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr, args.warmup_steps,
-                     args.epoch, args.per_save_epoch, args.mode, args.tokenizer)
+                     args.epoch, args.per_save_epoch, args.mode, args.tokenizer, args.fp16)
 
