@@ -150,7 +150,7 @@ class BertClassifier(object):
 
         max_steps = int(len(dataset) / batch_size * epoch)
         warmup_steps = int(max_steps * warmup_proportion)
-        optimizer = get_optimizer(self.model, lr, warmup_steps, max_steps)
+        optimizer = get_optimizer(self.model, lr, warmup_steps, max_steps, self.fp16)
 
         balance_weights = None
         if balance_weight:
