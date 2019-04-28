@@ -111,13 +111,7 @@ class BertAdam(Optimizer):
                 if group['weight_decay_rate'] > 0.0:
                     update += group['weight_decay_rate'] * p.data
 
-                if group['warmup_steps'] is not 0 and state['step'] < group['warmup_steps']:
-                    lr_scheduled = group['lr'] * state['step']/group['warmup_steps']
-                elif group['max_steps'] is not 0:
-                    global_step = min(state['step'], group['max_steps'])
-                    lr_scheduled = group['lr'] * (1 - global_step/group['max_steps'])
-                else:
-                    lr_scheduled = group['lr']
+                lr_scheduled = update_lr(state['step'], group['lr'], group['warmup_steps'], group['max_steps'])
 
                 update_with_lr = lr_scheduled * update
                 p.data.add_(-update_with_lr)
@@ -134,6 +128,23 @@ class BertAdam(Optimizer):
         return 0
 
 
+def update_lr(step, lr=5e-5, warmup_steps=0, max_steps=0):
+    if step < 0:
+        return lr
+    if warmup_steps is not 0 and step < warmup_steps:
+        return lr * step / warmup_steps
+    elif max_steps is not 0:
+        global_step = min(step, max_steps)
+        return lr * (1 - global_step / max_steps)
+    else:
+        return lr
+
+
+def update_lr_apex(optimzer, step, lr=5e-5, warmup_steps=0, max_steps=0):
+    for param_group in optimzer.param_groups:
+        param_group['lr'] = update_lr(step, lr, warmup_steps, max_steps)
+
+
 # add for optimizer initializer
 def get_optimizer(
         model,
@@ -141,14 +152,28 @@ def get_optimizer(
         warmup_steps=0,
         max_steps=0,
         decoy=0.01,
-        no_decay=('bias', 'layer_norm', 'LayerNorm')
+        no_decay=('bias', 'layer_norm', 'LayerNorm'),
+        fp16=False
 ):
     param_optimizer = list(model.named_parameters())
     optimizer_grouped_parameters = [
         {'params': [p for n, p in param_optimizer if _do_use_weight_decay(n, no_decay)], 'weight_decay_rate': decoy},
         {'params': [p for n, p in param_optimizer if not _do_use_weight_decay(n, no_decay)], 'weight_decay_rate': 0.0}
     ]
-    return BertAdam(optimizer_grouped_parameters, lr, warmup_steps, max_steps)
+    if fp16:
+        try:
+            from apex.optimizers import FP16_Optimizer
+            from apex.optimizers import FusedAdam
+            optimizer = FusedAdam(optimizer_grouped_parameters,
+                                  lr=lr,
+                                  bias_correction=False,
+                                  max_grad_norm=1.0)
+            return FP16_Optimizer(optimizer, dynamic_loss_scale=True)
+        except ImportError:
+            raise ImportError(
+                "Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
+    else:
+        return BertAdam(optimizer_grouped_parameters, lr, warmup_steps, max_steps)
 
 
 def _do_use_weight_decay(param_name, exclude_from_weight_decay):

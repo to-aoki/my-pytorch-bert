@@ -23,7 +23,7 @@ from . utils import set_seeds, save, load, get_device
 
 class Helper(object):
 
-    def __init__(self, seeds=20151106, device=None):
+    def __init__(self, seeds=20151106, device=None, fp16=False):
         super().__init__()
         set_seeds(seeds)
         self.num_gpu = 0
@@ -36,7 +36,9 @@ class Helper(object):
         if torch.cuda.is_available() and self.device is not 'cpu':
             self.num_gpu = torch.cuda.device_count()
 
-        print("device: {} num_gpu: {}".format(self.device, self.num_gpu))
+        self.fp16 = fp16 and torch.cuda.is_available()
+
+        print("device: {} num_gpu: {} fp16: {}".format(self.device, self.num_gpu, self.fp16))
 
     def load_model(self, model, model_path, optimizer=None):
         load(model, model_path, self.device, optimizer)
@@ -53,9 +55,12 @@ class Helper(object):
         model_file=None,
         save_dir='train/',
         per_save_epoc=-1,
-        epoch_dataset_adjust=None
+        adjustment_every_epoch=None,
+        adjustment_every_step=None
     ):
 
+        if self.fp16:
+            model.half()
         model.to(self.device)
         if self.num_gpu > 1:
             model = torch.nn.DataParallel(model)
@@ -79,7 +84,14 @@ class Helper(object):
 
                 if self.num_gpu > 1:
                     loss = loss.mean()
-                loss.backward()
+                if self.fp16:
+                    optimizer.backward(loss)
+                else:
+                    loss.backward()
+
+                if adjustment_every_step is not None:
+                    adjustment_every_step(model, dataset, loss, global_step, optimizer)
+
                 total_loss += loss.item()
                 total_steps += 1
                 iter_bar.set_description("E-{:0=2} : {:2.4f} avg loss ".format(e, total_loss / total_steps))
@@ -91,8 +103,8 @@ class Helper(object):
                 output_model_file = os.path.join(save_dir, "train_model_" + str(e) + "_" + str(global_step) + ".pt")
                 save(model, output_model_file, optimizer)
 
-            if epoch_dataset_adjust is not None:
-                epoch_dataset_adjust(dataset)
+            if adjustment_every_epoch is not None:
+                adjustment_every_epoch(model, dataset, total_loss, total_steps, optimizer)
 
         return total_loss / total_steps
 
@@ -106,11 +118,12 @@ class Helper(object):
         model_file=None,
         examples_reports=None,
         compute_epoch_score=None,
-        epoch_dataset_adjust=None,
+        adjustment_every_epoch=None,
         epoch=1,
         evaluate_score=None,
     ):
-
+        if self.fp16 and torch.cuda.is_available():
+            model.half()
         model.to(self.device)
         if self.num_gpu > 1:
             model = torch.nn.DataParallel(model)
@@ -139,6 +152,7 @@ class Helper(object):
                 total_loss += loss.item()
                 total_steps += 1
                 iter_bar.set_description("E-{:0=2} : {:2.4f} avg loss ".format(e, total_loss / total_steps))
+
                 global_step += 1
 
             if examples_reports is not None:
@@ -151,8 +165,8 @@ class Helper(object):
 
             scores.append(epoch_score)
 
-            if epoch_dataset_adjust is not None:
-                epoch_dataset_adjust(dataset)
+            if adjustment_every_epoch is not None:
+                adjustment_every_epoch(model, dataset, total_loss, total_steps)
 
         if evaluate_score is not None:
             score = evaluate_score(scores)

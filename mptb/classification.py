@@ -43,7 +43,8 @@ class BertClassifier(object):
         label_num=-1,
         hidden_size=-1,
         tokenizer_name='google',
-        under_sampling=False
+        under_sampling=False,
+        fp16=False
     ):
         if tokenizer is None:
             self.tokenizer = get_tokenizer(
@@ -76,6 +77,7 @@ class BertClassifier(object):
             self.helper.load_model(self.model, model_path)
             self.model.eval()
             self.learned = True
+        self.fp16 = fp16
         super().__init__()
 
     def get_dataset(
@@ -164,21 +166,41 @@ class BertClassifier(object):
             loss = criterion(logits.view(-1, self.model.label_len), label_id.view(-1))
             return loss
 
+        if self.fp16:
+            def adjustment_every_step(model, dataset, loss, global_step, optimizer):
+                from mptb.optimization import update_lr_apex
+                update_lr_apex(optimizer, global_step, lr, warmup_steps, max_steps)
+        else:
+            def adjustment_every_step(model, dataset, total_loss, total_steps, optimizer):
+                pass
+
         if sampler is None:
             if balance_sample:
-                sampler = BertClassifierEstimator.get_class_balanced_sampler(dataset)
+                sampler = BertClassifier.get_class_balanced_sampler(dataset)
             else:
                 sampler = RandomSampler(dataset)
 
-        def epoch_dataset_adjust(dataset):
-            if under_sampling_cycle:
+        if under_sampling_cycle:
+            def adjustment_every_epoch(model, dataset, total_loss, total_steps, optimizer):
                 dataset.next_under_samples()
-            else:
+        else:
+            def adjustment_every_epoch(model, dataset, total_loss, total_steps, optimizer):
                 pass
 
         loss = self.helper.train(
-            process, self.model, dataset, sampler, optimizer, batch_size, epoch, traing_model_path, save_dir,
-                per_save_epoch, epoch_dataset_adjust)
+            process=process,
+            model=self.model,
+            dataset=dataset,
+            sampler=sampler,
+            optimizer=optimizer,
+            batch_size=batch_size,
+            epoch=epoch,
+            model_file=traing_model_path,
+            save_dir=save_dir,
+            per_save_epoc=per_save_epoch,
+            adjustment_every_epoch=adjustment_every_epoch,
+            adjustment_every_step=adjustment_every_step
+        )
         self.learned = True
         if is_save_after_training:
             output_model_path = os.path.join(save_dir, "classifier.pt")

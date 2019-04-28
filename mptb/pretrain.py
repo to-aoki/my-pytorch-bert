@@ -38,7 +38,8 @@ class BertPretrainier(object):
         sp_model_path=None,
         model_path=None,
         dataset_path=None,
-        tokenizer_name='google'
+        tokenizer_name='google',
+        fp16=False
     ):
 
         if tokenizer is None:
@@ -59,6 +60,7 @@ class BertPretrainier(object):
             self.model_path = model_path
             self.helper.load_model(self.model, model_path)
             self.model.eval()
+        self.fp16 = fp16
         super().__init__()
 
     def get_dataset(
@@ -115,7 +117,7 @@ class BertPretrainier(object):
 
         max_steps = int(len(dataset) / batch_size * epoch)
         warmup_steps = int(max_steps * warmup_proportion)
-        optimizer = get_optimizer(self.model, lr, warmup_steps, max_steps)
+        optimizer = get_optimizer(self.model, lr, warmup_steps, max_steps, self.fp16)
         criterion_lm = CrossEntropyLoss(ignore_index=-1, reduction='none')
         criterion_ns = CrossEntropyLoss(ignore_index=-1)
 
@@ -128,10 +130,28 @@ class BertPretrainier(object):
             next_sentence_loss = criterion_ns(next_sentence_logits.view(-1, 2), next_sentence_labels.view(-1))
             return masked_lm_loss + next_sentence_loss
 
-        loss = self.helper.train(
-            process, self.model, dataset, sampler, optimizer, batch_size, epoch,
-            traing_model_path, save_dir, per_save_epoch)
+        if self.fp16:
+            def adjustment_every_step(model, dataset, loss, global_step, optimizer):
+                from mptb.optimization import update_lr_apex
+                update_lr_apex(optimizer, global_step, lr, warmup_steps, max_steps)
+        else:
+            def adjustment_every_step(model, dataset, total_loss, total_steps, optimizer):
+                pass
 
+        loss = self.helper.train(
+            process=process,
+            model=self.model,
+            dataset=dataset,
+            sampler=sampler,
+            optimizer=optimizer,
+            batch_size=batch_size,
+            epoch=epoch,
+            model_file=traing_model_path,
+            save_dir=save_dir,
+            per_save_epoc=per_save_epoch,
+            adjustment_every_epoch=None,
+            adjustment_every_step=adjustment_every_step
+        )
         self.learned = True
 
         if is_save_after_training:
