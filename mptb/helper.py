@@ -37,7 +37,6 @@ class Helper(object):
             self.num_gpu = torch.cuda.device_count()
 
         self.fp16 = fp16 & torch.cuda.is_available()
-
         print("device: {} num_gpu: {} fp16: {}".format(self.device, self.num_gpu, self.fp16))
 
     def set_model(self, model):
@@ -47,6 +46,7 @@ class Helper(object):
 
     def load_model(self, model, model_path, optimizer=None):
         load(model, model_path, self.device, optimizer)
+        self.set_model(model)
 
     def train(
         self,
@@ -63,16 +63,14 @@ class Helper(object):
         adjustment_every_epoch=None,
         adjustment_every_step=None
     ):
-        model.to(self.device)
-        if self.fp16:
-            model.half()
+        self.set_model(model)
         if self.num_gpu > 1:  # not test
             model = torch.nn.DataParallel(model)
         if model_file is not None and model_file is not '':
-            # warmup_steps over-ride
+            # optimizer attributes override
             load(model, model_file, self.device, optimizer)
-        model.train()
         global_step = optimizer.get_step()
+        model.train()
         dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
 
         for e in range(epoch):
@@ -125,12 +123,9 @@ class Helper(object):
         epoch=1,
         evaluate_score=None,
     ):
-        if self.fp16 and torch.cuda.is_available():
-            model.half()
-        model.to(self.device)
+        self.set_model(model)
         if self.num_gpu > 1:
             model = torch.nn.DataParallel(model)
-
         if model_file is not None:
             load(model, model_file, self.device)
             print('loaded ; ' + str(model_file))
@@ -188,8 +183,8 @@ class Helper(object):
         batch_size=1,
         model_file=None
     ):
+        self.set_model(model)
 
-        model.to(self.device)
         if self.num_gpu > 1:
             model = torch.nn.DataParallel(model)
         if model_file is not None:

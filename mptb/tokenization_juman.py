@@ -58,8 +58,8 @@ class JumanTokenizer(object):
 
     def tokenize(self, text):
         text = self.preprocessor(text) if self.preprocessor is not None else text
-        text = han_to_zen(text)  # Japanese_L-12_H-768_A-12_E-30_BPE use zenkaku.
-        sentences = separate_japanese_doc(text.strip())  # separated 。、？！．，
+        text = han_to_zen(text)  # Japanese_L-12_H-768_A-12_E-30_BPE use normalize Zenkaku.
+        sentences = separate_japanese_doc(text.strip())  # avoid limit input
         tokens = []
         for sentence in sentences:
             if sentence == '':
@@ -143,14 +143,14 @@ class FullTokenizer(object):
 
     def tokenize(self, text):
         split_tokens = []
-        for juman_token in self.tokenizer.tokenize(convert_to_unicode(text)):
+        for juman_token in self.tokenizer.tokenize(text):
             for sub_token in self.basic_tokenizer.tokenize(juman_token, is_juman=True):
                 for sub_sub_token in self.wordpiece_tokenizer.tokenize(sub_token):
                     split_tokens.append(sub_sub_token)
         return split_tokens
 
     def convert_tokens_to_ids(self, tokens):
-        return convert_by_vocab(self.vocab, tokens, unk_info=0)
+        return convert_by_vocab(self.vocab, tokens, unk_info=1)
 
     def convert_ids_to_tokens(self, ids):
         return convert_by_vocab(self.inv_vocab, ids, unk_info='[UNK]')
