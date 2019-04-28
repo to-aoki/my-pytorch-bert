@@ -116,7 +116,8 @@ class BertPretrainier(object):
 
         max_steps = int(len(dataset) / batch_size * epoch)
         warmup_steps = int(max_steps * warmup_proportion)
-        optimizer = get_optimizer(self.model, lr, warmup_steps, max_steps, self.helper.fp16)
+        optimizer = get_optimizer(
+            model=self.model, lr=lr, warmup_steps=warmup_steps, max_steps=max_steps, fp16=self.helper.fp16)
         criterion_lm = CrossEntropyLoss(ignore_index=-1, reduction='none')
         criterion_ns = CrossEntropyLoss(ignore_index=-1)
 
