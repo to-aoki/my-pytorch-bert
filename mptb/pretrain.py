@@ -55,12 +55,11 @@ class BertPretrainier(object):
         print(config)
         self.max_pos = self.dataset.max_pos
         self.model = BertPretrainingTasks(config)
-        self.helper = Helper()
+        self.helper = Helper(fp16)
         if model_path is not None and model_path != '':
             self.model_path = model_path
             self.helper.load_model(self.model, model_path)
             self.model.eval()
-        self.fp16 = fp16
         super().__init__()
 
     def get_dataset(
@@ -117,7 +116,7 @@ class BertPretrainier(object):
 
         max_steps = int(len(dataset) / batch_size * epoch)
         warmup_steps = int(max_steps * warmup_proportion)
-        optimizer = get_optimizer(self.model, lr, warmup_steps, max_steps, self.fp16)
+        optimizer = get_optimizer(self.model, lr, warmup_steps, max_steps, self.helper.fp16)
         criterion_lm = CrossEntropyLoss(ignore_index=-1, reduction='none')
         criterion_ns = CrossEntropyLoss(ignore_index=-1)
 
@@ -130,7 +129,7 @@ class BertPretrainier(object):
             next_sentence_loss = criterion_ns(next_sentence_logits.view(-1, 2), next_sentence_labels.view(-1))
             return masked_lm_loss + next_sentence_loss
 
-        if self.fp16:
+        if self.heler.fp16:
             def adjustment_every_step(model, dataset, loss, global_step, optimizer):
                 from mptb.optimization import update_lr_apex
                 update_lr_apex(optimizer, global_step, lr, warmup_steps, max_steps)

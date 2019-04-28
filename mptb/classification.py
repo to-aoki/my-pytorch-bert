@@ -71,13 +71,12 @@ class BertClassifier(object):
             print('pretain model loaded: ' + pretrain_path)
             self.pretrain = True
 
-        self.helper = Helper()
+        self.helper = Helper(fp16)
         if model_path is not None and model_path != '':
             self.model_path = model_path
             self.helper.load_model(self.model, model_path)
             self.model.eval()
             self.learned = True
-        self.fp16 = fp16
         super().__init__()
 
     def get_dataset(
@@ -150,7 +149,7 @@ class BertClassifier(object):
 
         max_steps = int(len(dataset) / batch_size * epoch)
         warmup_steps = int(max_steps * warmup_proportion)
-        optimizer = get_optimizer(self.model, lr, warmup_steps, max_steps, self.fp16)
+        optimizer = get_optimizer(self.model, lr, warmup_steps, max_steps, self.helper.fp16)
 
         balance_weights = None
         if balance_weight:
@@ -166,7 +165,7 @@ class BertClassifier(object):
             loss = criterion(logits.view(-1, self.model.label_len), label_id.view(-1))
             return loss
 
-        if self.fp16:
+        if self.helper.fp16:
             def adjustment_every_step(model, dataset, loss, global_step, optimizer):
                 from mptb.optimization import update_lr_apex
                 update_lr_apex(optimizer, global_step, lr, warmup_steps, max_steps)
