@@ -129,7 +129,7 @@ class BertPretrainier(object):
             next_sentence_loss = criterion_ns(next_sentence_logits.view(-1, 2), next_sentence_labels.view(-1))
             return masked_lm_loss + next_sentence_loss
 
-        if self.heler.fp16:
+        if self.helper.fp16:
             def adjustment_every_step(model, dataset, loss, global_step, optimizer):
                 from mptb.optimization import update_lr_apex
                 update_lr_apex(optimizer, global_step, lr, warmup_steps, max_steps)

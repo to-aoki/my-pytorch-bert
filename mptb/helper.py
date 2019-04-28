@@ -36,7 +36,7 @@ class Helper(object):
         if torch.cuda.is_available() and self.device is not 'cpu':
             self.num_gpu = torch.cuda.device_count()
 
-        self.fp16 = fp16 and torch.cuda.is_available()
+        self.fp16 = fp16 & torch.cuda.is_available()
 
         print("device: {} num_gpu: {} fp16: {}".format(self.device, self.num_gpu, self.fp16))
 
