@@ -40,6 +40,11 @@ class Helper(object):
 
         print("device: {} num_gpu: {} fp16: {}".format(self.device, self.num_gpu, self.fp16))
 
+    def set_model(self, model):
+        model.to(self.device)
+        if self.fp16:
+            model.half()
+
     def load_model(self, model, model_path, optimizer=None):
         load(model, model_path, self.device, optimizer)
 
@@ -58,10 +63,9 @@ class Helper(object):
         adjustment_every_epoch=None,
         adjustment_every_step=None
     ):
-
+        model.to(self.device)
         if self.fp16:
             model.half()
-        model.to(self.device)
         if self.num_gpu > 1:  # not test
             model = torch.nn.DataParallel(model)
         if model_file is not None and model_file is not '':
