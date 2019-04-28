@@ -108,8 +108,8 @@ class BertAdam(Optimizer):
                 # Instead we want to decay the weights in a manner that doesn't interact
                 # with the m/v parameters. This is equivalent to adding the square
                 # of the weights to the loss with plain (non-momentum) SGD.
-                if group['weight_decay_rate'] > 0.0:
-                    update += group['weight_decay_rate'] * p.data
+                if group['weight_decay'] > 0.0:
+                    update += group['weight_decay'] * p.data
 
                 lr_scheduled = update_lr(state['step'], group['lr'], group['warmup_steps'], group['max_steps'])
 
@@ -157,8 +157,8 @@ def get_optimizer(
 ):
     param_optimizer = list(model.named_parameters())
     optimizer_grouped_parameters = [
-        {'params': [p for n, p in param_optimizer if _do_use_weight_decay(n, no_decay)], 'weight_decay_rate': decoy},
-        {'params': [p for n, p in param_optimizer if not _do_use_weight_decay(n, no_decay)], 'weight_decay_rate': 0.0}
+        {'params': [p for n, p in param_optimizer if _do_use_weight_decay(n, no_decay)], 'weight_decay': decoy},
+        {'params': [p for n, p in param_optimizer if not _do_use_weight_decay(n, no_decay)], 'weight_decay': 0.0}
     ]
     if fp16:
         try:
