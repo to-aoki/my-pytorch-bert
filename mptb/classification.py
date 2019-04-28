@@ -71,7 +71,7 @@ class BertClassifier(object):
             print('pretain model loaded: ' + pretrain_path)
             self.pretrain = True
 
-        self.helper = Helper(fp16)
+        self.helper = Helper(fp16=fp16)
         if model_path is not None and model_path != '':
             self.model_path = model_path
             self.helper.load_model(self.model, model_path)
