@@ -70,7 +70,8 @@ def classification(
             balance_sample=balance_sample,
             under_sampling_cycle=under_sampling_cycle,
             save_dir=save_dir,
-            per_save_epoch=per_save_epoch
+            per_save_epoch=per_save_epoch,
+            fp16=fp16
         )
         if eval_dataset_path is None:
             return
