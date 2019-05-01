@@ -47,6 +47,16 @@ python run_classifier.py \
  --label_num=9
 ```
 
+### Use FP16 (Pascal CUDA)
+```
+git clone https://github.com/NVIDIA/apex.git
+cd apex
+python setup.py install --cuda_ext --cpp_ext
+```
+and '--fp16' option attach.
+
+Tested by Google Colaboratory GPU type only.
+
 ### Selection of Tokenizer to use 
 ```
 python run_classifier.py \
@@ -68,6 +78,27 @@ python run_classifier.py \
 '--tokenizer' becomes effective when '--sp_model_path' option is not attached.
 
 tokenizer : mecab | juman | other-strings (google-bert basic tokenizer)
+
+### use MeCab
+```
+apt-get -q -y install sudo file mecab libmecab-dev mecab-ipadic-utf8 git curl python-mecab 
+git clone --depth 1 https://github.com/neologd/mecab-ipadic-neologd.git 
+echo yes | mecab-ipadic-neologd/bin/install-mecab-ipadic-neologd -n 
+pip install mecab-python3
+```
+
+### use Juman++
+```
+wget https://github.com/ku-nlp/jumanpp/releases/download/v2.0.0-rc2/jumanpp-2.0.0-rc2.tar.xz
+tar xfv jumanpp-2.0.0-rc2.tar.xz  
+cd jumanpp-2.0.0-rc2
+mkdir bld
+cd bld
+cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local # where to install Juman++
+make install -j4 
+pip install pyknp
+pip install mojimoji
+```
 
 ### How to Classifier evaluate
 ```
