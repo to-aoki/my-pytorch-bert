@@ -47,6 +47,50 @@ python run_classifier.py \
  --label_num=9
 ```
 
+### How to Classifier evaluate
+```
+python run_classifier.py \
+ --config_path=config/bert_base.json \
+ --eval_dataset_path=/content/drive/My\ Drive/data/sample_eval.tsv \
+ --model_path=/content/drive/My\ Drive/classifier/classifier.pt \
+ --vocab_path=/content/drive/My\ Drive/data/sample.vocab \
+ --sp_model_path=/content/drive/My\ Drive/data/sample.model \
+ --max_pos=512 \
+ --mode=eval \
+ --label_num=9
+```
+
+### How to train Sentence Piece
+```
+python train-sentencepiece.py --config_path=json-file
+```
+json-file example:
+```
+{
+    "text_dir" : "tests/",
+    "prefix" : "tests/sample_text",
+    "vocab_size" : 100,
+    "ctl_symbols" : "[PAD],[CLS],[SEP],[MASK]"
+}
+```
+
+### How to pre-train
+```
+python run_pretrain.py \
+ --config_path=config/bert_base.json \
+ --dataset_path=/content/drive/My\ Drive/data/sample.txt \
+ --vocab_path=/content/drive/My\ Drive/data/sample.vocab \
+ --sp_model_path=/content/drive/My\ Drive/data/sample.model \
+ --save_dir=pretrain/ \
+ --batch_size=4 \
+ --max_pos=256 \
+ --lr=5e-5 \
+ --warmup_steps=0.1 \
+ --epoch=20 \
+ --per_save_epoch=4 \
+ --mode=train
+```
+
 ### Use FP16 (Pascal CUDA)
 ```
 git clone https://github.com/NVIDIA/apex.git
@@ -98,50 +142,6 @@ cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local # where to
 make install -j4 
 pip install pyknp
 pip install mojimoji
-```
-
-### How to Classifier evaluate
-```
-python run_classifier.py \
- --config_path=config/bert_base.json \
- --eval_dataset_path=/content/drive/My\ Drive/data/sample_eval.tsv \
- --model_path=/content/drive/My\ Drive/classifier/classifier.pt \
- --vocab_path=/content/drive/My\ Drive/data/sample.vocab \
- --sp_model_path=/content/drive/My\ Drive/data/sample.model \
- --max_pos=512 \
- --mode=eval \
- --label_num=9
-```
-
-### How to train Sentence Piece
-```
-python train-sentencepiece.py --config_path=json-file
-```
-json-file example:
-```
-{
-    "text_dir" : "tests/",
-    "prefix" : "tests/sample_text",
-    "vocab_size" : 100,
-    "ctl_symbols" : "[PAD],[CLS],[SEP],[MASK]"
-}
-```
-
-### How to pre-train
-```
-python run_pretrain.py \
- --config_path=config/bert_base.json \
- --dataset_path=/content/drive/My\ Drive/data/sample.txt \
- --vocab_path=/content/drive/My\ Drive/data/sample.vocab \
- --sp_model_path=/content/drive/My\ Drive/data/sample.model \
- --save_dir=pretrain/ \
- --batch_size=4 \
- --max_pos=256 \
- --lr=5e-5 \
- --warmup_steps=0.1 \
- --epoch=20 \
- --per_save_epoch=4 \
- --mode=train
 ```
 
 
