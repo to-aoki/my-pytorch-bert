@@ -13,20 +13,21 @@
 # limitations under the License.
 """Ginza Tokenizer Test."""
 
-from mptb.tokenization_ginza import GinzaTokenizer
+from mptb.tokenization_ginza import GinzaTokenizer, create_vocab
 from mptb.preprocessing import *
 import os
+import sys
 
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='for MeCab Tokenizer vocab file generate.', usage='%(prog)s [options]')
-    parser.add_argument('--file_path', help='Original text file path', required=True,
-                        type=str)
+    parser.add_argument('--file_path', help='Original text file path', nargs='?',
+                        type=str, default=None)
     parser.add_argument('--convert_path', help='Output convert file path.', nargs='?',
                         type=str, default=None)
+    parser.add_argument('--output_path', help='Output convert file path.', nargs='?',
+                        type=str, default=None)
     args = parser.parse_args()
-    args.vocab_path = None
-
     preprocessor = Pipeline([
         ToUnicode(),
         Normalize(),
@@ -34,9 +35,12 @@ if __name__ == '__main__':
         ReplaceNumber(),
         ReplaceURI(),
     ])
+    if args.output_path is not None:
+        create_vocab(args.output_path)
+        sys.exit(0)
 
     tokenizer = GinzaTokenizer(preprocessor=preprocessor)
-    if args.convert_path is not None:
+    if args.file_path is not None and args.convert_path is not None:
         _, ext = os.path.splitext(args.file_path)
         with open(args.file_path, "r", encoding='utf-8') as reader:
             with open(args.convert_path, 'w', encoding='utf-8', newline="\n") as writer:

@@ -19,26 +19,26 @@
 
 import spacy
 from random import randint
+from mojimoji import han_to_zen
 from collections import OrderedDict
 from tqdm import tqdm
-from .preprocessing import *
 
 CONTROL_TOKENS = ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']
+# https://github.com/megagonlabs/ginza/blob/master/ja_ginza/sudachi_tokenizer.py
+UPOS_TOKENS = ['SYM', 'INTJ', 'SPACE', 'ADJ', 'ADP', 'PART', 'SCONJ', 'AUX', 'NOUN',
+               'PRON', 'VERB', 'ADV', 'PUNCT', 'PROPN', 'NUM', 'DET']
 
 
-def convert_to_unicode(text):
-    """Converts `text` to Unicode (if it's not already), assuming utf-8 input."""
-    if six.PY3:
-        if isinstance(text, str):
-            return text
-        elif isinstance(text, bytes):
-            return text.decode("utf-8", "ignore")
-        else:
-            raise ValueError("Unsupported string type: %s" % (type(text)))
-    else:
-        raise ValueError("Not running on Python 3")
-
-# TODO spacy train(vocab create)
+def create_vocab(create_file_path, control_tokens=CONTROL_TOKENS, upos_tokens=UPOS_TOKENS):
+    with open(create_file_path, "w", encoding='utf-8', newline='\n') as f:
+        nlp = spacy.load('ja_ginza_nopn')
+        for _, vector in enumerate(tqdm(list(nlp.vocab.vectors))):
+            f.write(nlp.vocab.strings[vector] + '\n')
+        for control in control_tokens:
+            f.write(control+'\n')
+        for upos in upos_tokens:
+            f.write('[' + upos + ']' + '\n')
+    return len(nlp.vocab.vectors) + len(control_tokens) + len(upos_tokens)
 
 
 class GinzaTokenizer(object):
@@ -46,35 +46,32 @@ class GinzaTokenizer(object):
     def __init__(
         self,
         preprocessor=None,
-        lemmatize=True,
-        stopwords=[],
-        collect_futures=[]
+        lemmatize=False,
+        collect_futures=[],
+        upos_tokens=UPOS_TOKENS
     ):
-        self.ginza = spacy.load('ja_ginza_nopn')
+        self.nlp = spacy.load('ja_ginza_nopn')
         self.collect_futures = collect_futures
         self.preprocessor = preprocessor
         self.lemmatize = lemmatize
-        self.stopwords = stopwords
+        self.upos_tokens = upos_tokens
 
     def tokenize(self, text):
         text = self.preprocessor(text) if self.preprocessor is not None else text
+        text = han_to_zen(text)  # dict use zenkaku
         tokens = []
-        doc = self.ginza(text.rstrip())
-        for sent in doc.sents:
-            for token in sent:
+        doc = self.nlp(text.rstrip())
+        for token in doc:
+            if token.has_vector:
                 word = token.orth_.strip()
-                if word == '':
-                    continue
-                if word in self.stopwords:
-                    continue
                 if self.lemmatize:
                     word = token.lemma_
-                if not self.collect_futures:
-                    tokens.append(word)
+            else:
+                if token.pos_ in self.upos_tokens:
+                    word = '[' + token.pos_ + ']'
                 else:
-                    if token.pos_ in self.collect_futures:
-                        tokens.append(word)
-                # handle dep
+                    word = '[UNK]'
+            tokens.append(word)
         return tokens
 
 
@@ -94,14 +91,13 @@ def token_vocab_build(reader):
     vocab_dict = OrderedDict()
     index = 0
     for _, token in enumerate(tqdm(reader)):
-        word, _ = token.split("\t")
         word = word.strip()
         vocab_dict[word] = index
         index += 1
     return vocab_dict
 
 
-def convert_by_vocab(vocab_dict, items, unk_info):
+def convert_by_vocab(vocab_dict, items, unk_info, nlp=None):
     """Converts a sequence of [tokens|ids] using the vocab."""
     output = []
     for item in items:
@@ -112,16 +108,6 @@ def convert_by_vocab(vocab_dict, items, unk_info):
     return output
 
 
-def convert_tokens_to_ids(vocab, tokens):
-    """Id of <unk> is assumed as 0"""
-    return convert_by_vocab(vocab, tokens, unk_info=1)
-
-
-def convert_ids_to_tokens(inv_vocab, ids):
-    """Token of unknown word is assumed as [UNK]"""
-    return convert_by_vocab(inv_vocab, ids, unk_info='[UNK]')
-
-
 class FullTokenizer(object):
     """Runs end-to-end tokenziation."""
 
@@ -130,25 +116,25 @@ class FullTokenizer(object):
         self.vocab = load_vocab(vocab_file)
         assert (0 < len(self.vocab))
         self.inv_vocab = {}
-        self.control_len = 0
+        self.control_start = 0
         for k, v in self.vocab.items():
-            if v in control_tokens:
-                self.control_len += 1
+            if v == control_tokens[0]:
+                self.control_start = k
             self.inv_vocab[v] = k
 
     def tokenize(self, text):
-        split_tokens = self.tokenizer.tokenize(convert_to_unicode(text))
+        split_tokens = self.tokenizer.tokenize(text)
         return split_tokens
 
     def convert_tokens_to_ids(self, tokens):
-        return convert_by_vocab(self.vocab, tokens, unk_info=0)
+        return convert_by_vocab(self.vocab, tokens, unk_info=100002)
 
     def convert_ids_to_tokens(self, ids):
         return convert_by_vocab(self.inv_vocab, ids, unk_info='[UNK]')
 
     # add for get random word
     def get_random_token_id(self):
-        return randint(self.control_len + 1, len(self.inv_vocab) - 1)
+        return randint(0, self.control_start)
 
     def __len__(self):
         return len(self.vocab)

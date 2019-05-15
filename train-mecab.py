@@ -15,6 +15,7 @@
 
 from mptb.tokenization_mecab import *
 from mptb.preprocessing import *
+import os
 
 if __name__ == '__main__':
     import argparse
