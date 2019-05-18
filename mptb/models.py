@@ -41,19 +41,21 @@ class Config(NamedTuple):
     initializer_range: float = 0.02            # initialize weight range
 
     @classmethod
-    def from_json(cls, file, vocab_size=None, max_position_embeddings=None, type_vocab_size=None):
+    def from_json(cls, file, vocab_size=None, max_position_embeddings=0, type_vocab_size=0, num_hidden_layers=0):
         with open(file, "r", encoding="UTF-8") as reader:
             config = json.load(reader)
             if vocab_size is not None and vocab_size > 0:
                 config['vocab_size'] = vocab_size
-            if max_position_embeddings is not None and max_position_embeddings > 0:
+            if max_position_embeddings > 0:
                 config['max_position_embeddings'] = max_position_embeddings
-            if type_vocab_size is not None and type_vocab_size > 0:
+            if type_vocab_size > 0:
                 config['type_vocab_size'] = type_vocab_size
-            # my model used
-            if 'hidden_act' in config:
-                del config['hidden_act']  # gelu funtion only
-            if 'directionality' in config:
+            if num_hidden_layers > 0:
+                config['type_vocab_size'] = num_hidden_layers
+            # my model not used
+            if 'hidden_act' in config:        # gelu funtion used only
+                del config['hidden_act']
+            if 'directionality' in config:    # ?
                 del config['directionality']
             delete_keys =[]
             for key in config.keys():

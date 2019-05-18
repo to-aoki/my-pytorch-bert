@@ -24,7 +24,7 @@ from torch.utils.data import RandomSampler, WeightedRandomSampler
 from .finetuning import Classifier
 from .class_dataset import ClassDataset
 from .helper import Helper
-from .utils import save, load, get_logger, make_balanced_classes_weights, get_tokenizer
+from .utils import save, load, get_logger, make_balanced_classes_weights, get_tokenizer, load_from_google_bert_model
 
 
 class BertClassifier(object):
@@ -38,10 +38,12 @@ class BertClassifier(object):
         sp_model_path=None,
         model_path=None,
         pretrain_path=None,
+        tf_pretrain_path=None,
         dataset_path=None,
         header_skip=True,
         label_num=-1,
         hidden_size=-1,
+        layser_num=-1,
         tokenizer_name='google',
         under_sampling=False,
         fp16=False
@@ -52,7 +54,7 @@ class BertClassifier(object):
         else:
             self.tokenizer = tokenizer
 
-        config = Config.from_json(config_path, len(self.tokenizer), max_pos)
+        config = Config.from_json(config_path, len(self.tokenizer), max_pos, layser_num)
         self.max_pos = config.max_position_embeddings
         print(config)
         if dataset_path is not None:
@@ -69,6 +71,10 @@ class BertClassifier(object):
         if model_path is None and pretrain_path is not None:
             load(self.model.bert, pretrain_path)
             print('pretain model loaded: ' + pretrain_path)
+            self.pretrain = True
+        if not hasattr(self, 'pretrain') and tf_pretrain_path is not None:
+            load_from_google_bert_model(self.model.bert, tf_pretrain_path)
+            print('pretain model loaded: ' + tf_pretrain_path)
             self.pretrain = True
 
         self.helper = Helper(fp16=fp16)
@@ -117,7 +123,7 @@ class BertClassifier(object):
         sampler=None,
         traing_model_path=None,
         pretrain_path=None,
-        model_path=None,
+        tf_pretrain_path=None,
         batch_size=4,
         epoch=10,
         lr=5e-5,
@@ -136,18 +142,24 @@ class BertClassifier(object):
             else:
                 raise ValueError('require dataset')
 
+        is_model_laoded = False
         if traing_model_path is None and hasattr(self, 'model_path'):
-            model_path = self.model_path
+            traing_model_path = self.model_path
+            is_model_laoded = True
 
-        if not hasattr(dataset,'sampling_index'):
+        if not hasattr(dataset, 'sampling_index'):
             under_sampling_cycle = False
 
-        if model_path is None and pretrain_path is not None:
-            load(self.model.bert, pretrain_path)
-            self.pretrain = True
+        if not is_model_laoded:
+            if pretrain_path is not None:
+                load(self.model.bert, pretrain_path)
+                self.pretrain = True
+            elif tf_pretrain_path is not None:
+                load_from_google_bert_model(self.model.bert, tf_pretrain_path)
+                self.pretrain = True
 
-        if not hasattr(self, 'pretrain') and not hasattr(self, 'learned'):
-            raise ValueError('require pretrain model')
+        if not is_model_laoded and not hasattr(self, 'pretrain') and not hasattr(self, 'learned'):
+            raise ValueError('require model')
 
         max_steps = int(len(dataset) / batch_size * epoch)
         warmup_steps = int(max_steps * warmup_proportion)

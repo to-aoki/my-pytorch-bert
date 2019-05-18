@@ -22,6 +22,7 @@ def classification(
     train_dataset_path='tests/sample_text_class.txt',
     eval_dataset_path='tests/sample_text_class.txt',
     pretrain_path='pretrain/bert.pt',
+    tf_pretrain_path=None,
     model_path=None,
     vocab_path='tests/sample_text.vocab',
     sp_model_path='tests/sample_text.model',
@@ -53,6 +54,7 @@ def classification(
             vocab_path=vocab_path,
             sp_model_path=sp_model_path,
             pretrain_path=pretrain_path,
+            tf_pretrain_path=tf_pretrain_path,
             dataset_path=train_dataset_path,
             header_skip=not read_head,
             label_num=label_num,
@@ -86,7 +88,6 @@ def classification(
             max_pos=max_pos,
             vocab_path=vocab_path,
             sp_model_path=sp_model_path,
-            pretrain_path=pretrain_path,
             model_path=model_path,
             dataset_path=eval_dataset_path,
             header_skip=not read_head,
@@ -104,11 +105,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='BERT classification.', usage='%(prog)s [options]')
     parser.add_argument('--config_path', help='JSON file path for defines networks.', nargs='?',
                         type=str, default='config/bert_base.json')
-    parser.add_argument('--train_dataset_path', help='Training Dataset file (TSV file) path for classification.', nargs='?',
-                        type=str,  default=None)
-    parser.add_argument('--eval_dataset_path', help='Evaluate Dataset file (TSV file) path for classification.', nargs='?',
-                        type=str,  default=None)
+    parser.add_argument('--train_dataset_path', help='Training Dataset file (TSV file) path for classification.',
+                        nargs='?', type=str,  default=None)
+    parser.add_argument('--eval_dataset_path', help='Evaluate Dataset file (TSV file) path for classification.',
+                        nargs='?', type=str,  default=None)
     parser.add_argument('--pretrain_path', help='Pre-training PyTorch model path.', nargs='?',
+                        type=str, default=None)
+    parser.add_argument('--tf_pretrain_path', help='Pre-training TensorFlow(Google) model path.', nargs='?',
                         type=str, default=None)
     parser.add_argument('--model_path', help='Classifier PyTorch model path.', nargs='?',
                         type=str, default=None)
@@ -154,8 +157,30 @@ if __name__ == '__main__':
     parser.add_argument('--fp16', action='store_true',
                         help='Use nVidia fp16(require apex module)')
     args = parser.parse_args()
-    classification(args.config_path, args.train_dataset_path, args.eval_dataset_path, args.pretrain_path, args.model_path, args.vocab_path,
-                   args.sp_model_path, args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr,
-                   args.warmup_steps, args.epoch, args.per_save_epoch, args.mode, args.label_num,
-                   args.balance_weight, args.balance_sample, args.under_sampling, args.under_sampling_cycle,
-                   args.tokenizer, args.read_head, args.fp16)
+    classification(
+        config_path=args.config_path,
+        train_dataset_path=args.train_dataset_path,
+        eval_dataset_path=args.eval_dataset_path,
+        pretrain_path= args.pretrain_path,
+        tf_pretrain_path=args.tf_pretrain_path,
+        model_path=args.model_path,
+        vocab_path=args.vocab_path,
+        sp_model_path=args.sp_model_path,
+        save_dir=args.save_dir,
+        log_dir=args.log_dir,
+        batch_size=args.batch_size,
+        max_pos=args.max_pos,
+        lr=args.lr,
+        warmup_proportion=args.warmup_steps,
+        epoch=args.epoch,
+        per_save_epoch=args.per_save_epoch,
+        mode=args.mode,
+        label_num=args.label_num,
+        balance_weight=args.balance_weight,
+        balance_sample=args.balance_sample,
+        under_sampling=args.under_sampling,
+        under_sampling_cycle=args.under_sampling_cycle,
+        tokenizer_name=args.tokenizer,
+        read_head=args.read_head,
+        fp16=args.fp16
+    )
