@@ -51,7 +51,7 @@ class Config(NamedTuple):
             if type_vocab_size > 0:
                 config['type_vocab_size'] = type_vocab_size
             if num_hidden_layers > 0:
-                config['type_vocab_size'] = num_hidden_layers
+                config['num_hidden_layers'] = num_hidden_layers
             # my model not used
             if 'hidden_act' in config:        # gelu funtion used only
                 del config['hidden_act']
