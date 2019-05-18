@@ -23,11 +23,13 @@ def extract_model(
     config_path='config/bert_base.json',
     model_path="pretrain/pretran_on_the_way.pt",
     output_path="pretrain/bert_only_model.pt",
+    only_bert=False
 ):
     config = Config.from_json(config_path)
     model = BertPretrainingTasks(config)
     load(model, model_path, get_device())
-    model = model.bert
+    if only_bert:
+        model = model.bert
     save(model, output_path)
 
 
@@ -38,7 +40,9 @@ if __name__ == '__main__':
                         type=str, default='config/bert_base.json')
     parser.add_argument('--model_path', help='my-pytorch-bert model path (include optimizer).', required=True,
                         type=str)
+    parser.add_argument('--only_bert', action='store_true',
+                        help='Use bert only output.')
     parser.add_argument('--output_path', help='Output model path.', required=True,
                         type=str)
     args = parser.parse_args()
-    extract_model(args.config_path, args.model_path, args.output_path)
+    extract_model(args.config_path, args.model_path, args.output_path, args.only_bert)
