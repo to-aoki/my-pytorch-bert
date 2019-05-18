@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Bert classifierBertClassifier."""
+"""BertClassifier."""
 
 
 from mptb import BertClassifier
@@ -155,7 +155,7 @@ if __name__ == '__main__':
     parser.add_argument('--read_head', action='store_true',
                         help='Use not include header TSV file')
     parser.add_argument('--fp16', action='store_true',
-                        help='Use nVidia fp16(require apex module)')
+                        help='Use nVidia fp16 (require apex module)')
     args = parser.parse_args()
     classification(
         config_path=args.config_path,
