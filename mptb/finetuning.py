@@ -23,18 +23,18 @@ from . models import BertModel
 class Classifier(nn.Module):
     """Bert fine-tuning classifier"""
 
-    def __init__(self, config, label_num, hidden_size=-1):
+    def __init__(self, config, label_num):
         super().__init__()
 
         self.bert = BertModel(config)
-        hidden_size = config.hidden_size if hidden_size < 1 else hidden_size
-        self.classifier = nn.Linear(hidden_size, label_num)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        self.classifier = nn.Linear(config.hidden_size, label_num)
         self.classifier.weight.data = torch.fmod(
             torch.randn(self.classifier.weight.size()), config.initializer_range)
         self.classifier.bias = nn.Parameter(torch.zeros(label_num))
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.label_len = label_num
 
     def forward(self, input_ids, segment_ids, input_mask):
         _, pooled_output = self.bert(input_ids, segment_ids, input_mask)
         return self.classifier(self.dropout(pooled_output))
+
