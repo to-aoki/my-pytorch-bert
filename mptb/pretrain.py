@@ -93,11 +93,11 @@ class BertPretrainier(object):
         sampler=None,
         traing_model_path=None,
         batch_size=4,
-        epoch=20,
+        epochs=20,
         lr=5e-5,
         warmup_proportion=0.1,
         save_dir='../pretrain/',
-        per_save_epoch=1,
+        per_save_epochs=1,
         is_save_after_training=True
     ):
 
@@ -115,7 +115,7 @@ class BertPretrainier(object):
         if sampler is None:
             sampler = RandomSampler(dataset)
 
-        max_steps = int(len(dataset) / batch_size * epoch)
+        max_steps = int(len(dataset) / batch_size * epochs)
         warmup_steps = int(max_steps * warmup_proportion)
         optimizer = get_optimizer(
             model=self.model, lr=lr, warmup_steps=warmup_steps, max_steps=max_steps, fp16=self.helper.fp16)
@@ -146,10 +146,10 @@ class BertPretrainier(object):
             sampler=sampler,
             optimizer=optimizer,
             batch_size=batch_size,
-            epoch=epoch,
+            epochs=epochs,
             model_file=traing_model_path,
             save_dir=save_dir,
-            per_save_epoc=per_save_epoch,
+            per_save_epochs=per_save_epochs,
             adjustment_every_epoch=None,
             adjustment_every_step=adjustment_every_step
         )

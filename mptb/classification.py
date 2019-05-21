@@ -15,12 +15,12 @@
 
 import os
 from collections import namedtuple
-from . models import Config
-from . optimization import get_optimizer
 import torch
 from torch.nn import CrossEntropyLoss
 from torch.utils.data import RandomSampler, WeightedRandomSampler
 
+from .models import Config
+from .optimization import get_optimizer
 from .finetuning import Classifier
 from .class_dataset import ClassDataset
 from .helper import Helper
@@ -124,14 +124,14 @@ class BertClassifier(object):
         pretrain_path=None,
         tf_pretrain_path=None,
         batch_size=4,
-        epoch=10,
+        epochs=10,
         lr=5e-5,
         warmup_proportion=0.1,
         balance_weight=False,
         balance_sample=False,
         under_sampling_cycle=False,
         save_dir='../classifier/',
-        per_save_epoch=1,
+        per_save_epochs=1,
         is_save_after_training=True
     ):
 
@@ -160,7 +160,7 @@ class BertClassifier(object):
         if not is_model_laoded and not hasattr(self, 'pretrain') and not hasattr(self, 'learned'):
             raise ValueError('require model')
 
-        max_steps = int(len(dataset) / batch_size * epoch)
+        max_steps = int(len(dataset) / batch_size * epochs)
         warmup_steps = int(max_steps * warmup_proportion)
         optimizer = get_optimizer(
             model=self.model, lr=lr, warmup_steps=warmup_steps, max_steps=max_steps, fp16=self.helper.fp16)
@@ -173,7 +173,7 @@ class BertClassifier(object):
 
         criterion = CrossEntropyLoss(weight=balance_weights)
 
-        def process(batch, model, iter_bar, epoch, step):
+        def process(batch, model, iter_bar, epochs, step):
             input_ids, segment_ids, input_mask, label_id = batch
             logits = model(input_ids, segment_ids, input_mask)
             loss = criterion(logits.view(-1, self.model.label_len), label_id.view(-1))
@@ -207,10 +207,10 @@ class BertClassifier(object):
             sampler=sampler,
             optimizer=optimizer,
             batch_size=batch_size,
-            epoch=epoch,
+            epochs=epochs,
             model_file=traing_model_path,
             save_dir=save_dir,
-            per_save_epoc=per_save_epoch,
+            per_save_epochs=per_save_epochs,
             adjustment_every_epoch=adjustment_every_epoch,
             adjustment_every_step=adjustment_every_step
         )
@@ -227,7 +227,7 @@ class BertClassifier(object):
         sampler=None,
         model_path=None,
         batch_size=2,
-        epoch=1,
+        epochs=1,
         is_reports_output=True,
         log_dir=None
     ):
@@ -273,7 +273,7 @@ class BertClassifier(object):
         if not is_reports_output:
             return self.helper.evaluate(
                 process, self.model, dataset, sampler, batch_size, model_path,
-                    compute_epoch_score=compute_epoch_score, epoch=epoch)
+                    compute_epoch_score=compute_epoch_score, epochs=epochs)
 
         def example_reports(examples):
             if examples is None or len(examples) is 0:
@@ -305,7 +305,7 @@ class BertClassifier(object):
 
         return self.helper.evaluate(
             process, self.model, dataset, sampler, batch_size, model_path, example_reports,
-            compute_epoch_score=compute_epoch_score, epoch=epoch)
+            compute_epoch_score=compute_epoch_score, epochs=epochs)
 
     def predict(
         self,

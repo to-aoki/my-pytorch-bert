@@ -56,10 +56,10 @@ class Helper(object):
         sampler,
         optimizer,
         batch_size=1,
-        epoch=20,
+        epochs=20,
         model_file=None,
         save_dir='train/',
-        per_save_epoc=-1,
+        per_save_epochs=-1,
         adjustment_every_epoch=None,
         adjustment_every_step=None
     ):
@@ -73,7 +73,7 @@ class Helper(object):
         model.train()
         dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
 
-        for e in range(epoch):
+        for e in range(epochs):
             total_loss = 0.0
             total_steps = 0
             iter_bar = tqdm(
@@ -100,7 +100,7 @@ class Helper(object):
                 optimizer.zero_grad()
                 global_step += 1
 
-            if per_save_epoc > 0 and (e + 1) % per_save_epoc is 0:
+            if per_save_epochs > 0 and (e + 1) % per_save_epochs is 0:
                 output_model_file = os.path.join(save_dir, "train_model_" + str(e) + "_" + str(global_step) + ".pt")
                 save(model, output_model_file, optimizer)
 
@@ -120,7 +120,7 @@ class Helper(object):
         examples_reports=None,
         compute_epoch_score=None,
         adjustment_every_epoch=None,
-        epoch=1,
+        epochs=1,
         evaluate_score=None,
     ):
         self.set_model(model)
@@ -133,7 +133,7 @@ class Helper(object):
         model.eval()
         dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
         scores = []
-        for e in range(epoch):
+        for e in range(epochs):
             global_step = 0
             total_loss = 0.0
             total_steps = 0

@@ -28,8 +28,8 @@ def bert_pretraining(
     max_pos=128,
     lr=5e-5,
     warmup_proportion=0.1,  # warmup_steps = len(dataset) / batch_size * epoch * warmup_proportion
-    epoch=5,
-    per_save_epoch=1,
+    epochs=5,
+    per_save_epochs=1,
     mode='train',
     tokenizer_name='google',
     fp16=False
@@ -47,10 +47,10 @@ def bert_pretraining(
 
     if mode == 'train':
         estimator.train(
-            traing_model_path=model_path, batch_size=batch_size, epoch=epoch, per_save_epoch=per_save_epoch,
+            traing_model_path=model_path, batch_size=batch_size, epochs=epochs, per_save_epochs=per_save_epochs,
             lr=lr, warmup_proportion=warmup_proportion, save_dir=save_dir
         )
-        score = estimator.evaluate(batch_size=batch_size, log_dir=log_dir)
+        score = estimator.evaluate(batch_size=batch_size, log_dir=log_dir ,is_reports_output=True)
         print(score)
     else:
         score = estimator.evaluate(model_path=model_path, batch_size=batch_size, log_dir=log_dir)
@@ -82,11 +82,11 @@ if __name__ == '__main__':
                         type=float, default = 5e-5)
     parser.add_argument('--warmup_steps', help='Warm-up steps proportion.', nargs='?',
                         type=float, default=0.1)
-    parser.add_argument('--epoch', help='Epoch', nargs='?',
+    parser.add_argument('--epochs', help='Epochs', nargs='?',
                         type=int, default=20)
-    parser.add_argument('--per_save_epoch', help=
+    parser.add_argument('--per_save_epochs', help=
                         'Saving training model timing is the number divided by the epoch number', nargs='?',
-                        type=int, default=1)
+                        type=int, default=-1)
     parser.add_argument('--mode', help='train or eval', nargs='?',
                         type=str, default="train")
     parser.add_argument('--tokenizer', nargs='?', type=str, default='google',
@@ -98,5 +98,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     bert_pretraining(args.config_path, args.dataset_path, args.model_path, args.vocab_path, args.sp_model_path,
                      args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr, args.warmup_steps,
-                     args.epoch, args.per_save_epoch, args.mode, args.tokenizer, args.fp16)
+                     args.epochs, args.per_save_epochs, args.mode, args.tokenizer, args.fp16)
 

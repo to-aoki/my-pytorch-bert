@@ -32,8 +32,8 @@ def classification(
     max_pos=128,
     lr=5e-5,
     warmup_proportion=0.1,  # warmup_steps = len(dataset) / batch_size * epoch * warmup_proportion
-    epoch=5,
-    per_save_epoch=1,
+    epochs=5,
+    per_save_epochs=1,
     mode='train',
     label_num=-1,
     balance_weight=False,
@@ -66,13 +66,13 @@ def classification(
         estimator.train(
             traing_model_path=model_path,
             batch_size=batch_size,
-            epoch=epoch,
+            epochs=epochs,
             lr=lr, warmup_proportion=warmup_proportion,
             balance_weight=balance_weight,
             balance_sample=balance_sample,
             under_sampling_cycle=under_sampling_cycle,
             save_dir=save_dir,
-            per_save_epoch=per_save_epoch
+            per_save_epochs=per_save_epochs
         )
         if eval_dataset_path is None:
             return
@@ -131,9 +131,9 @@ if __name__ == '__main__':
                         type=float, default=2e-5)
     parser.add_argument('--warmup_steps', help='Warm-up steps proportion.', nargs='?',
                         type=float, default=0.1)
-    parser.add_argument('--epoch', help='Epoch', nargs='?',
+    parser.add_argument('--epochs', help='Epochs', nargs='?',
                         type=int, default=10)
-    parser.add_argument('--per_save_epoch', help=
+    parser.add_argument('--per_save_epochs', help=
                         'Saving training model timing is the number divided by the epoch number', nargs='?',
                         type=int, default=1)
     parser.add_argument('--mode', help='train or eval', nargs='?',
@@ -172,8 +172,8 @@ if __name__ == '__main__':
         max_pos=args.max_pos,
         lr=args.lr,
         warmup_proportion=args.warmup_steps,
-        epoch=args.epoch,
-        per_save_epoch=args.per_save_epoch,
+        epochs=args.epochs,
+        per_save_epochs=args.per_save_epochs,
         mode=args.mode,
         label_num=args.label_num,
         balance_weight=args.balance_weight,
