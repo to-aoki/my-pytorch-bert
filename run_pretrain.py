@@ -32,7 +32,8 @@ def bert_pretraining(
     per_save_epochs=1,
     mode='train',
     tokenizer_name='google',
-    fp16=False
+    fp16=False,
+    on_disk=False,
 ):
 
     estimator = BertPretrainier(
@@ -41,8 +42,9 @@ def bert_pretraining(
         vocab_path=vocab_path,
         sp_model_path=sp_model_path,
         dataset_path=dataset_path,
+        on_memory=not on_disk,
         tokenizer_name=tokenizer_name,
-        fp16=fp16
+        fp16=fp16,
     )
 
     if mode == 'train':
@@ -77,9 +79,9 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size',  help='Batch size', nargs='?',
                         type=int, default=4)
     parser.add_argument('--max_pos', help='The maximum sequence length for BERT (slow as big).', nargs='?',
-                        type=int, default=128)
+                        type=int, default=512)
     parser.add_argument('--lr', help='Learning rate', nargs='?',
-                        type=float, default = 5e-5)
+                        type=float, default=5e-5)
     parser.add_argument('--warmup_steps', help='Warm-up steps proportion.', nargs='?',
                         type=float, default=0.1)
     parser.add_argument('--epochs', help='Epochs', nargs='?',
@@ -95,8 +97,10 @@ if __name__ == '__main__':
                         )
     parser.add_argument('--fp16', action='store_true',
                         help='Use nVidia fp16(require apex module)')
+    parser.add_argument('--on_disk', action='store_true',
+                        help='Read dataset file every time')
     args = parser.parse_args()
     bert_pretraining(args.config_path, args.dataset_path, args.model_path, args.vocab_path, args.sp_model_path,
                      args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr, args.warmup_steps,
-                     args.epochs, args.per_save_epochs, args.mode, args.tokenizer, args.fp16)
+                     args.epochs, args.per_save_epochs, args.mode, args.tokenizer, args.fp16, --args.on_disk)
 

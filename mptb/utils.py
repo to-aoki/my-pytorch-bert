@@ -76,7 +76,7 @@ def load_from_google_bert_model(model, f):
     copy_tf_tensor(f, s+"dense/bias",   d.bias)
 
 
-def separate_japanese_doc(text, separater='^。、？！。，'):
+def separate_japanese_doc(text, separater='。、？！．，'):
     return re.findall(r'[^'+separater+']+(?:['+separater+']|$)', text)
 
 
@@ -147,6 +147,7 @@ def get_tokenizer(
             return FullTokenizer(vocab_path, preprocessor=preprocessor)
         elif name == 'juman':
             from .tokenization_juman import FullTokenizer
+            preprocessor.append(ToZenkaku())
             return FullTokenizer(vocab_path, preprocessor=preprocessor)
         # google bert tokenizer use
         else:

@@ -36,14 +36,14 @@ class Config(NamedTuple):
 
 
 def _get_text_file(text_dir):
-    file_list = glob.glob(f'{text_dir}/*.txt')
+    file_list = glob.glob(f'{text_dir}/*')
     files = ",".join(file_list)
     return files
 
 
 def train(text_dir, prefix, vocab_size, ctl_symbols):
     files = _get_text_file(text_dir)
-    command = f'--input={files} --model_prefix={prefix} --vocab_size={vocab_size} --control_symbols={ctl_symbols}'
+    command = f'--input={files} --model_prefix={prefix} --vocab_size={vocab_size} --control_symbols={ctl_symbols} --add_dummy_prefix=False --treat_whitespace_as_suffix=True'
     sp.SentencePieceTrainer.Train(command)
 
 

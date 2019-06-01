@@ -25,6 +25,9 @@ class Pipeline(object):
             text = p(text)
         return text
 
+    def append(self, preprocessor):
+        self.preprocessors.append(preprocessor)
+
     def __str__(self):
         format_string = self.__class__.__name__ + '['
         for p in self.preprocessors:
@@ -37,6 +40,33 @@ class Pipeline(object):
         for p in self.preprocessors:
             if str(p) == key:
                 self.preprocessors.remove(p)
+
+
+try:
+    from mojimoji import han_to_zen
+
+
+    class ToZenkaku(object):
+        def __call__(self, text):
+            return han_to_zen(text)
+
+        def __str__(self):
+            return self.__class__.__name__
+
+except ImportError:
+    # only alphabet and number
+    UPPER = dict((0x0041 + ch, 0xFF21 + ch) for ch in range(26))
+    LOWER = dict((0x0061 + ch, 0xFF41 + ch) for ch in range(26))
+    NUMBER = dict((0x0030 + ch, 0xFF10 + ch) for ch in range(10))
+    half_to_full = {**UPPER, **LOWER, **NUMBER}
+
+
+    class ToZenkaku(object):
+        def __call__(self, text):
+            return text.translate(half_to_full)
+
+        def __str__(self):
+            return self.__class__.__name__
 
 
 class ToUnicode(object):

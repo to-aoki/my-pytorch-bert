@@ -18,7 +18,6 @@
 # limitations under the License.
 
 from pyknp import Juman
-from mojimoji import han_to_zen
 from random import randint
 from collections import OrderedDict
 from tqdm import tqdm
@@ -56,9 +55,8 @@ class JumanTokenizer(object):
         self.preprocessor = preprocessor
         self.stopwords = stopwords
 
-    def tokenize(self, text):
+    def tokenize(self, text, input_max_bytes=4096):
         text = self.preprocessor(text) if self.preprocessor is not None else text
-        text = han_to_zen(text)  # Japanese_L-12_H-768_A-12_E-30_BPE use normalize Zenkaku.
         sentences = separate_japanese_doc(text.strip())  # avoid limit input
         tokens = []
         for sentence in sentences:
@@ -68,7 +66,7 @@ class JumanTokenizer(object):
             is_tokenize_continue = True
             while is_tokenize_continue:
                 sub_text = loop_sentence
-                while len(sub_text.encode()) > 4096:  # juman tokenizer max text input
+                while len(sub_text.encode()) > input_max_bytes:
                     sub_text = sub_text[:-1]
                 for mrph in self.jumanpp.analysis(sub_text):
                     token = mrph.midasi.strip()
