@@ -80,7 +80,6 @@ class Helper(object):
                 dataloader, desc="E-{:0=2} : XX.XXXX avg loss ".format(e), position=0)
             for step, batch in enumerate(iter_bar):
                 batch = tuple(t.to(self.device) for t in batch)
-
                 loss = process(batch, model, iter_bar, e, step)
 
                 if self.num_gpu > 1:
@@ -101,7 +100,7 @@ class Helper(object):
                 global_step += 1
 
             if per_save_epochs > 0 and (e + 1) % per_save_epochs is 0:
-                output_model_file = os.path.join(save_dir, "train_model_" + str(e) + "_" + str(global_step) + ".pt")
+                output_model_file = os.path.join(save_dir, "train_model.pt")
                 save(model, output_model_file, optimizer)
 
             if adjustment_every_epoch is not None:

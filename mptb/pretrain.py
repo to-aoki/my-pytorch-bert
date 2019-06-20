@@ -22,7 +22,7 @@ from torch.utils.data import RandomSampler
 from .models import Config
 from .pretrain_tasks import BertPretrainingTasks
 from .optimization import get_optimizer
-from .pretrain_dataset import PretrainDataset
+from .pretrain_dataset import PretrainDataset, PretensorPretrainDataset
 from .helper import Helper
 from .utils import save, get_logger, get_tokenizer
 
@@ -38,22 +38,27 @@ class BertPretrainier(object):
         sp_model_path=None,
         model_path=None,
         dataset_path=None,
+        pretensor_data_path=None,
         on_memory=True,
         tokenizer_name='google',
         fp16=False
     ):
-        if tokenizer is None:
+
+        if tokenizer is None and vocab_path is not None:
             self.tokenizer = get_tokenizer(
                 vocab_path=vocab_path, sp_model_path=sp_model_path, name=tokenizer_name)
         else:
             self.tokenizer = tokenizer
 
-        if dataset_path is not None:
+        if pretensor_data_path is not None:
+            self.dataset = PretensorPretrainDataset(pretensor_data_path)
+        elif dataset_path is not None:
             self.dataset = self.get_dataset(dataset_path, self.tokenizer, max_pos=max_pos, on_memory=on_memory)
+            max_pos = self.dataset.max_pos
 
-        config = Config.from_json(config_path, len(self.tokenizer), self.dataset.max_pos)
+        config = Config.from_json(config_path, len(self.tokenizer), max_pos)
         print(config)
-        self.max_pos = self.dataset.max_pos
+        self.max_pos = max_pos
         self.model = BertPretrainingTasks(config)
         self.helper = Helper(fp16=fp16)
         self.helper.set_model(self.model)

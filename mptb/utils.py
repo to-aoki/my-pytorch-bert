@@ -138,8 +138,13 @@ def get_tokenizer(
         preprocessor = default_preprocessor()
 
     if sp_model_path is not None and vocab_path is not None:
-        from .tokenization_sentencepiece import FullTokenizer
-        return FullTokenizer(sp_model_path, vocab_path, preprocessor=preprocessor)
+        if name == 'sp_pos':
+            # sentencepiece + UD POS (ginza)
+            from .tokenization_sp_pos import FullTokenizer
+            return FullTokenizer(sp_model_path, vocab_path, preprocessor=preprocessor)
+        else:
+            from .tokenization_sentencepiece import FullTokenizer
+            return FullTokenizer(sp_model_path, vocab_path, preprocessor=preprocessor)
     elif vocab_path is not None:
         name = name.lower()
         if name == 'mecab':
@@ -149,8 +154,8 @@ def get_tokenizer(
             from .tokenization_juman import FullTokenizer
             preprocessor.append(ToZenkaku())
             return FullTokenizer(vocab_path, preprocessor=preprocessor)
-        # google bert tokenizer use
         else:
+            # google bert tokenizer use
             from .tokenization import FullTokenizer
             return FullTokenizer(vocab_path, preprocessor=preprocessor)
 

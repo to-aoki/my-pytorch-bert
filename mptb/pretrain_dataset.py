@@ -25,10 +25,13 @@ from random import random
 from random import randint, shuffle, randrange
 
 import torch
+from torch.utils.data import RandomSampler
 from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
 from tqdm import tqdm
-from .utils import truncate_seq_pair
+from .utils import truncate_seq_pair, get_tokenizer
 import copy
+import pickle
 
 
 class PretrainDataset(Dataset):
@@ -248,7 +251,7 @@ class PretrainDataset(Dataset):
         target_max_pos = max_pos - 3 if tokens_b else max_pos - 2
 
         tokens_a_ids = copy.copy(tokens_a)
-        tokens_b_ids =copy.copy(tokens_b)
+        tokens_b_ids = copy.copy(tokens_b)
         # However, sequences to minimize the mismatch between pre-training and fine-tuning.
         if random() < short_seq_prob:
             target_max_pos = randint(2, target_max_pos)
@@ -297,3 +300,56 @@ class PretrainDataset(Dataset):
         name, _ = os.path.splitext(os.path.basename(self.dataset_path))
         return name
 
+
+class PretrainDataGeneration(object):
+
+    def __init__(
+        self,
+        dataset_path=None,
+        output_path=None,
+        vocab_path='tests/sample_text.vocab',
+        sp_model_path='tests/sample_text.model',
+        max_pos=512,
+        epochs=1,
+        tokenizer_name='google',
+    ):
+        tokenizer = get_tokenizer(
+            vocab_path=vocab_path, sp_model_path=sp_model_path, name=tokenizer_name)
+
+        if max_pos < 5:
+            import statistics
+            with open(dataset_path, 'r', newline="\n", encoding="utf-8") as data:
+                tokens = list(map(self.tokenizer.tokenize, data.readlines()))
+                median_pos = round(statistics.median(list(map(lambda x: len(x), tokens))))
+            max_pos = median_pos * 2 + 3  # [CLS]a[SEP]b[SEP]
+            print("max_pos (median):", max_pos)
+
+        self.dataset = PretrainDataset(
+            tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path, on_memory=True
+        )
+        self.output_path = output_path
+        self.epochs = epochs
+
+    def generate(self):
+        sampler = RandomSampler(self.dataset)
+        gen_dataloader = DataLoader(self.dataset, sampler=sampler, batch_size=1)
+        for e in range(self.epochs):
+            iter_bar = tqdm(
+                gen_dataloader, "generate pretrain input file")
+            with open(self.output_path + '_' + str(e) + '.pickle', 'ab+') as f:
+                for step, batch in enumerate(iter_bar):
+                    pickle.dump(batch, f)
+
+
+class PretensorPretrainDataset(Dataset):
+
+    def __init__(self, dataset_path=None, length=2642016):
+        self.file = open(dataset_path, "rb")
+        self.length = length
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, item):
+        object = pickle.load(self.file)
+        return object[0][0], object[1][0], object[2][0], object[3][0], object[4][0]
