@@ -18,12 +18,13 @@ from mptb import PretrainDataGeneration
 
 if __name__ == '__main__':
     generator = PretrainDataGeneration(
-        dataset_path='tests/sample_text.txt',
+        dataset_path='data/jawiki_norm.txt',
+#        dataset_path='tests/sample_text.txt',
         output_path='tests/sample_text',
         vocab_path='data/32023.vocab',
         sp_model_path='data/32023.model',
         max_pos=512,
-        epochs=10,
+        epochs=1,
         tokenizer_name='sp_pos'
     )
     generator.generate()

@@ -168,7 +168,10 @@ class PretrainDataset(Dataset):
         if self.on_memory:
             sample = self.sample_to_doc[item]
             t1 = self.all_documents[sample["doc_id"]][sample["line"]]
+            print(t1)
             t2 = self.all_documents[sample["doc_id"]][sample["line"]+1]
+            print(t2)
+
             # used later to avoid random nextSentence from same doc
             self.current_doc = sample["doc_id"]
             return t1, t2
@@ -339,11 +342,14 @@ class PretrainDataGeneration(object):
             with open(self.output_path + '_' + str(e) + '.pickle', 'ab+') as f:
                 for step, batch in enumerate(iter_bar):
                     pickle.dump(batch, f)
+                print('pickle length: ' + str(step+1))
 
 
-class PretensorPretrainDataset(Dataset):
+class PreTensorPretrainDataset(Dataset):
 
-    def __init__(self, dataset_path=None, length=2642016):
+    def __init__(self, dataset_path=None, length=-1):
+        if length < 0:
+            raise ValueError('length must be positive.')
         self.file = open(dataset_path, "rb")
         self.length = length
 

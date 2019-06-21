@@ -22,7 +22,7 @@ from torch.utils.data import RandomSampler
 from .models import Config
 from .pretrain_tasks import BertPretrainingTasks
 from .optimization import get_optimizer
-from .pretrain_dataset import PretrainDataset, PretensorPretrainDataset
+from .pretrain_dataset import PretrainDataset, PreTensorPretrainDataset
 from .helper import Helper
 from .utils import save, get_logger, get_tokenizer
 
@@ -39,6 +39,7 @@ class BertPretrainier(object):
         model_path=None,
         dataset_path=None,
         pretensor_data_path=None,
+        pretensor_data_length=-1,
         on_memory=True,
         tokenizer_name='google',
         fp16=False
@@ -51,7 +52,7 @@ class BertPretrainier(object):
             self.tokenizer = tokenizer
 
         if pretensor_data_path is not None:
-            self.dataset = PretensorPretrainDataset(pretensor_data_path)
+            self.dataset = PreTensorPretrainDataset(pretensor_data_path, pretensor_data_length)
         elif dataset_path is not None:
             self.dataset = self.get_dataset(dataset_path, self.tokenizer, max_pos=max_pos, on_memory=on_memory)
             max_pos = self.dataset.max_pos
@@ -62,10 +63,7 @@ class BertPretrainier(object):
         self.model = BertPretrainingTasks(config)
         self.helper = Helper(fp16=fp16)
         self.helper.set_model(self.model)
-        if model_path is not None and model_path != '':
-            self.model_path = model_path
-            self.helper.load_model(self.model, model_path)
-            self.model.eval()
+        self.model_path = model_path
         super().__init__()
 
     def get_dataset(
@@ -124,6 +122,8 @@ class BertPretrainier(object):
         warmup_steps = int(max_steps * warmup_proportion)
         optimizer = get_optimizer(
             model=self.model, lr=lr, warmup_steps=warmup_steps, max_steps=max_steps, fp16=self.helper.fp16)
+        if self.model_path is not None and self.model_path != '':
+            self.helper.load_model(self.model, self.model_path, optimizer)
         criterion_lm = CrossEntropyLoss(ignore_index=-1, reduction='none')
         criterion_ns = CrossEntropyLoss(ignore_index=-1)
 
@@ -143,6 +143,9 @@ class BertPretrainier(object):
         else:
             def adjustment_every_step(model, dataset, total_loss, total_steps, optimizer):
                 pass
+
+        def adjustment_every_epoch(model, dataset, total_loss, total_steps, optimizer):
+            exit(0)
 
         loss = self.helper.train(
             process=process,
@@ -179,6 +182,9 @@ class BertPretrainier(object):
         if model_path is None and hasattr(self, 'model_path'):
             model_path = self.model_path
             self.learned = True
+
+        if model_path is not None:
+            self.helper.load_model(self.model, model_path)
 
         if not hasattr(self, 'learned') or not hasattr(self, 'model'):
             raise ValueError('not learning model.')
