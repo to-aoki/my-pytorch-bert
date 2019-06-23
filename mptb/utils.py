@@ -277,8 +277,14 @@ def load(model, filename, device='cpu', optimizer=None):
         model.load_state_dict(loading_dict['model'])
     else:
         model.load_state_dict(loading_dict)
-    if optimizer is not None and 'optimizer' in loading_dict:
-        optimizer.load_state_dict(loading_dict['optimizer'])
+    try:
+        if optimizer is not None and 'optimizer' in loading_dict:
+            optimizer.load_state_dict(loading_dict['optimizer'])
+    except (KeyError, ValueError) as e:
+        import warnings
+        from traceback import print_exc
+        warnings.warn('Ignore optimizer restore. Optimizer maybe miss-match.')
+        print_exc()
 
 
 def save(model, filename, optimizer=None):

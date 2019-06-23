@@ -26,11 +26,11 @@ def bert_pretraining(
     sp_model_path='tests/sample_text.model',
     save_dir='pretrain/',
     log_dir=None,
-    batch_size=1,
+    batch_size=4,
     max_pos=512,
     lr=5e-5,
     warmup_proportion=0.1,  # warmup_steps = len(dataset) / batch_size * epoch * warmup_proportion
-    epochs=5,
+    epochs=10,
     per_save_epochs=1,
     mode='train',
     tokenizer_name='google',
