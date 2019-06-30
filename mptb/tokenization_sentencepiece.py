@@ -80,7 +80,7 @@ def load_vocab(vocab_file):
     """Loads a vocabulary file into a dictionary."""
     try:
         import tensorflow as tf
-        with tf.gfile.GFile(vocab_file, "r") as reader:
+        with tf.io.gfile.GFile(vocab_file, "r") as reader:
             return token_vocab_build(reader)
             
     except ImportError:
