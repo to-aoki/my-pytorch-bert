@@ -19,7 +19,7 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.utils.data import RandomSampler, WeightedRandomSampler
 
-from .models import Config
+from .bert import Config
 from .optimization import get_optimizer
 from .finetuning import Classifier
 from .class_dataset import ClassDataset

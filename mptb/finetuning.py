@@ -17,7 +17,7 @@
 import torch
 import torch.nn as nn
 
-from . models import BertModel
+from . bert import BertModel
 
 
 class Classifier(nn.Module):

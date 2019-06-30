@@ -16,7 +16,7 @@
 """Convert TensorFlow Bert Model to my-torch-bert."""
 
 import torch
-from mptb.models import BertModel, Config
+from mptb.bert import BertModel, Config
 from mptb.utils import load_from_google_bert_model
 
 

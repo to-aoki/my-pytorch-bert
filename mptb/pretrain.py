@@ -19,7 +19,7 @@ import torch.nn.functional as F
 from torch.nn import CrossEntropyLoss, NLLLoss
 from torch.utils.data import RandomSampler
 
-from .models import Config
+from .bert import Config
 from .pretrain_tasks import BertPretrainingTasks
 from .optimization import get_optimizer
 from .pretrain_dataset import PretrainDataset, PreTensorPretrainDataset
