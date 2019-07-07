@@ -62,7 +62,6 @@ class PretrainDataset(Dataset):
         self.cls_id = self.tokenizer.convert_tokens_to_ids(["[CLS]"])[0]
         self.sep_id = self.tokenizer.convert_tokens_to_ids(["[SEP]"])[0]
         self.mask_id = self.tokenizer.convert_tokens_to_ids(["[MASK]"])[0]
-
         self.corpus_lines = 0
         # load samples into memory
         if len(documents) > 0 or on_memory:
@@ -313,7 +312,7 @@ class PretrainDataGeneration(object):
         vocab_path='tests/sample_text.vocab',
         sp_model_path='tests/sample_text.model',
         max_pos=512,
-        epochs=1,
+        epochs=2,
         tokenizer_name='google',
     ):
         tokenizer = get_tokenizer(

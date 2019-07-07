@@ -44,7 +44,7 @@ except ImportError:
             return self.weight * (x - mean)/std + self.bias
 
 
-class PositionWiseFeedForward(nn.Module):
+class PositionwiseFeedForward(nn.Module):
     """ FeedForward Neural Networks for each position """
     def __init__(self, config, eps=1e-12):
         super().__init__()

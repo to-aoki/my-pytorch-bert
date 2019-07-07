@@ -100,7 +100,7 @@ class BertPretrainier(object):
         lr=5e-5,
         warmup_proportion=0.1,
         save_dir='../pretrain/',
-        per_save_epochs=1,
+        per_save_steps=1000000,
         is_save_after_training=True
     ):
 
@@ -140,12 +140,14 @@ class BertPretrainier(object):
             def adjustment_every_step(model, dataset, loss, global_step, optimizer):
                 from mptb.optimization import update_lr_apex
                 update_lr_apex(optimizer, global_step, lr, warmup_steps, max_steps)
+                if global_step % per_save_steps == 0:
+                    output_model_file = os.path.join(save_dir, "train_model.pt")
+                    save(model, output_model_file, optimizer)
         else:
-            def adjustment_every_step(model, dataset, total_loss, total_steps, optimizer):
-                pass
-
-        def adjustment_every_epoch(model, dataset, total_loss, total_steps, optimizer):
-            exit(0)
+            def adjustment_every_step(model, dataset, total_loss, global_step, optimizer):
+                if global_step % per_save_steps == 0:
+                    output_model_file = os.path.join(save_dir, "train_model.pt")
+                    save(model, output_model_file, optimizer)
 
         loss = self.helper.train(
             process=process,
@@ -157,7 +159,7 @@ class BertPretrainier(object):
             epochs=epochs,
             model_file=traing_model_path,
             save_dir=save_dir,
-            per_save_epochs=per_save_epochs,
+            per_save_epochs=-1,
             adjustment_every_epoch=None,
             adjustment_every_step=adjustment_every_step
         )

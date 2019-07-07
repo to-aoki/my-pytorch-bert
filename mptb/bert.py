@@ -25,7 +25,7 @@ from typing import NamedTuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .models import LayerNorm, PositionWiseFeedForward
+from .models import LayerNorm, PositionwiseFeedForward
 
 
 class Config(NamedTuple):
@@ -184,7 +184,7 @@ class TransformerBlock(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.attention = Attention(config)
-        self.pwff = PositionWiseFeedForward(config)
+        self.pwff = PositionwiseFeedForward(config)
 
     def forward(self, hidden_states, attention_mask):
         attention_output = self.attention(hidden_states, attention_mask)
