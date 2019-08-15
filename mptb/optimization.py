@@ -164,6 +164,7 @@ def get_optimizer(
         try:
             from apex.optimizers import FP16_Optimizer
             from apex.optimizers import FusedAdam
+            from torch._utils import _flatten_dense_tensors, _unflatten_dense_tensors
 
             optimizer = FusedAdam(optimizer_grouped_parameters,
                                   lr=lr,
@@ -176,8 +177,46 @@ def get_optimizer(
                     return state['step']
                 return 0
 
+            def step(self, closure=None):
+                """
+                Not supporting closure.
+                """
+                # First compute norm for all group so we know if there is overflow
+                grads_groups_flat = []
+                norm_groups = []
+                skip = False
+                for i, group in enumerate(self.fp16_groups):
+                    # https://github.com/NVIDIA/apex/issues/131
+                    grads_groups_flat.append(
+                        _flatten_dense_tensors(
+                            [p.grad if p.grad is not None else p.new_zeros(p.size()) for p in group]))
+                    # grads_groups_flat.append(_flatten_dense_tensors([p.grad for p in group]))
+                    norm_groups.append(self.compute_grad_norm(grads_groups_flat[i]))
+                    if norm_groups[i] == -1:  # TODO: early break
+                        skip = True
+
+                if skip:
+                    self._update_scale(skip)
+                    return
+
+                # norm is in fact norm*cur_scale
+                self.optimizer.step(grads=[[g] for g in grads_groups_flat],
+                                    output_params=[[p] for p in self.fp16_groups_flat],
+                                    scale=self.cur_scale,
+                                    grad_norms=norm_groups)
+
+                # TODO: we probably don't need this? just to be safe
+                for i in range(len(norm_groups)):
+                    updated_params = _unflatten_dense_tensors(self.fp16_groups_flat[i], self.fp16_groups[i])
+                    for p, q in zip(self.fp16_groups[i], updated_params):
+                        p.data = q.data
+
+                self._update_scale(False)
+                return
+
             FP16_Optimizer.get_step = get_step
-            return FP16_Optimizer(optimizer, dynamic_loss_scale=True)
+            FP16_Optimizer.step = step
+            return FP16_Optimizer(optimizer, dynamic_loss_scale=False)
         except ImportError:
             raise ImportError(
                 "Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
