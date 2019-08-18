@@ -45,7 +45,6 @@ class Pipeline(object):
 try:
     from mojimoji import han_to_zen
 
-
     class ToZenkaku(object):
         def __call__(self, text):
             return han_to_zen(text)

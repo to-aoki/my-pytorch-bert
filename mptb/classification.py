@@ -69,7 +69,7 @@ class BertClassifier(object):
             if label_num != -1 and label_num != self.dataset.label_num():
                 raise ValueError(
                     'label num mismatch. input : {} datset : {}'.format(label_num, self.dataset.label_num()))
-            self.model = Classifier(config, label_num=self.dataset.label_num())
+            self.model = Classifier(config, num_labels=self.dataset.label_num())
 
         if model_path is None and pretrain_path is not None:
             load(self.model.bert, pretrain_path)
@@ -114,7 +114,7 @@ class BertClassifier(object):
                 sentence_a=sentence_a, sentence_b=sentence_b, labels=labels,
                 under_sampling=under_sampling
             )
-            if self.dataset.label_num() < 0:
+            if dataset.label_num() < 0:
                 raise ValueError('label_num require positive value.')
             return dataset
 
