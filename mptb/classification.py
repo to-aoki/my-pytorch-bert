@@ -21,8 +21,9 @@ from torch.utils.data import RandomSampler, WeightedRandomSampler
 
 from .bert import Config
 from .optimization import get_optimizer
-from .finetuning import Classifier
+from .finetuning import Classifier, MultipleChoiceSelector
 from .class_dataset import ClassDataset
+from .choice_dataset import SwagDataset
 from .helper import Helper
 from .utils import save, load, get_logger, make_balanced_classes_weights, get_tokenizer, load_from_google_bert_model
 
@@ -45,7 +46,9 @@ class BertClassifier(object):
         bert_layer_num=-1,
         tokenizer_name='google',
         under_sampling=False,
-        fp16=False
+        fp16=False,
+        task='class',
+        device=None
     ):
         if tokenizer is None:
             self.tokenizer = get_tokenizer(
@@ -56,17 +59,18 @@ class BertClassifier(object):
         config = Config.from_json(config_path, len(self.tokenizer), max_pos, bert_layer_num)
         self.max_pos = config.max_position_embeddings
         print(config)
+        self.task = task
         if dataset_path is not None:
             self.dataset = self.get_dataset(
-                self.tokenizer,
-                dataset_path,
-                header_skip=header_skip, under_sampling=under_sampling)
-            label_num = self.dataset.label_num()
+                self.tokenizer, dataset_path, header_skip=header_skip, under_sampling=under_sampling)
+        if self.task == 'choice':
+            self.model = MultipleChoiceSelector(config)
+        else:
+            if label_num != -1 and label_num != self.dataset.label_num():
+                raise ValueError(
+                    'label num mismatch. input : {} datset : {}'.format(label_num, self.dataset.label_num()))
+            self.model = Classifier(config, label_num=self.dataset.label_num())
 
-        if label_num < 0:
-            raise ValueError('label_num require positive value.')
-
-        self.model = Classifier(config, label_num=label_num)
         if model_path is None and pretrain_path is not None:
             load(self.model.bert, pretrain_path)
             print('pretain model loaded: ' + pretrain_path)
@@ -76,7 +80,7 @@ class BertClassifier(object):
             print('pretain model loaded: ' + tf_pretrain_path)
             self.pretrain = True
 
-        self.helper = Helper(fp16=fp16)
+        self.helper = Helper(device=device, fp16=fp16)
         self.helper.set_model(self.model)
         if model_path is not None and model_path != '':
             self.model_path = model_path
@@ -99,17 +103,25 @@ class BertClassifier(object):
         if tokenizer is None:
             raise ValueError('dataset require tokenizer')
 
-        return ClassDataset(
-            tokenizer=tokenizer, max_pos=self.max_pos, dataset_path=dataset_path, header_skip=header_skip,
-            sentence_a=sentence_a, sentence_b=sentence_b, labels=labels,
-            under_sampling=under_sampling
-        )
+        if self.task == 'choice':
+            return SwagDataset(
+                tokenizer=tokenizer, max_pos=self.max_pos, dataset_path=dataset_path, header_skip=header_skip
+            )
+
+        else:
+            dataset = ClassDataset(
+                tokenizer=tokenizer, max_pos=self.max_pos, dataset_path=dataset_path, header_skip=header_skip,
+                sentence_a=sentence_a, sentence_b=sentence_b, labels=labels,
+                under_sampling=under_sampling
+            )
+            if self.dataset.label_num() < 0:
+                raise ValueError('label_num require positive value.')
+            return dataset
 
     @staticmethod
-    def get_class_balanced_sampler(
-        dataset
-    ):
-        assert isinstance(dataset, ClassDataset), 'dataset is an instance of ClassDataset.'
+    def get_class_balanced_sampler(dataset):
+        if not hasattr(dataset, 'per_label_records_num'):
+            return RandomSampler(dataset)
         indices = list(range(len(dataset)))
         num_samples = len(dataset)
         weights = [1.0 / dataset.per_label_records_num[dataset[index][3].item()] for index in indices]
@@ -176,19 +188,22 @@ class BertClassifier(object):
         def process(batch, model, iter_bar, epochs, step):
             input_ids, segment_ids, input_mask, label_id = batch
             logits = model(input_ids, segment_ids, input_mask)
-            loss = criterion(logits.view(-1, self.model.label_len), label_id.view(-1))
+            if hasattr(model, 'label_len'):
+                loss = criterion(logits.view(-1, model.label_len), label_id.view(-1))
+            else:
+                loss = criterion(logits.view(-1, input_ids.shape[1]), label_id.view(-1))
             return loss
 
         if self.helper.fp16:
-            def adjustment_every_step(model, dataset, loss, global_step, optimizer):
+            def adjustment_every_step(model, dataset, loss, global_step, optimizer, batch_size):
                 from mptb.optimization import update_lr_apex
                 update_lr_apex(optimizer, global_step, lr, warmup_steps, max_steps)
         else:
-            def adjustment_every_step(model, dataset, total_loss, total_steps, optimizer):
+            def adjustment_every_step(model, dataset, total_loss, total_steps, optimizer, batch_size):
                 pass
 
         if sampler is None:
-            if balance_sample:
+            if balance_sample and self.task != 'choice':
                 sampler = BertClassifier.get_class_balanced_sampler(dataset)
             else:
                 sampler = RandomSampler(dataset)
@@ -258,7 +273,10 @@ class BertClassifier(object):
         def process(batch, model, iter_bar, step):
             input_ids, segment_ids, input_mask, label_id = batch
             logits = model(input_ids, segment_ids, input_mask)
-            loss = criterion(logits.view(-1, self.model.label_len), label_id.view(-1))
+            if hasattr(model, 'label_len'):
+                loss = criterion(logits.view(-1, self.model.label_len), label_id.view(-1))
+            else:
+                loss = criterion(logits.view(-1, input_ids.shape[1]), label_id.view(-1))
             _, label_pred = logits.max(1)
             example = Example(label_pred.tolist(), label_id.tolist())
             return loss, example
@@ -273,7 +291,7 @@ class BertClassifier(object):
         if not is_reports_output:
             return self.helper.evaluate(
                 process, self.model, dataset, sampler, batch_size, model_path,
-                    compute_epoch_score=compute_epoch_score, epochs=epochs)
+                compute_epoch_score=compute_epoch_score, epochs=epochs)
 
         def example_reports(examples):
             if examples is None or len(examples) is 0:
@@ -328,7 +346,7 @@ class BertClassifier(object):
             else:
                 raise ValueError('require dataset')
 
-        def process(batch, model, iter_bar, step):
+        def process(batch, model, step):
             input_ids, segment_ids, input_mask = batch
             logits = model(input_ids, segment_ids, input_mask)
             _, label_pred = logits.max(1)

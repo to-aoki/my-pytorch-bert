@@ -8,6 +8,7 @@
 # and add get_step method.
 #
 # Copyright 2018 The Google AI Language Team Authors and The HugginFace Inc. team.
+# Copyright (c) 2018, NVIDIA CORPORATION.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -156,6 +157,7 @@ def get_optimizer(
         fp16=False
 ):
     param_optimizer = list(model.named_parameters())
+    param_optimizer = [n for n in param_optimizer if 'pool' not in n[0]]
     optimizer_grouped_parameters = [
         {'params': [p for n, p in param_optimizer if _do_use_weight_decay(n, no_decay)], 'weight_decay': decoy},
         {'params': [p for n, p in param_optimizer if not _do_use_weight_decay(n, no_decay)], 'weight_decay': 0.0}
@@ -187,11 +189,11 @@ def get_optimizer(
                 skip = False
                 for i, group in enumerate(self.fp16_groups):
                     # https://github.com/NVIDIA/apex/issues/131
+                    # grads_groups_flat.append(_flatten_dense_tensors([p.grad for p in group]))
                     grads_groups_flat.append(
                         _flatten_dense_tensors(
                             [p.grad if p.grad is not None else p.new_zeros(p.size()) for p in group]))
-                    # grads_groups_flat.append(_flatten_dense_tensors([p.grad for p in group]))
-                    norm_groups.append(self.compute_grad_norm(grads_groups_flat[i]))
+                    norm_groups.append(self._compute_grad_norm(grads_groups_flat[i]))
                     if norm_groups[i] == -1:  # TODO: early break
                         skip = True
 
@@ -216,7 +218,7 @@ def get_optimizer(
 
             FP16_Optimizer.get_step = get_step
             FP16_Optimizer.step = step
-            return FP16_Optimizer(optimizer, dynamic_loss_scale=False)
+            return FP16_Optimizer(optimizer, dynamic_loss_scale=True)
         except ImportError:
             raise ImportError(
                 "Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")

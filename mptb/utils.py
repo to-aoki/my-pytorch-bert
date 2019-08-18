@@ -215,6 +215,10 @@ def set_seeds(seed):
 def truncate_seq_pair(tokens_a, tokens_b, max_length):
     """Truncates a sequence pair in place to the maximum length."""
 
+    if len(tokens_b) == 0:
+        del tokens_a[max_length:]
+        return
+
     # This is a simple heuristic which will always truncate the longer sequence
     # one token at a time. This makes more sense than truncating an equal percent
     # of tokens from each, since if one sequence is very short then each token

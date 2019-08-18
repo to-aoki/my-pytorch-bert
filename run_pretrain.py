@@ -21,6 +21,7 @@ def bert_pretraining(
     dataset_path='tests/sample_text.txt',
     pretensor_data_path=None,
     pretensor_data_length=-1,
+    pickle_path=None,
     model_path=None,
     vocab_path='tests/sample_text.vocab',
     sp_model_path='tests/sample_text.model',
@@ -31,11 +32,15 @@ def bert_pretraining(
     lr=5e-5,
     warmup_proportion=0.1,  # warmup_steps = len(dataset) / batch_size * epoch * warmup_proportion
     epochs=10,
+    per_save_epochs=3,
     per_save_steps=1000000,
     mode='train',
     tokenizer_name='google',
     fp16=False,
     on_disk=False,
+    task='bert',
+    stack=False,
+    max_words_length=10,
 ):
 
     estimator = BertPretrainier(
@@ -49,14 +54,17 @@ def bert_pretraining(
         on_memory=not on_disk,
         tokenizer_name=tokenizer_name,
         fp16=fp16,
+        model=task,
+        sentence_stack=stack,
+        pickle_path=pickle_path,
+        max_words_length=max_words_length
     )
 
     if mode == 'train':
-        estimator.train(
-            traing_model_path=model_path, batch_size=batch_size, epochs=epochs, per_save_steps=per_save_steps,
-            lr=lr, warmup_proportion=warmup_proportion, save_dir=save_dir
+        score = estimator.train(
+            traing_model_path=model_path, batch_size=batch_size, epochs=epochs, per_save_epochs=per_save_epochs,
+            per_save_steps=per_save_steps, lr=lr, warmup_proportion=warmup_proportion, save_dir=save_dir
         )
-        score = estimator.evaluate(batch_size=batch_size, log_dir=log_dir, is_reports_output=True)
         print(score)
     else:
         score = estimator.evaluate(model_path=model_path, batch_size=batch_size, log_dir=log_dir)
@@ -70,10 +78,13 @@ if __name__ == '__main__':
                         type=str, default='config/bert_base.json')
     parser.add_argument('--dataset_path', help='Dataset file path for BERT to pre-training.', nargs='?',
                         type=str, default='tests/sample_text.txt')
-    parser.add_argument('--pretensor_dataset_path', help='Pre-tensor dataset file path for BERT to pre-training.',
+    parser.add_argument('--pretensor_dataset_path', help='Pre-tensor masked dataset file path for BERT to pre-training.',
                         nargs='?', type=str, default=None)
-    parser.add_argument('--pretensor_dataset_length', help='Pre-tensor dataset tensor length for BERT to pre-training.',
+    parser.add_argument('--pretensor_dataset_length',
+                        help='Pre-tensor masked dataset tensor length for BERT to pre-training.',
                         nargs='?', type=int, default=-1)
+    parser.add_argument('--pickle_path', help='Pre-tensor pickle dataset file path for BERT to pre-training.',
+                        nargs='?', type=str, default=None)
     parser.add_argument('--model_path', help='Pre-training PyTorch model path.', nargs='?',
                         type=str, default=None)
     parser.add_argument('--vocab_path', help='Vocabulary file path for BERT to pre-training.', nargs='?', required=True,
@@ -94,9 +105,12 @@ if __name__ == '__main__':
                         type=float, default=0.1)
     parser.add_argument('--epochs', help='Epochs', nargs='?',
                         type=int, default=20)
+    parser.add_argument('--per_save_epochs', help=
+                        'Saving training model timing is the number divided by the epochs number', nargs='?',
+                        type=int, default=-1)
     parser.add_argument('--per_save_steps', help=
                         'Saving training model timing is the number divided by the steps number', nargs='?',
-                        type=int, default=1000000)
+                        type=int, default=-1)
     parser.add_argument('--mode', help='train or eval', nargs='?',
                         type=str, default="train")
     parser.add_argument('--tokenizer', nargs='?', type=str, default='google',
@@ -107,9 +121,20 @@ if __name__ == '__main__':
                         help='Use nVidia fp16(require apex module)')
     parser.add_argument('--on_disk', action='store_true',
                         help='Read dataset file every time')
+    parser.add_argument('--task', nargs='?', type=str, default='bert',
+                        help=
+                        'Select from the following name groups pretrain task(bert or mlm)'
+                        )
+    parser.add_argument('--stack', action='store_true',
+                        help='Sentencestack option when task=mlm effective.')
+    parser.add_argument('--max_words_length', help='Masked Consecutive words(tokens) max length', nargs='?',
+                        type=int, default=10)
     args = parser.parse_args()
     bert_pretraining(args.config_path, args.dataset_path, args.pretensor_dataset_path, args.pretensor_dataset_length,
+                     args.pickle_path,
                      args.model_path, args.vocab_path, args.sp_model_path,
                      args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr, args.warmup_steps,
-                     args.epochs, args.per_save_steps, args.mode, args.tokenizer, args.fp16, --args.on_disk)
+                     args.epochs, args.per_save_epochs, args.per_save_steps,
+                     args.mode, args.tokenizer, args.fp16, args.on_disk, args.task, args.stack,
+                     args.max_words_length)
 

@@ -23,6 +23,20 @@ from .models import gelu, LayerNorm
 from .bert import BertModel
 
 
+class OnlyMaskedLMTasks(nn.Module):
+    """Bert Pre-training Tasks"""
+
+    def __init__(self, config):
+        super().__init__()
+        self.bert = BertModel(config)
+        self.masked_lm = MaskedLM(config, self.bert.embeddings.word_embeddings.weight.size(0))
+
+    def forward(self, input_ids, segment_ids, input_mask):
+        hidden_state, _ = self.bert(input_ids, segment_ids, input_mask)
+        logits_lm = self.masked_lm.forward(hidden_state, self.bert.embeddings.word_embeddings.weight)
+        return logits_lm, None
+
+
 class BertPretrainingTasks(nn.Module):
     """Bert Pre-training Tasks"""
 
@@ -47,6 +61,8 @@ class MaskedLM(nn.Module):
         self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         self.layer_norm = LayerNorm(config.hidden_size, eps=1e-12)
         self.bias = nn.Parameter(torch.zeros(n_vocab))
+        self.dense.weight.data = torch.fmod(
+            torch.randn(self.dense.weight.size()), config.initializer_range)
 
     def forward(self, hidden_states, word_embeddings_weight):
         hidden_states = gelu(self.dense(hidden_states))

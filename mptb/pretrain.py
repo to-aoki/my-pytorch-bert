@@ -17,12 +17,12 @@ import os
 from collections import namedtuple
 import torch.nn.functional as F
 from torch.nn import CrossEntropyLoss, NLLLoss
-from torch.utils.data import RandomSampler
+from torch.utils.data import SequentialSampler, RandomSampler
 
 from .bert import Config
-from .pretrain_tasks import BertPretrainingTasks
+from .pretrain_tasks import BertPretrainingTasks, OnlyMaskedLMTasks
 from .optimization import get_optimizer
-from .pretrain_dataset import PretrainDataset, PreTensorPretrainDataset
+from .pretrain_dataset import PretrainDataset, PreTensorPretrainDataset, OneSegmentDataset
 from .helper import Helper
 from .utils import save, get_logger, get_tokenizer
 
@@ -42,7 +42,11 @@ class BertPretrainier(object):
         pretensor_data_length=-1,
         on_memory=True,
         tokenizer_name='google',
-        fp16=False
+        fp16=False,
+        model='bert',
+        sentence_stack=False,
+        pickle_path=None,
+        max_words_length=10,
     ):
 
         if tokenizer is None and vocab_path is not None:
@@ -51,19 +55,27 @@ class BertPretrainier(object):
         else:
             self.tokenizer = tokenizer
 
-        if pretensor_data_path is not None:
-            self.dataset = PreTensorPretrainDataset(pretensor_data_path, pretensor_data_length)
-        elif dataset_path is not None:
-            self.dataset = self.get_dataset(dataset_path, self.tokenizer, max_pos=max_pos, on_memory=on_memory)
-            max_pos = self.dataset.max_pos
+        self.dataset = self.get_dataset(dataset_path, self.tokenizer, max_pos=max_pos, on_memory=on_memory,
+                                        model=model, sentence_stack=sentence_stack, pickle_path=pickle_path,
+                                        pretensor_data_path=pretensor_data_path,
+                                        pretensor_data_length=pretensor_data_length,
+                                        max_words_length=max_words_length)
+        max_pos = self.dataset.max_pos
 
         config = Config.from_json(config_path, len(self.tokenizer), max_pos)
         print(config)
         self.max_pos = max_pos
-        self.model = BertPretrainingTasks(config)
+        if model == 'mlm':
+            self.model = OnlyMaskedLMTasks(config)
+            print('Task: Only MaskedLM')
+        else:
+            self.model = BertPretrainingTasks(config)
+            print('Task: With  Next Sentence Predict')
+        self.model_name = model
         self.helper = Helper(fp16=fp16)
         self.helper.set_model(self.model)
         self.model_path = model_path
+        self.learned = False
         super().__init__()
 
     def get_dataset(
@@ -72,11 +84,21 @@ class BertPretrainier(object):
         tokenizer,
         max_pos=-1,
         on_memory=True,
+        model='bert',
+        sentence_stack=False,
+        pickle_path=None,
+        pretensor_data_path=None,
+        pretensor_data_length=-1,
+        max_words_length=10
     ):
+        if pretensor_data_path is not None and pretensor_data_length > 0:
+            print('Dataset : PreTensorPretrainDataset')
+            return PreTensorPretrainDataset(pretensor_data_path, pretensor_data_length)
+
         if hasattr(self, 'max_pos'):
             max_pos = self.max_pos
 
-        if max_pos < 5:
+        if max_pos < 5 and dataset_path is not None:
             # max_pos = statistics.median(all-sentence-tokens)
             import statistics
             with open(dataset_path, 'r', newline="\n", encoding="utf-8") as data:
@@ -85,9 +107,19 @@ class BertPretrainier(object):
             max_pos = median_pos * 2 + 3  # [CLS]a[SEP]b[SEP]
             print("max_pos (median):", max_pos)
 
-        return PretrainDataset(
-            tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path, on_memory=on_memory
-        )
+        if model == 'mlm' and (dataset_path is not None or pickle_path is not None):
+            print('Dataset : OneSegmentDataset')
+            return OneSegmentDataset(
+                tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path,
+                sentence_stack=sentence_stack, pickle_path=pickle_path, max_words_length=max_words_length
+            )
+        elif dataset_path is not None:
+            print('Dataset : NextSentenceDataset')
+            return PretrainDataset(
+                tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path, on_memory=on_memory
+            )
+        else:
+            raise ValueError('require dataset_path')
 
     def train(
         self,
@@ -100,7 +132,8 @@ class BertPretrainier(object):
         lr=5e-5,
         warmup_proportion=0.1,
         save_dir='../pretrain/',
-        per_save_steps=1000000,
+        per_save_epochs=3,
+        per_save_steps=-1,
         is_save_after_training=True
     ):
 
@@ -116,7 +149,10 @@ class BertPretrainier(object):
                 raise ValueError('require dataset')
 
         if sampler is None:
-            sampler = RandomSampler(dataset)
+            if isinstance(dataset, PreTensorPretrainDataset) or isinstance(dataset, OneSegmentDataset):
+                sampler = SequentialSampler(dataset)
+            else:
+                sampler = RandomSampler(dataset)
 
         max_steps = int(len(dataset) / batch_size * epochs)
         warmup_steps = int(max_steps * warmup_proportion)
@@ -124,30 +160,45 @@ class BertPretrainier(object):
             model=self.model, lr=lr, warmup_steps=warmup_steps, max_steps=max_steps, fp16=self.helper.fp16)
         if self.model_path is not None and self.model_path != '':
             self.helper.load_model(self.model, self.model_path, optimizer)
-        criterion_lm = CrossEntropyLoss(ignore_index=-1, reduction='none')
-        criterion_ns = CrossEntropyLoss(ignore_index=-1)
+        criterion_lm = CrossEntropyLoss(ignore_index=-1)
+        if isinstance(self.model, BertPretrainingTasks):
+            criterion_ns = CrossEntropyLoss(ignore_index=-1)
 
         def process(batch, model, iter_bar, epoch, step):
             input_ids, segment_ids, input_mask, next_sentence_labels, label_ids = batch
-            masked_lm_logists, next_sentence_logits = model(input_ids, segment_ids, input_mask)
-            lm_labels = label_ids.view(-1)
-            numerator = criterion_lm(masked_lm_logists.view(-1, len(tokenizer)), lm_labels)
-            masked_lm_loss = numerator.sum() / (len(lm_labels) + 1e-5)
-            next_sentence_loss = criterion_ns(next_sentence_logits.view(-1, 2), next_sentence_labels.view(-1))
-            return masked_lm_loss + next_sentence_loss
+            if segment_ids.shape[1] == 0:
+                segment_ids = None
+            if input_mask.shape[1] == 0:
+                input_mask = None
+            if next_sentence_labels.shape[0] == 0:
+                next_sentence_labels = None
+            masked_lm_logists, auxiliary_logits = model(input_ids, segment_ids, input_mask)
+            masked_lm_loss = criterion_lm(masked_lm_logists.view(-1, len(tokenizer)), label_ids.view(-1))
+
+            # mlm
+            if auxiliary_logits is None:
+                return masked_lm_loss
+            # nsp
+            else:
+                auxiliary_loss = criterion_ns(auxiliary_logits.view(-1, 2), next_sentence_labels.view(-1))
+            return masked_lm_loss + auxiliary_loss
 
         if self.helper.fp16:
-            def adjustment_every_step(model, dataset, loss, global_step, optimizer):
+            def adjustment_every_step(model, dataset, loss, global_step, optimizer, batch_size):
                 from mptb.optimization import update_lr_apex
                 update_lr_apex(optimizer, global_step, lr, warmup_steps, max_steps)
-                if global_step % per_save_steps == 0:
-                    output_model_file = os.path.join(save_dir, "train_model.pt")
+                if per_save_steps > 0 and global_step > 0 and global_step % per_save_steps == 0:
+                    output_model_file = os.path.join(save_dir, model.__class__.__name__ + "_train_model.pt")
                     save(model, output_model_file, optimizer)
+                    if "dump_last_indices" in dir(dataset):
+                        dataset.dump_last_indices(global_step * batch_size)
         else:
-            def adjustment_every_step(model, dataset, total_loss, global_step, optimizer):
-                if global_step % per_save_steps == 0:
-                    output_model_file = os.path.join(save_dir, "train_model.pt")
+            def adjustment_every_step(model, dataset, loss, global_step, optimizer, batch_size):
+                if per_save_steps > 0 and global_step > 0 and global_step % per_save_steps == 0:
+                    output_model_file = os.path.join(save_dir, model.__class__.__name__ + "_train_model.pt")
                     save(model, output_model_file, optimizer)
+                    if "dump_last_indices" in dir(dataset):
+                        dataset.dump_last_indices(global_step * batch_size)
 
         loss = self.helper.train(
             process=process,
@@ -159,7 +210,7 @@ class BertPretrainier(object):
             epochs=epochs,
             model_file=traing_model_path,
             save_dir=save_dir,
-            per_save_epochs=-1,
+            per_save_epochs=per_save_epochs,
             adjustment_every_epoch=None,
             adjustment_every_step=adjustment_every_step
         )
@@ -205,31 +256,50 @@ class BertPretrainier(object):
         if sampler is None:
             sampler = RandomSampler(dataset)
 
-        criterion_lm = NLLLoss(ignore_index=-1, reduction='none')
+        criterion_lm = NLLLoss(ignore_index=-1)
         criterion_ns = NLLLoss(ignore_index=-1)
         Example = namedtuple('Example', ('lm_pred', 'lm_true', 'ns_pred', 'ns_true'))
 
         def process(batch, model, iter_bar, step):
             input_ids, segment_ids, input_mask, next_sentence_labels, label_ids = batch
-            masked_lm_loss, next_sentence_loss = model(input_ids, segment_ids, input_mask)
+            if segment_ids.shape[1] == 0:
+                segment_ids = None
+            if input_mask.shape[1] == 0:
+                input_mask = None
+            if next_sentence_labels.shape[1] == 0:
+                next_sentence_labels = None
+            masked_lm_logists, auxiliary_logits = model(input_ids, segment_ids, input_mask)
 
-            masked_lm_probs = F.log_softmax(masked_lm_loss.view(-1, len(tokenizer)), 1)
-            masked_lm_predictions = masked_lm_probs.max(1, False)
-            lm_labels = label_ids.view(-1)
+            # without nsp
+            if auxiliary_logits is None:
+                masked_lm_probs = F.log_softmax(masked_lm_logists.view(-1, len(tokenizer)), 1)
+                masked_lm_predictions = masked_lm_probs.max(1, False)
+                lm_labels = label_ids.view(-1)
+                example = Example(
+                    masked_lm_predictions[1].tolist(), lm_labels.tolist(),
+                    [], [])
 
-            ns_probs = F.log_softmax(next_sentence_loss.view(-1, 2), 1)
-            ns_predictions = ns_probs.max(1, False)
-            ns_labels = next_sentence_labels.view(-1)
+                masked_lm_loss = criterion_lm(masked_lm_probs, lm_labels)
+                masked_lm_loss = masked_lm_loss.sum() / (len(lm_labels) + 1e-5)
+                return masked_lm_loss, example
+            # nsp
+            else:
+                masked_lm_probs = F.log_softmax(masked_lm_logists.view(-1, len(tokenizer)), 1)
+                masked_lm_predictions = masked_lm_probs.max(1, False)
+                lm_labels = label_ids.view(-1)
 
-            example = Example(
-                masked_lm_predictions[1].tolist(), lm_labels.tolist(),
-                ns_predictions[1].tolist(), ns_labels.tolist())
+                ns_probs = F.log_softmax(auxiliary_logits.view(-1, 2), 1)
+                ns_predictions = ns_probs.max(1, False)
+                ns_labels = next_sentence_labels.view(-1)
 
-            masked_lm_loss = criterion_lm(masked_lm_probs, lm_labels)
-            masked_lm_loss = masked_lm_loss.sum()/(len(lm_labels) + 1e-5)
-            next_sentence_loss = criterion_ns(ns_probs, ns_labels)
+                example = Example(
+                    masked_lm_predictions[1].tolist(), lm_labels.tolist(),
+                    ns_predictions[1].tolist(), ns_labels.tolist())
 
-            return masked_lm_loss + next_sentence_loss, example
+                masked_lm_loss = criterion_lm(masked_lm_probs, lm_labels)
+                next_sentence_loss = criterion_ns(ns_probs, ns_labels)
+
+                return masked_lm_loss + next_sentence_loss, example
 
         if not is_reports_output:
             return self.helper.evaluate(process, self.model, dataset, sampler, batch_size, model_path)
@@ -274,6 +344,7 @@ class BertPretrainier(object):
                         logger.info(str(k) + "," + str(ck) + "," + str(cv))
             else:
                 print(classification_report(y_lm_trues, y_lm_preds))
-                print(classification_report(y_ns_trues, y_ns_preds))
+                if len(y_ns_trues) > 0 and len(y_ns_preds) > 0:
+                    print(classification_report(y_ns_trues, y_ns_preds))
 
         return self.helper.evaluate(process, self.model, dataset, sampler, batch_size, model_path, example_reports)

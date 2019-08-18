@@ -88,11 +88,11 @@ class FullTokenizer(object):
 
     def __init__(self, model_file, vocab_file, preprocessor=None):
         self.tokenizer = SentencePieceTokenizer(model_file, preprocessor=preprocessor)
-        self.nlp = spacy.load('ja_ginza_nopn')
+        self.nlp = spacy.load('ja_ginza')
         self.vocab = load_vocab(vocab_file)
         assert(0 < len(self.vocab))
         self.inv_vocab = {}
-        self.control_len = 1  # <unk>
+        self.control_len = 1  # 0 : <unk>
         for k, v in self.vocab.items():
             if self.tokenizer.tokenizer.is_control(v):
                 self.control_len += 1  # Control characters are focused at the top?

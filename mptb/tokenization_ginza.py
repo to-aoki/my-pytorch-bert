@@ -50,7 +50,7 @@ class GinzaTokenizer(object):
         collect_futures=[],
         upos_tokens=UPOS_TOKENS
     ):
-        self.nlp = spacy.load('ja_ginza_nopn')
+        self.nlp = spacy.load('ja_ginza')
         self.collect_futures = collect_futures
         self.preprocessor = preprocessor
         self.lemmatize = lemmatize

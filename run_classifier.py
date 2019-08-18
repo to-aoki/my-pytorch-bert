@@ -42,7 +42,9 @@ def classification(
     under_sampling_cycle=False,
     tokenizer_name='google',
     read_head=False,
-    fp16=False
+    fp16=False,
+    task='class',
+    device=None
 ):
 
     if under_sampling_cycle:
@@ -60,7 +62,9 @@ def classification(
             label_num=label_num,
             tokenizer_name=tokenizer_name,
             under_sampling=under_sampling,
-            fp16=fp16
+            fp16=fp16,
+            task=task,
+            device=device
         )
 
         estimator.train(
@@ -156,6 +160,8 @@ if __name__ == '__main__':
                         help='Use not include header TSV file')
     parser.add_argument('--fp16', action='store_true',
                         help='Use nVidia fp16 (require apex module)')
+    parser.add_argument('--task',  nargs='?', type=str, default='class', help='Target Task (class or choice)')
+    parser.add_argument('--device', nargs='?', type=str, default=None, help='Target Runing device name.')
     args = parser.parse_args()
     classification(
         config_path=args.config_path,
@@ -182,5 +188,7 @@ if __name__ == '__main__':
         under_sampling_cycle=args.under_sampling_cycle,
         tokenizer_name=args.tokenizer,
         read_head=args.read_head,
-        fp16=args.fp16
+        fp16=args.fp16,
+        task=args.task,
+        device=args.device,
     )

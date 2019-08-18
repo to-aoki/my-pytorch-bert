@@ -23,7 +23,7 @@ from . utils import set_seeds, save, load, get_device
 
 class Helper(object):
 
-    def __init__(self, seeds=20151106, device=None, fp16=False):
+    def __init__(self, seeds=20151106, device=None, fp16=False, cli_interval=10):
         super().__init__()
         set_seeds(seeds)
         self.num_gpu = 0
@@ -35,9 +35,12 @@ class Helper(object):
 
         if torch.cuda.is_available() and self.device is not 'cpu':
             self.num_gpu = torch.cuda.device_count()
+            self.fp16 = fp16 & torch.cuda.is_available()
+        else:
+            self.fp16 = False
 
-        self.fp16 = fp16 & torch.cuda.is_available()
         print("device: {} num_gpu: {} fp16: {}".format(self.device, self.num_gpu, self.fp16))
+        self.cli_interval = cli_interval
 
     def set_model(self, model):
         model.to(self.device)
@@ -70,6 +73,7 @@ class Helper(object):
             # optimizer attributes override
             load(model, model_file, self.device, optimizer)
         global_step = optimizer.get_step()
+        print('Optimizer start steps : {:d}'.format(global_step))
         model.train()
         dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
 
@@ -77,7 +81,7 @@ class Helper(object):
             total_loss = 0.0
             total_steps = 0
             iter_bar = tqdm(
-                dataloader, desc="E-{:0=2} : XX.XXXX avg loss ".format(e), position=0)
+                dataloader, desc="E-{:0=2} : XX.XXXX avg loss ".format(e), position=0, mininterval=self.cli_interval)
             for step, batch in enumerate(iter_bar):
                 batch = tuple(t.to(self.device) for t in batch)
                 loss = process(batch, model, iter_bar, e, step)
@@ -90,11 +94,12 @@ class Helper(object):
                     loss.backward()
 
                 if adjustment_every_step is not None:
-                    adjustment_every_step(model, dataset, loss, global_step, optimizer)
+                    adjustment_every_step(model, dataset, loss, global_step, optimizer, batch_size)
 
                 total_loss += loss.item()
                 total_steps += 1
-                iter_bar.set_description("E-{:0=2} : {:2.4f} avg loss ".format(e, total_loss / total_steps))
+                iter_bar.set_description("E-{:0=2} : {:2.4f} avg loss ".format(e, total_loss / total_steps),
+                                         refresh=False)
                 optimizer.step()
                 optimizer.zero_grad()
                 global_step += 1
@@ -137,7 +142,8 @@ class Helper(object):
             total_loss = 0.0
             total_steps = 0
             examples = []
-            iter_bar = tqdm(dataloader, desc="E-{:0=2} : XX.XXXX avg loss ".format(e), position=0)
+            iter_bar = tqdm(
+                dataloader, desc="E-{:0=2} : XX.XXXX avg loss ".format(e), position=0, mininterval=self.cli_interval)
             for step, batch in enumerate(iter_bar):
                 batch = tuple(t.to(self.device) for t in batch)
                 with torch.no_grad():
@@ -148,7 +154,8 @@ class Helper(object):
 
                 total_loss += loss.item()
                 total_steps += 1
-                iter_bar.set_description("E-{:0=2} : {:2.4f} avg loss ".format(e, total_loss / total_steps))
+                iter_bar.set_description("E-{:0=2} : {:2.4f} avg loss ".format(e, total_loss / total_steps),
+                                         refresh=False)
 
                 global_step += 1
 
@@ -196,11 +203,10 @@ class Helper(object):
         dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
 
         predicts = []
-        iter_bar = tqdm(dataloader, desc="XX.XXXX avg loss ", position=0)
-        for step, batch in enumerate(iter_bar):
+        for step, batch in enumerate(dataloader):
             batch = tuple(t.to(self.device) for t in batch)
             with torch.no_grad():
-                predict = process(batch, model, iter_bar, step)
+                predict = process(batch, model, step)
                 predicts.append(predict)
         return predicts
 
