@@ -93,12 +93,12 @@ class OneSegmentDataset(Dataset):
     def dump_last_indices(self, steps):
         if hasattr(self, 'last_indices_path'):
             last_indices = steps % len(self.indices)
-            with open(self.last_indices_path, "wb+") as f:
+            with open(self.last_indices_path, 'wb') as f:
                 pickle.dump(self.indices[last_indices:], f)
 
     def dump_ids_documents(self, output_path, is_gzip=False):
         if is_gzip:
-            with gzip.open(output_path + '.gz', 'wb+') as f:
+            with gzip.open(output_path + '.gz', 'wb') as f:
                 pickle.dump(self.all_documents, f)
         else:
             with open(output_path, 'wb+') as f:

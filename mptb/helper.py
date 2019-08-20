@@ -94,7 +94,7 @@ class Helper(object):
                     loss.backward()
 
                 if adjustment_every_step is not None:
-                    adjustment_every_step(model, dataset, loss, global_step, optimizer, batch_size)
+                    adjustment_every_step(model, dataset, loss, total_steps, optimizer, batch_size)
 
                 total_loss += loss.item()
                 total_steps += 1
