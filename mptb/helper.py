@@ -94,6 +94,7 @@ class Helper(object):
                     loss.backward()
 
                 total_steps += 1
+                global_step += 1
                 if adjustment_every_step is not None:
                     adjustment_every_step(model, dataset, loss, total_steps, global_step, optimizer, batch_size)
 
@@ -102,7 +103,6 @@ class Helper(object):
                                          refresh=False)
                 optimizer.step()
                 optimizer.zero_grad()
-                global_step += 1
 
             if per_save_epochs > 0 and (e + 1) % per_save_epochs is 0:
                 output_model_file = os.path.join(save_dir, "train_model.pt")
