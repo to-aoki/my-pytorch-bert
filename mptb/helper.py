@@ -95,7 +95,7 @@ class Helper(object):
 
                 total_steps += 1
                 if adjustment_every_step is not None:
-                    adjustment_every_step(model, dataset, loss, total_steps, optimizer, batch_size)
+                    adjustment_every_step(model, dataset, loss, total_steps, global_step, optimizer, batch_size)
 
                 total_loss += loss.item()
                 iter_bar.set_description("E-{:0=2} : {:2.4f} avg loss ".format(e, total_loss / total_steps),

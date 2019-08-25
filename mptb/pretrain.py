@@ -184,21 +184,21 @@ class BertPretrainier(object):
             return masked_lm_loss + auxiliary_loss
 
         if self.helper.fp16:
-            def adjustment_every_step(model, dataset, loss, global_step, optimizer, batch_size):
+            def adjustment_every_step(model, dataset, loss, total_steps, global_step, optimizer, batch_size):
                 from mptb.optimization import update_lr_apex
                 update_lr_apex(optimizer, global_step, lr, warmup_steps, max_steps)
-                if per_save_steps > 0 and global_step > 0 and global_step % per_save_steps == 0:
+                if per_save_steps > 0 and total_steps > 0 and total_steps % per_save_steps == 0:
                     output_model_file = os.path.join(save_dir, model.__class__.__name__ + "_train_model.pt")
                     save(model, output_model_file, optimizer)
                     if "dump_last_indices" in dir(dataset):
-                        dataset.dump_last_indices(global_step * batch_size)
+                        dataset.dump_last_indices(total_steps * batch_size)
         else:
-            def adjustment_every_step(model, dataset, loss, global_step, optimizer, batch_size):
-                if per_save_steps > 0 and global_step > 0 and global_step % per_save_steps == 0:
+            def adjustment_every_step(model, dataset, loss, total_steps, global_step, optimizer, batch_size):
+                if per_save_steps > 0 and total_steps > 0 and total_steps % per_save_steps == 0:
                     output_model_file = os.path.join(save_dir, model.__class__.__name__ + "_train_model.pt")
                     save(model, output_model_file, optimizer)
                     if "dump_last_indices" in dir(dataset):
-                        dataset.dump_last_indices(global_step * batch_size)
+                        dataset.dump_last_indices(total_steps * batch_size)
 
         loss = self.helper.train(
             process=process,
