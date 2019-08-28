@@ -73,7 +73,6 @@ class BertPretrainier(object):
             print('Task: With  Next Sentence Predict')
         self.model_name = model
         self.helper = Helper(fp16=fp16)
-        self.helper.set_model(self.model)
         self.model_path = model_path
         self.learned = False
         super().__init__()
@@ -157,7 +156,7 @@ class BertPretrainier(object):
         max_steps = int(len(dataset) / batch_size * epochs)
         warmup_steps = int(max_steps * warmup_proportion)
         optimizer = get_optimizer(
-            model=self.model, lr=lr, warmup_steps=warmup_steps, max_steps=max_steps, fp16=self.helper.fp16)
+            model=self.model, lr=lr, warmup_steps=warmup_steps, max_steps=max_steps)
         if self.model_path is not None and self.model_path != '':
             self.helper.load_model(self.model, self.model_path, optimizer)
         criterion_lm = CrossEntropyLoss(ignore_index=-1)

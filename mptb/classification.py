@@ -81,7 +81,6 @@ class BertClassifier(object):
             self.pretrain = True
 
         self.helper = Helper(device=device, fp16=fp16)
-        self.helper.set_model(self.model)
         if model_path is not None and model_path != '':
             self.model_path = model_path
             self.helper.load_model(self.model, model_path)
@@ -175,7 +174,7 @@ class BertClassifier(object):
         max_steps = int(len(dataset) / batch_size * epochs)
         warmup_steps = int(max_steps * warmup_proportion)
         optimizer = get_optimizer(
-            model=self.model, lr=lr, warmup_steps=warmup_steps, max_steps=max_steps, fp16=self.helper.fp16)
+            model=self.model, lr=lr, warmup_steps=warmup_steps, max_steps=max_steps)
 
         balance_weights = None
         if balance_weight:

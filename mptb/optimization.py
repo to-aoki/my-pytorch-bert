@@ -148,13 +148,12 @@ def update_lr_apex(optimzer, step, lr=5e-5, warmup_steps=0, max_steps=0):
 
 # add for optimizer initializer
 def get_optimizer(
-        model,
-        lr=5e-5,
-        warmup_steps=0,
-        max_steps=0,
-        decoy=0.01,
-        no_decay=('bias', 'layer_norm', 'LayerNorm'),
-        fp16=False
+    model,
+    lr=5e-5,
+    warmup_steps=0,
+    max_steps=0,
+    decoy=0.01,
+    no_decay=('bias', 'layer_norm', 'LayerNorm')
 ):
     param_optimizer = list(model.named_parameters())
     param_optimizer = [n for n in param_optimizer if 'pool' not in n[0]]
@@ -162,69 +161,7 @@ def get_optimizer(
         {'params': [p for n, p in param_optimizer if _do_use_weight_decay(n, no_decay)], 'weight_decay': decoy},
         {'params': [p for n, p in param_optimizer if not _do_use_weight_decay(n, no_decay)], 'weight_decay': 0.0}
     ]
-    if fp16:
-        try:
-            from apex.optimizers import FP16_Optimizer
-            from apex.optimizers import FusedAdam
-            from torch._utils import _flatten_dense_tensors, _unflatten_dense_tensors
-
-            optimizer = FusedAdam(optimizer_grouped_parameters,
-                                  lr=lr,
-                                  bias_correction=False,
-                                  max_grad_norm=1.0)
-
-            def get_step(self):
-                state = self.optimizer.state[((self.optimizer.param_groups[0])['params'])[0]]
-                if 'step' in state:
-                    return state['step']
-                return 0
-
-            def step(self, closure=None):
-                """
-                Not supporting closure.
-                """
-                # First compute norm for all group so we know if there is overflow
-                grads_groups_flat = []
-                norm_groups = []
-                skip = False
-                for i, group in enumerate(self.fp16_groups):
-                    # https://github.com/NVIDIA/apex/issues/131
-                    # grads_groups_flat.append(_flatten_dense_tensors([p.grad for p in group]))
-                    grads_groups_flat.append(
-                        _flatten_dense_tensors(
-                            [p.grad if p.grad is not None else p.new_zeros(p.size()) for p in group]))
-                    norm_groups.append(self._compute_grad_norm(grads_groups_flat[i]))
-                    if norm_groups[i] == -1:  # TODO: early break
-                        skip = True
-
-                if skip:
-                    self._update_scale(skip)
-                    return
-
-                # norm is in fact norm*cur_scale
-                self.optimizer.step(grads=[[g] for g in grads_groups_flat],
-                                    output_params=[[p] for p in self.fp16_groups_flat],
-                                    scale=self.cur_scale,
-                                    grad_norms=norm_groups)
-
-                # TODO: we probably don't need this? just to be safe
-                for i in range(len(norm_groups)):
-                    updated_params = _unflatten_dense_tensors(self.fp16_groups_flat[i], self.fp16_groups[i])
-                    for p, q in zip(self.fp16_groups[i], updated_params):
-                        p.data = q.data
-
-                self._update_scale(False)
-                return
-
-            FP16_Optimizer.get_step = get_step
-            FP16_Optimizer.step = step
-            return FP16_Optimizer(optimizer, dynamic_loss_scale=True)
-        except ImportError:
-            raise ImportError(
-                "Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
-    else:
-        return BertAdam(optimizer_grouped_parameters, lr, warmup_steps, max_steps)
-
+    return BertAdam(optimizer_grouped_parameters, lr, warmup_steps, max_steps)
 
 def _do_use_weight_decay(param_name, exclude_from_weight_decay):
     """Whether to use L2 weight decay for `param_name`."""
