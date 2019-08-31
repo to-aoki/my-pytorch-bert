@@ -193,13 +193,8 @@ class BertClassifier(object):
                 loss = criterion(logits.view(-1, input_ids.shape[1]), label_id.view(-1))
             return loss
 
-        if self.helper.fp16:
-            def adjustment_every_step(model, dataset, loss, total_steps, global_step, optimizer, batch_size):
-                from mptb.optimization import update_lr_apex
-                update_lr_apex(optimizer, global_step, lr, warmup_steps, max_steps)
-        else:
-            def adjustment_every_step(model, dataset, loss, total_steps, global_step, optimizer, batch_size):
-                pass
+        def adjustment_every_step(model, dataset, loss, total_steps, global_step, optimizer, batch_size):
+            pass
 
         if sampler is None:
             if balance_sample and self.task != 'choice':
