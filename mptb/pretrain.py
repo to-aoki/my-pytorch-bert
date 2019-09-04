@@ -46,7 +46,7 @@ class BertPretrainier(object):
         model='bert',
         sentence_stack=False,
         pickle_path=None,
-        max_words_length=10,
+        max_words_length=4,
     ):
 
         if tokenizer is None and vocab_path is not None:
@@ -88,7 +88,7 @@ class BertPretrainier(object):
         pickle_path=None,
         pretensor_data_path=None,
         pretensor_data_length=-1,
-        max_words_length=10
+        max_words_length=4
     ):
         if pretensor_data_path is not None and pretensor_data_length > 0:
             print('Dataset : PreTensorPretrainDataset')

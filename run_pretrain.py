@@ -40,7 +40,7 @@ def bert_pretraining(
     on_disk=False,
     task='bert',
     stack=False,
-    max_words_length=10,
+    max_words_length=4,
 ):
 
     estimator = BertPretrainier(

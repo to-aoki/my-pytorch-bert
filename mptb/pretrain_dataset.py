@@ -141,7 +141,6 @@ class OneSegmentDataset(Dataset):
         :param max_pos: int, maximum length of sequence.4
         :param short_seq_prob: float, Probability of creating sequences which are shorter than the maximum length.
         :param masked_lm_prob: float, Masked LM probability.
-        :param max_words_length: int, Masked Consecutive words(tokens) max length.
         :return: features
         """
 
