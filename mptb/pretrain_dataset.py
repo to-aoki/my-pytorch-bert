@@ -39,7 +39,7 @@ import pickle
 class OneSegmentDataset(Dataset):
 
     def __init__(self, tokenizer, max_pos, dataset_path=None, documents=[], encoding="utf-8",
-                 sentence_stack=True, pickle_path=None, max_words_length=10):
+                 sentence_stack=True, pickle_path=None, max_words_length=5):
         self.tokenizer = tokenizer
         self.max_pos = max_pos
         self.dataset_path = dataset_path
@@ -163,7 +163,7 @@ class OneSegmentDataset(Dataset):
         mask_prediction = int(round(len(tokens) * masked_lm_prob))
         mask_candidate_pos = [i for i, token in enumerate(
             tokens) if token != self.cls_id and token != self.sep_id]
-        mask_length = np.random.geometric(0.2)
+        mask_length = np.random.geometric(0.4)
         if mask_length > self.max_words_length:
             mask_length = self.max_words_length
         if mask_length > mask_prediction:
