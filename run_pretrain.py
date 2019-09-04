@@ -128,7 +128,7 @@ if __name__ == '__main__':
     parser.add_argument('--stack', action='store_true',
                         help='Sentencestack option when task=mlm effective.')
     parser.add_argument('--max_words_length', help='Masked Consecutive words(tokens) max length', nargs='?',
-                        type=int, default=10)
+                        type=int, default=4)
     args = parser.parse_args()
     bert_pretraining(args.config_path, args.dataset_path, args.pretensor_dataset_path, args.pretensor_dataset_length,
                      args.pickle_path,
