@@ -31,8 +31,6 @@ class SwagDataset(Dataset):
     ):
         super().__init__()
         self.records = []
-        self.text_records = []
-        self.per_label_records_num = []
 
         start = 1 if header_skip else 0
         with open(dataset_path, "r", encoding=encoding) as f:
