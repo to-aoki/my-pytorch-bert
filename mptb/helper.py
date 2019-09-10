@@ -15,7 +15,6 @@
 
 import os
 import torch
-import torch.nn as nn
 from torch.utils.data import DataLoader, SequentialSampler
 from tqdm import tqdm
 from . utils import set_seeds, save, load, get_device
@@ -42,14 +41,8 @@ class Helper(object):
         print("device: {} num_gpu: {} fp16: {}".format(self.device, self.num_gpu, self.fp16))
         self.cli_interval = cli_interval
 
-    def set_model(self, model):
-        model.to(self.device)
-        if self.fp16:
-            model.half()
-
     def load_model(self, model, model_path, optimizer=None):
         load(model, model_path, self.device, optimizer)
-        self.set_model(model)
 
     def train(
         self,
@@ -64,9 +57,17 @@ class Helper(object):
         save_dir='train/',
         per_save_epochs=-1,
         adjustment_every_epoch=None,
-        adjustment_every_step=None
+        adjustment_every_step=None,
+        opt_level='O2'
     ):
-        self.set_model(model)
+        model.to(self.device)
+        model.train()
+        if self.fp16:
+            try:
+                from apex import amp
+            except ImportError:
+                raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
+            model, optimizer = amp.initialize(model, optimizer, opt_level=opt_level)
         if self.num_gpu > 1:  # not test
             model = torch.nn.DataParallel(model)
         if model_file is not None and model_file is not '':
@@ -74,7 +75,6 @@ class Helper(object):
             load(model, model_file, self.device, optimizer)
         global_step = optimizer.get_step()
         print('Optimizer start steps : {:d}'.format(global_step))
-        model.train()
         dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
 
         for e in range(epochs):
@@ -89,15 +89,17 @@ class Helper(object):
                 if self.num_gpu > 1:
                     loss = loss.mean()
                 if self.fp16:
-                    optimizer.backward(loss)
+                    with amp.scale_loss(loss, optimizer) as scaled_loss:
+                        scaled_loss.backward()
+                    torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), 1.0)
                 else:
                     loss.backward()
 
+                total_steps += 1
                 if adjustment_every_step is not None:
-                    adjustment_every_step(model, dataset, loss, global_step, optimizer, batch_size)
+                    adjustment_every_step(model, dataset, loss, total_steps, global_step, optimizer, batch_size)
 
                 total_loss += loss.item()
-                total_steps += 1
                 iter_bar.set_description("E-{:0=2} : {:2.4f} avg loss ".format(e, total_loss / total_steps),
                                          refresh=False)
                 optimizer.step()
@@ -127,14 +129,14 @@ class Helper(object):
         epochs=1,
         evaluate_score=None,
     ):
-        self.set_model(model)
+        model.to(self.device)
+        model.eval()
         if self.num_gpu > 1:
             model = torch.nn.DataParallel(model)
         if model_file is not None:
             load(model, model_file, self.device)
             print('loaded ; ' + str(model_file))
 
-        model.eval()
         dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
         scores = []
         for e in range(epochs):
@@ -189,7 +191,8 @@ class Helper(object):
         batch_size=1,
         model_file=None
     ):
-        self.set_model(model)
+        model.to(self.device)
+        model.eval()
 
         if self.num_gpu > 1:
             model = torch.nn.DataParallel(model)

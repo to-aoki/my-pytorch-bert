@@ -15,7 +15,7 @@
 
 
 from mptb import Config
-from mptb.pretrain_tasks import BertPretrainingTasks
+from mptb.pretrain_tasks import BertPretrainingTasks, OnlyMaskedLMTasks
 from mptb.utils import load, save, get_device
 
 
@@ -23,10 +23,14 @@ def extract_model(
     config_path='config/bert_base.json',
     model_path="pretrain/pretran_on_the_way.pt",
     output_path="pretrain/bert_only_model.pt",
-    only_bert=False
+    only_bert=False,
+    mlm=False
 ):
     config = Config.from_json(config_path)
-    model = BertPretrainingTasks(config)
+    if mlm:
+        model = OnlyMaskedLMTasks(config)
+    else:
+        model = BertPretrainingTasks(config)
     load(model, model_path, get_device())
     if only_bert:
         model = model.bert
@@ -40,9 +44,11 @@ if __name__ == '__main__':
                         type=str, default='config/bert_base.json')
     parser.add_argument('--model_path', help='my-pytorch-bert model path (include optimizer).', required=True,
                         type=str)
+    parser.add_argument('--mlm', action='store_true',
+                        help='Use mlm only model.')
     parser.add_argument('--only_bert', action='store_true',
                         help='Use bert only output.')
     parser.add_argument('--output_path', help='Output model path.', required=True,
                         type=str)
     args = parser.parse_args()
-    extract_model(args.config_path, args.model_path, args.output_path, args.only_bert)
+    extract_model(args.config_path, args.model_path, args.output_path, args.only_bert, args.mlm)

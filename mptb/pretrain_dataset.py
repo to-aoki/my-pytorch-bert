@@ -39,7 +39,7 @@ import pickle
 class OneSegmentDataset(Dataset):
 
     def __init__(self, tokenizer, max_pos, dataset_path=None, documents=[], encoding="utf-8",
-                 sentence_stack=True, pickle_path=None, max_words_length=10):
+                 sentence_stack=True, pickle_path=None, max_words_length=4):
         self.tokenizer = tokenizer
         self.max_pos = max_pos
         self.dataset_path = dataset_path
@@ -93,12 +93,12 @@ class OneSegmentDataset(Dataset):
     def dump_last_indices(self, steps):
         if hasattr(self, 'last_indices_path'):
             last_indices = steps % len(self.indices)
-            with open(self.last_indices_path, "wb+") as f:
+            with open(self.last_indices_path, "wb") as f:
                 pickle.dump(self.indices[last_indices:], f)
 
     def dump_ids_documents(self, output_path, is_gzip=False):
         if is_gzip:
-            with gzip.open(output_path + '.gz', 'wb+') as f:
+            with gzip.open(output_path + '.gz', 'wb') as f:
                 pickle.dump(self.all_documents, f)
         else:
             with open(output_path, 'wb+') as f:
@@ -141,7 +141,6 @@ class OneSegmentDataset(Dataset):
         :param max_pos: int, maximum length of sequence.4
         :param short_seq_prob: float, Probability of creating sequences which are shorter than the maximum length.
         :param masked_lm_prob: float, Masked LM probability.
-        :param max_words_length: int, Masked Consecutive words(tokens) max length.
         :return: features
         """
 
@@ -163,7 +162,7 @@ class OneSegmentDataset(Dataset):
         mask_prediction = int(round(len(tokens) * masked_lm_prob))
         mask_candidate_pos = [i for i, token in enumerate(
             tokens) if token != self.cls_id and token != self.sep_id]
-        mask_length = np.random.geometric(0.2)
+        mask_length = np.random.geometric(0.4)
         if mask_length > self.max_words_length:
             mask_length = self.max_words_length
         if mask_length > mask_prediction:

@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Bert Choice Dataset for BERT."""
+"""Choice Dataset for BERT."""
 
 import csv
 import itertools
@@ -31,8 +31,6 @@ class SwagDataset(Dataset):
     ):
         super().__init__()
         self.records = []
-        self.text_records = []
-        self.per_label_records_num = []
 
         start = 1 if header_skip else 0
         with open(dataset_path, "r", encoding=encoding) as f:

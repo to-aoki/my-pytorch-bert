@@ -46,7 +46,7 @@ class BertPretrainier(object):
         model='bert',
         sentence_stack=False,
         pickle_path=None,
-        max_words_length=10,
+        max_words_length=4,
     ):
 
         if tokenizer is None and vocab_path is not None:
@@ -73,7 +73,6 @@ class BertPretrainier(object):
             print('Task: With  Next Sentence Predict')
         self.model_name = model
         self.helper = Helper(fp16=fp16)
-        self.helper.set_model(self.model)
         self.model_path = model_path
         self.learned = False
         super().__init__()
@@ -89,7 +88,7 @@ class BertPretrainier(object):
         pickle_path=None,
         pretensor_data_path=None,
         pretensor_data_length=-1,
-        max_words_length=10
+        max_words_length=4
     ):
         if pretensor_data_path is not None and pretensor_data_length > 0:
             print('Dataset : PreTensorPretrainDataset')
@@ -157,7 +156,7 @@ class BertPretrainier(object):
         max_steps = int(len(dataset) / batch_size * epochs)
         warmup_steps = int(max_steps * warmup_proportion)
         optimizer = get_optimizer(
-            model=self.model, lr=lr, warmup_steps=warmup_steps, max_steps=max_steps, fp16=self.helper.fp16)
+            model=self.model, lr=lr, warmup_steps=warmup_steps, max_steps=max_steps)
         if self.model_path is not None and self.model_path != '':
             self.helper.load_model(self.model, self.model_path, optimizer)
         criterion_lm = CrossEntropyLoss(ignore_index=-1)
@@ -183,22 +182,12 @@ class BertPretrainier(object):
                 auxiliary_loss = criterion_ns(auxiliary_logits.view(-1, 2), next_sentence_labels.view(-1))
             return masked_lm_loss + auxiliary_loss
 
-        if self.helper.fp16:
-            def adjustment_every_step(model, dataset, loss, global_step, optimizer, batch_size):
-                from mptb.optimization import update_lr_apex
-                update_lr_apex(optimizer, global_step, lr, warmup_steps, max_steps)
-                if per_save_steps > 0 and global_step > 0 and global_step % per_save_steps == 0:
-                    output_model_file = os.path.join(save_dir, model.__class__.__name__ + "_train_model.pt")
-                    save(model, output_model_file, optimizer)
-                    if "dump_last_indices" in dir(dataset):
-                        dataset.dump_last_indices(global_step * batch_size)
-        else:
-            def adjustment_every_step(model, dataset, loss, global_step, optimizer, batch_size):
-                if per_save_steps > 0 and global_step > 0 and global_step % per_save_steps == 0:
-                    output_model_file = os.path.join(save_dir, model.__class__.__name__ + "_train_model.pt")
-                    save(model, output_model_file, optimizer)
-                    if "dump_last_indices" in dir(dataset):
-                        dataset.dump_last_indices(global_step * batch_size)
+        def adjustment_every_step(model, dataset, loss, total_steps, global_step, optimizer, batch_size):
+            if per_save_steps > 0 and total_steps > 0 and total_steps % per_save_steps == 0:
+                output_model_file = os.path.join(save_dir, model.__class__.__name__ + "_train_model.pt")
+                save(model, output_model_file, optimizer)
+                if "dump_last_indices" in dir(dataset):
+                    dataset.dump_last_indices(total_steps * batch_size)
 
         loss = self.helper.train(
             process=process,

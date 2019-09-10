@@ -75,7 +75,8 @@ class Embeddings(nn.Module):
         super().__init__()
         self.word_embeddings = nn.Embedding(config.vocab_size, config.hidden_size, padding_idx=0)
         self.position_embeddings = nn.Embedding(config.max_position_embeddings, config.hidden_size, padding_idx=0)
-        self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size, padding_idx=0)
+        if config.type_vocab_size > 0:
+            self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size, padding_idx=0)
 
         self.layer_norm = LayerNorm(config.hidden_size)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
@@ -85,10 +86,12 @@ class Embeddings(nn.Module):
             max_position_embeddings = input_ids.size(1)
             position_ids = torch.arange(max_position_embeddings, dtype=torch.long, device=input_ids.device)
             position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
-        if token_type_ids is None:
-            token_type_ids = torch.zeros_like(input_ids)
-        embeddings = self.word_embeddings(input_ids) + self.position_embeddings(position_ids) + \
-                     self.token_type_embeddings(token_type_ids)
+        token_type_embedded = 0.
+        if hasattr(self, 'token_type_embeddings'):
+            if token_type_ids is None:
+                token_type_ids = torch.zeros_like(input_ids)
+            token_type_embedded = self.token_type_embeddings(token_type_ids)
+        embeddings = self.word_embeddings(input_ids) + self.position_embeddings(position_ids) + token_type_embedded
         return self.dropout(self.layer_norm(embeddings))
 
 

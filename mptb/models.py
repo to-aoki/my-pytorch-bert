@@ -55,7 +55,7 @@ class PositionwiseFeedForward(nn.Module):
         self.layer_norm = LayerNorm(config.hidden_size, eps=eps)
 
     def forward(self, attention_output):
-        intermediate_output = self.dropout(gelu(self.intermediate(attention_output)))
+        intermediate_output = gelu(self.intermediate(attention_output))
         hidden_states = self.dropout(self.output(intermediate_output))
         return self.layer_norm(hidden_states + attention_output)
 

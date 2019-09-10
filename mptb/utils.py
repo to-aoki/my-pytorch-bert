@@ -46,7 +46,8 @@ def load_from_google_bert_model(model, f):
     d = model.embeddings
     copy_tf_tensor(f, s+'word_embeddings',       d.word_embeddings.weight)
     copy_tf_tensor(f, s+'position_embeddings',   d.position_embeddings.weight)
-    copy_tf_tensor(f, s+'token_type_embeddings', d.token_type_embeddings.weight)
+    if hasattr(d, 'token_type_embeddings'):
+        copy_tf_tensor(f, s+'token_type_embeddings', d.token_type_embeddings.weight)
     copy_tf_tensor(f, s+'LayerNorm/gamma',       d.layer_norm.weight)
     copy_tf_tensor(f, s+'LayerNorm/beta',        d.layer_norm.bias)
 

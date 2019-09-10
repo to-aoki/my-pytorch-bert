@@ -81,7 +81,6 @@ class BertClassifier(object):
             self.pretrain = True
 
         self.helper = Helper(device=device, fp16=fp16)
-        self.helper.set_model(self.model)
         if model_path is not None and model_path != '':
             self.model_path = model_path
             self.helper.load_model(self.model, model_path)
@@ -175,7 +174,7 @@ class BertClassifier(object):
         max_steps = int(len(dataset) / batch_size * epochs)
         warmup_steps = int(max_steps * warmup_proportion)
         optimizer = get_optimizer(
-            model=self.model, lr=lr, warmup_steps=warmup_steps, max_steps=max_steps, fp16=self.helper.fp16)
+            model=self.model, lr=lr, warmup_steps=warmup_steps, max_steps=max_steps)
 
         balance_weights = None
         if balance_weight:
@@ -194,13 +193,8 @@ class BertClassifier(object):
                 loss = criterion(logits.view(-1, input_ids.shape[1]), label_id.view(-1))
             return loss
 
-        if self.helper.fp16:
-            def adjustment_every_step(model, dataset, loss, global_step, optimizer, batch_size):
-                from mptb.optimization import update_lr_apex
-                update_lr_apex(optimizer, global_step, lr, warmup_steps, max_steps)
-        else:
-            def adjustment_every_step(model, dataset, total_loss, total_steps, optimizer, batch_size):
-                pass
+        def adjustment_every_step(model, dataset, loss, total_steps, global_step, optimizer, batch_size):
+            pass
 
         if sampler is None:
             if balance_sample and self.task != 'choice':
