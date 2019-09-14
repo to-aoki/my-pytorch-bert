@@ -47,12 +47,13 @@ def extract_model(
     if parallel:
         import torch
         model = torch.nn.DataParallel(model)
+
     load(model, model_path, 'cpu')
+    if parallel:
+        model = model.module
+
     if only_bert:
-        if parallel:
-            model = model.module.bert
-        else:
-            model = model.bert
+        model = model.bert
     save(model, output_path)
 
 
