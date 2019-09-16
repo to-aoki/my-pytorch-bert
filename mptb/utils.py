@@ -24,6 +24,32 @@ import torch
 from .preprocessing import *
 
 
+class AttributeDict(object):
+    def __init__(self, obj):
+        self.obj = obj
+
+    def __getstate__(self):
+        return self.obj.items()
+
+    def __setstate__(self, items):
+        if not hasattr(self, 'obj'):
+            self.obj = {}
+        for key, val in items:
+            self.obj[key] = val
+
+    def __getattr__(self, name):
+        if name in self.obj:
+            return self.obj.get(name)
+        else:
+            return None
+
+    def fields(self):
+        return self.obj
+
+    def keys(self):
+        return self.obj.keys()
+
+
 def copy_tf_tensor(checkpoint_dir, tf_name, pyt_attr):
     try:
         import tensorflow as tf
@@ -274,14 +300,14 @@ def get_logger(name, log_path=None, is_console=False, level=None):
     return logger
 
 
-def load(model, filename, device='cpu', optimizer=None):
+def load(model, filename, device='cpu', optimizer=None, strict=True):
     """Loading pytorch model and optimizer(Option)."""
     
     loading_dict = torch.load(filename, map_location=device)
     if 'model' in loading_dict:
-        model.load_state_dict(loading_dict['model'], strict=False)
+        model.load_state_dict(loading_dict['model'], strict=strict)
     else:
-        model.load_state_dict(loading_dict, strict=False)
+        model.load_state_dict(loading_dict, strict=strict)
     try:
         if optimizer is not None and 'optimizer' in loading_dict:
             optimizer.load_state_dict(loading_dict['optimizer'])

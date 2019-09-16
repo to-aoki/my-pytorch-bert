@@ -16,22 +16,43 @@
 
 from mptb import Config
 from mptb.pretrain_tasks import BertPretrainingTasks, OnlyMaskedLMTasks
-from mptb.utils import load, save, get_device
+from mptb.utils import load, save
 
 
 def extract_model(
     config_path='config/bert_base.json',
     model_path="pretrain/pretran_on_the_way.pt",
     output_path="pretrain/bert_only_model.pt",
+    load_strict=True,
     only_bert=False,
-    mlm=False
+    mlm=False,
+    parallel=False,
+    apex=False
 ):
     config = Config.from_json(config_path)
     if mlm:
         model = OnlyMaskedLMTasks(config)
     else:
         model = BertPretrainingTasks(config)
-    load(model, model_path, get_device())
+
+    if apex:
+        model.to('cuda')
+        from mptb import get_optimizer
+        optimizer = get_optimizer(
+            model=model)
+        try:
+            from apex import amp
+        except ImportError:
+            raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
+        model, _ = amp.initialize(model, optimizer, opt_level='O2')
+
+    if parallel:
+        import torch
+        model = torch.nn.DataParallel(model)
+    load(model, model_path, 'cpu', strict=load_strict)
+    if parallel:
+        model = model.module
+
     if only_bert:
         model = model.bert
     save(model, output_path)
@@ -44,11 +65,20 @@ if __name__ == '__main__':
                         type=str, default='config/bert_base.json')
     parser.add_argument('--model_path', help='my-pytorch-bert model path (include optimizer).', required=True,
                         type=str)
+    parser.add_argument('--loose', action='store_true',
+                        help='model load param checking loose')
     parser.add_argument('--mlm', action='store_true',
-                        help='Use mlm only model.')
+                        help='load mlm only model.')
+    parser.add_argument('--apex', action='store_true',
+                        help='load apex model.')
+    parser.add_argument('--parallel', action='store_true',
+                        help='load parallel wrapper model.')
     parser.add_argument('--only_bert', action='store_true',
                         help='Use bert only output.')
     parser.add_argument('--output_path', help='Output model path.', required=True,
                         type=str)
     args = parser.parse_args()
-    extract_model(args.config_path, args.model_path, args.output_path, args.only_bert, args.mlm)
+    extract_model(config_path=args.config_path, model_path=args.model_path,
+                  load_strict=not args.loose,
+                  output_path=args.output_path, only_bert=args.only_bert,
+                  apex=args.apex, parallel=args.parallel, mlm=args.mlm)
