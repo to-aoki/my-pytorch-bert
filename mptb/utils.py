@@ -43,6 +43,9 @@ class AttributeDict(object):
         else:
             return None
 
+    def __repr__(self):
+        return str(self.obj)
+
     def fields(self):
         return self.obj
 

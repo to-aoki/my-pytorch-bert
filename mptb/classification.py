@@ -25,7 +25,8 @@ from .finetuning import Classifier, MultipleChoiceSelector
 from .class_dataset import ClassDataset
 from .choice_dataset import SwagDataset
 from .helper import Helper
-from .utils import save, load, get_logger, make_balanced_classes_weights, get_tokenizer, load_from_google_bert_model
+from .utils import save, load, get_logger, make_balanced_classes_weights, \
+    get_tokenizer, load_from_google_bert_model, AttributeDict
 
 
 class BertClassifier(object):
@@ -48,7 +49,8 @@ class BertClassifier(object):
         under_sampling=False,
         fp16=False,
         task='class',
-        device=None
+        device=None,
+        quantize=False,
     ):
         if tokenizer is None:
             self.tokenizer = get_tokenizer(
@@ -56,9 +58,15 @@ class BertClassifier(object):
         else:
             self.tokenizer = tokenizer
 
-        config = Config.from_json(config_path, len(self.tokenizer), max_pos, bert_layer_num)
-        self.max_pos = config.max_position_embeddings
+        if quantize:
+            with open(config_path, "r", encoding="UTF-8") as reader:
+                import json
+                config_dict = json.load(reader)
+                config = AttributeDict(config_dict)
+        else:
+            config = Config.from_json(config_path, len(self.tokenizer), max_pos, bert_layer_num)
         print(config)
+        self.max_pos = config.max_position_embeddings
         self.task = task
         if dataset_path is not None:
             self.dataset = self.get_dataset(
@@ -69,10 +77,15 @@ class BertClassifier(object):
             if label_num != -1 and label_num != self.dataset.label_num():
                 raise ValueError(
                     'label num mismatch. input : {} datset : {}'.format(label_num, self.dataset.label_num()))
-            self.model = Classifier(config, num_labels=self.dataset.label_num())
+            if quantize:
+                print('quantized classification model')
+                from .quantized_bert import QuantizedBertForSequenceClassification
+                self.model = QuantizedBertForSequenceClassification(config, num_labels=self.dataset.label_num())
+            else:
+                self.model = Classifier(config, num_labels=self.dataset.label_num())
 
         if model_path is None and pretrain_path is not None:
-            load(self.model.bert, pretrain_path)
+            load(self.model.bert, pretrain_path, strict=not quantize)
             print('pretain model loaded: ' + pretrain_path)
             self.pretrain = True
         if not hasattr(self, 'pretrain') and tf_pretrain_path is not None:

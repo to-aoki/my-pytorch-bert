@@ -44,7 +44,8 @@ def classification(
     read_head=False,
     fp16=False,
     task='class',
-    device=None
+    device=None,
+    quantize=False,
 ):
 
     if under_sampling_cycle:
@@ -64,7 +65,8 @@ def classification(
             under_sampling=under_sampling,
             fp16=fp16,
             task=task,
-            device=device
+            device=device,
+            quantize=quantize,
         )
 
         estimator.train(
@@ -98,7 +100,9 @@ def classification(
             label_num=label_num,
             tokenizer_name=tokenizer_name,
             under_sampling=under_sampling,
-            fp16=fp16
+            fp16=fp16,
+            device=device,
+            quantize=quantize,
         )
         score = estimator.evaluate(batch_size=batch_size, log_dir=log_dir)
         print(score)
@@ -162,6 +166,8 @@ if __name__ == '__main__':
                         help='Use nVidia fp16 (require apex module)')
     parser.add_argument('--task',  nargs='?', type=str, default='class', help='Target Task (class or choice)')
     parser.add_argument('--device', nargs='?', type=str, default=None, help='Target Runing device name.')
+    parser.add_argument('--quantize', action='store_true',
+                        help='Use quantized bert (testing),')
     args = parser.parse_args()
     classification(
         config_path=args.config_path,
@@ -191,4 +197,5 @@ if __name__ == '__main__':
         fp16=args.fp16,
         task=args.task,
         device=args.device,
+        quantize=args.quantize
     )
