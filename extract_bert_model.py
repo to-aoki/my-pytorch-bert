@@ -27,32 +27,18 @@ def extract_model(
     only_bert=False,
     mlm=False,
     parallel=False,
-    apex=False
 ):
     config = Config.from_json(config_path)
     if mlm:
         model = OnlyMaskedLMTasks(config)
     else:
         model = BertPretrainingTasks(config)
-
-    if apex:
-        model.to('cuda')
-        from mptb import get_optimizer
-        optimizer = get_optimizer(
-            model=model)
-        try:
-            from apex import amp
-        except ImportError:
-            raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
-        model, _ = amp.initialize(model, optimizer, opt_level='O2')
-
     if parallel:
         import torch
         model = torch.nn.DataParallel(model)
     load(model, model_path, 'cpu', strict=load_strict)
     if parallel:
         model = model.module
-
     if only_bert:
         model = model.bert
     save(model, output_path)
@@ -69,8 +55,6 @@ if __name__ == '__main__':
                         help='model load param checking loose')
     parser.add_argument('--mlm', action='store_true',
                         help='load mlm only model.')
-    parser.add_argument('--apex', action='store_true',
-                        help='load apex model.')
     parser.add_argument('--parallel', action='store_true',
                         help='load parallel wrapper model.')
     parser.add_argument('--only_bert', action='store_true',
