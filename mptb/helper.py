@@ -59,7 +59,8 @@ class Helper(object):
         per_save_epochs=-1,
         adjustment_every_epoch=None,
         adjustment_every_step=None,
-        opt_level='O2'
+        opt_level='O2',
+        force_parallel=False,
     ):
         model.to(self.device)
         model.train()
@@ -73,7 +74,10 @@ class Helper(object):
             model = torch.nn.DataParallel(model)
         if model_file is not None and model_file is not '':
             # optimizer attributes override
-            load(model, model_file, self.device, optimizer)
+            if self.num_gpu > 1 and force_parallel:
+                load(model.module, model_file, self.device, optimizer)
+            else:
+                load(model, model_file, self.device, optimizer)
         global_step = optimizer.get_step()
         print('Optimizer start steps : {:d}'.format(global_step))
         dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
