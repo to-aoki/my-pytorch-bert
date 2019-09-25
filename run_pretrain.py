@@ -41,6 +41,7 @@ def bert_pretraining(
     task='bert',
     stack=False,
     max_words_length=4,
+    bert_model_path=None,
 ):
 
     estimator = BertPretrainier(
@@ -57,7 +58,8 @@ def bert_pretraining(
         model=task,
         sentence_stack=stack,
         pickle_path=pickle_path,
-        max_words_length=max_words_length
+        max_words_length=max_words_length,
+        bert_model_path=bert_model_path
     )
 
     if mode == 'train':
@@ -85,7 +87,9 @@ if __name__ == '__main__':
                         nargs='?', type=int, default=-1)
     parser.add_argument('--pickle_path', help='Pre-tensor pickle dataset file path for BERT to pre-training.',
                         nargs='?', type=str, default=None)
-    parser.add_argument('--model_path', help='Pre-training PyTorch model path.', nargs='?',
+    parser.add_argument('--model_path', help='Pre-training model path.', nargs='?',
+                        type=str, default=None)
+    parser.add_argument('--bert_model_path', help='Only BERT model path.', nargs='?',
                         type=str, default=None)
     parser.add_argument('--vocab_path', help='Vocabulary file path for BERT to pre-training.', nargs='?', required=True,
                         type=str)
@@ -136,5 +140,5 @@ if __name__ == '__main__':
                      args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr, args.warmup_steps,
                      args.epochs, args.per_save_epochs, args.per_save_steps,
                      args.mode, args.tokenizer, args.fp16, args.on_disk, args.task, args.stack,
-                     args.max_words_length)
+                     args.max_words_length, args.bert_model_path)
 

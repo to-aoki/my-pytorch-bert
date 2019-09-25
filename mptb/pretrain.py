@@ -47,6 +47,7 @@ class BertPretrainier(object):
         sentence_stack=False,
         pickle_path=None,
         max_words_length=4,
+        bert_model_path=None,
     ):
 
         if tokenizer is None and vocab_path is not None:
@@ -74,6 +75,7 @@ class BertPretrainier(object):
         self.model_name = model
         self.helper = Helper(fp16=fp16)
         self.model_path = model_path
+        self.bert_model_path = bert_model_path
         self.learned = False
         super().__init__()
 
@@ -159,6 +161,8 @@ class BertPretrainier(object):
             model=self.model, lr=lr, warmup_steps=warmup_steps, max_steps=max_steps)
         if self.model_path is not None and self.model_path != '':
             self.helper.load_model(self.model, self.model_path, optimizer)
+        elif self.bert_model_path is not None and self.bert_model_path != '':
+            self.helper.load_model(self.model.bert, self.bert_model_path)
         criterion_lm = CrossEntropyLoss(ignore_index=-1)
         if isinstance(self.model, BertPretrainingTasks):
             criterion_ns = CrossEntropyLoss(ignore_index=-1)

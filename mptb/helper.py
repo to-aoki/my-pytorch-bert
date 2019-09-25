@@ -33,6 +33,7 @@ class Helper(object):
             self.device = torch.device(get_device())
 
         if torch.cuda.is_available() and self.device is not 'cpu':
+            torch.backends.cudnn.benchmark = True
             self.num_gpu = torch.cuda.device_count()
             self.fp16 = fp16 & torch.cuda.is_available()
         else:
@@ -58,7 +59,8 @@ class Helper(object):
         per_save_epochs=-1,
         adjustment_every_epoch=None,
         adjustment_every_step=None,
-        opt_level='O2'
+        opt_level='O2',
+        force_parallel=False,
     ):
         model.to(self.device)
         model.train()
@@ -72,7 +74,10 @@ class Helper(object):
             model = torch.nn.DataParallel(model)
         if model_file is not None and model_file is not '':
             # optimizer attributes override
-            load(model, model_file, self.device, optimizer)
+            if self.num_gpu > 1 and force_parallel:
+                load(model.module, model_file, self.device, optimizer)
+            else:
+                load(model, model_file, self.device, optimizer)
         global_step = optimizer.get_step()
         print('Optimizer start steps : {:d}'.format(global_step))
         dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
@@ -96,15 +101,14 @@ class Helper(object):
                     loss.backward()
 
                 total_steps += 1
-                if adjustment_every_step is not None:
-                    adjustment_every_step(model, dataset, loss, total_steps, global_step, optimizer, batch_size)
-
                 total_loss += loss.item()
                 iter_bar.set_description("E-{:0=2} : {:2.4f} avg loss ".format(e, total_loss / total_steps),
                                          refresh=False)
                 optimizer.step()
                 optimizer.zero_grad()
                 global_step += 1
+                if adjustment_every_step is not None:
+                    adjustment_every_step(model, dataset, loss, total_steps, global_step, optimizer, batch_size)
 
             if per_save_epochs > 0 and (e + 1) % per_save_epochs is 0:
                 output_model_file = os.path.join(save_dir, "train_model.pt")
