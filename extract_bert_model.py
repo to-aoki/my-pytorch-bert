@@ -65,4 +65,4 @@ if __name__ == '__main__':
     extract_model(config_path=args.config_path, model_path=args.model_path,
                   load_strict=not args.loose,
                   output_path=args.output_path, only_bert=args.only_bert,
-                  apex=args.apex, parallel=args.parallel, mlm=args.mlm)
+                  parallel=args.parallel, mlm=args.mlm)
