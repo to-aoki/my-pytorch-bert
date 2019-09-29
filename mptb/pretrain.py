@@ -21,7 +21,7 @@ from torch.utils.data import SequentialSampler, RandomSampler
 
 from .bert import Config
 from .pretrain_tasks import BertPretrainingTasks, OnlyMaskedLMTasks
-from .optimization import get_optimizer
+from .optimization import get_optimizer, get_scheduler
 from .pretrain_dataset import PretrainDataset, PreTensorPretrainDataset, OneSegmentDataset
 from .helper import Helper
 from .utils import save, get_logger, get_tokenizer
@@ -157,8 +157,8 @@ class BertPretrainier(object):
 
         max_steps = int(len(dataset) / batch_size * epochs)
         warmup_steps = int(max_steps * warmup_proportion)
-        optimizer = get_optimizer(
-            model=self.model, lr=lr, warmup_steps=warmup_steps, max_steps=max_steps)
+        optimizer = get_optimizer(model=self.model, lr=lr)
+        scheduler = get_scheduler(optimizer, warmup_steps=warmup_steps, max_steps=max_steps)
         if self.model_path is not None and self.model_path != '':
             self.helper.load_model(self.model, self.model_path, optimizer)
         elif self.bert_model_path is not None and self.bert_model_path != '':
@@ -199,6 +199,7 @@ class BertPretrainier(object):
             dataset=dataset,
             sampler=sampler,
             optimizer=optimizer,
+            scheduler=scheduler,
             batch_size=batch_size,
             epochs=epochs,
             model_file=traing_model_path,

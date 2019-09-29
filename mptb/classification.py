@@ -20,7 +20,7 @@ from torch.nn import CrossEntropyLoss
 from torch.utils.data import RandomSampler, WeightedRandomSampler
 
 from .bert import Config
-from .optimization import get_optimizer
+from .optimization import get_optimizer, get_scheduler
 from .finetuning import Classifier, MultipleChoiceSelector
 from .class_dataset import ClassDataset
 from .choice_dataset import SwagDataset
@@ -186,8 +186,8 @@ class BertClassifier(object):
 
         max_steps = int(len(dataset) / batch_size * epochs)
         warmup_steps = int(max_steps * warmup_proportion)
-        optimizer = get_optimizer(
-            model=self.model, lr=lr, warmup_steps=warmup_steps, max_steps=max_steps)
+        optimizer = get_optimizer(model=self.model, lr=lr)
+        scheduler = get_scheduler(optimizer, warmup_steps=warmup_steps, max_steps=max_steps)
 
         balance_weights = None
         if balance_weight:
@@ -228,6 +228,7 @@ class BertClassifier(object):
             dataset=dataset,
             sampler=sampler,
             optimizer=optimizer,
+            scheduler=scheduler,
             batch_size=batch_size,
             epochs=epochs,
             model_file=traing_model_path,
