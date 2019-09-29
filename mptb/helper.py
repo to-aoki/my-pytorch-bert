@@ -62,7 +62,7 @@ class Helper(object):
         adjustment_every_epoch=None,
         adjustment_every_step=None,
         opt_level='O2',
-        force_parallel=False,
+        max_grad_norm=1.0
     ):
         model.to(self.device)
         model.train()
@@ -72,11 +72,11 @@ class Helper(object):
             except ImportError:
                 raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
             model, optimizer = amp.initialize(model, optimizer, opt_level=opt_level)
-        if self.num_gpu > 1:  # not test
+        if self.num_gpu > 1:
             model = torch.nn.DataParallel(model)
         if model_file is not None and model_file is not '':
             # optimizer attributes override
-            if self.num_gpu > 1 and force_parallel:
+            if self.num_gpu == 1 and hasattr(model, 'module'):
                 load(model.module, model_file, self.device, optimizer)
             else:
                 load(model, model_file, self.device, optimizer)
@@ -105,9 +105,15 @@ class Helper(object):
                 total_loss += loss.item()
                 iter_bar.set_description("E-{:0=2} : {:2.4f} avg loss ".format(e, total_loss / total_steps),
                                          refresh=False)
+                if self.fp16:
+                    torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), max_grad_norm)
+                else:
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
+
                 optimizer.step()
                 optimizer.zero_grad()
                 scheduler.step()
+
                 global_step += 1
                 if adjustment_every_step is not None:
                     adjustment_every_step(model, dataset, loss, total_steps, global_step, optimizer, batch_size)
