@@ -17,7 +17,8 @@ import os
 import torch
 from torch.utils.data import DataLoader, SequentialSampler
 from tqdm import tqdm
-from . utils import set_seeds, save, load, get_device
+from .utils import set_seeds, save, load, get_device
+from .optimization import get_step
 
 
 class Helper(object):
@@ -52,6 +53,7 @@ class Helper(object):
         dataset,
         sampler,
         optimizer,
+        scheduler,
         batch_size=1,
         epochs=20,
         model_file=None,
@@ -78,7 +80,7 @@ class Helper(object):
                 load(model.module, model_file, self.device, optimizer)
             else:
                 load(model, model_file, self.device, optimizer)
-        global_step = optimizer.get_step()
+        global_step = get_step(optimizer)
         print('Optimizer start steps : {:d}'.format(global_step))
         dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
 
@@ -96,7 +98,6 @@ class Helper(object):
                 if self.fp16:
                     with amp.scale_loss(loss, optimizer) as scaled_loss:
                         scaled_loss.backward()
-                    torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), 1.0)
                 else:
                     loss.backward()
 
@@ -106,9 +107,14 @@ class Helper(object):
                                          refresh=False)
                 optimizer.step()
                 optimizer.zero_grad()
+                scheduler.step()
                 global_step += 1
                 if adjustment_every_step is not None:
                     adjustment_every_step(model, dataset, loss, total_steps, global_step, optimizer, batch_size)
+
+                cpu_device = torch.device('cpu')
+                tuple(t.to(cpu_device) for t in batch)
+                torch.cuda.empty_cache()
 
             if per_save_epochs > 0 and (e + 1) % per_save_epochs is 0:
                 output_model_file = os.path.join(save_dir, "train_model.pt")
