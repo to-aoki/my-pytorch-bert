@@ -84,8 +84,9 @@ class BertClassifier(object):
             else:
                 self.model = Classifier(config, num_labels=self.dataset.label_num())
 
+        self.pretrain = False
         if model_path is None and pretrain_path is not None:
-            load(self.model.bert, pretrain_path, strict=not quantize)
+            self.helper.load_model(model=self.model.bert, model_path=pretrain_path, strict=not quantize)
             print('pretain model loaded: ' + pretrain_path)
             self.pretrain = True
         if not hasattr(self, 'pretrain') and tf_pretrain_path is not None:
@@ -97,7 +98,6 @@ class BertClassifier(object):
         if model_path is not None and model_path != '':
             self.model_path = model_path
             self.helper.load_model(self.model, model_path)
-            self.model.eval()
             self.learned = True
 
         super().__init__()
@@ -173,12 +173,14 @@ class BertClassifier(object):
         if not hasattr(dataset, 'sampling_index'):
             under_sampling_cycle = False
 
-        if not is_model_laoded:
+        if not is_model_laoded and not self.pretrain:
             if pretrain_path is not None:
-                load(self.model.bert, pretrain_path)
+                self.helper.load_model(model=self.model.bert, model_path=pretrain_path, strict=not quantize)
+                print('pretain model loaded: ' + pretrain_path)
                 self.pretrain = True
             elif tf_pretrain_path is not None:
                 load_from_google_bert_model(self.model.bert, tf_pretrain_path)
+                print('pretain model loaded: ' + tf_pretrain_path)
                 self.pretrain = True
 
         if not is_model_laoded and not hasattr(self, 'pretrain') and not hasattr(self, 'learned'):
@@ -240,7 +242,10 @@ class BertClassifier(object):
         self.learned = True
         if is_save_after_training:
             output_model_path = os.path.join(save_dir, "classifier.pt")
-            save(self.model, output_model_path)
+            if self.helper.num_gpu > 1:
+                save(self.model.module, output_model_path)
+            else:
+                save(self.model, output_model_path)
 
         return loss
 

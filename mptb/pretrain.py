@@ -159,9 +159,7 @@ class BertPretrainier(object):
         warmup_steps = int(max_steps * warmup_proportion)
         optimizer = get_optimizer(model=self.model, lr=lr)
         scheduler = get_scheduler(optimizer, warmup_steps=warmup_steps, max_steps=max_steps)
-        if self.model_path is not None and self.model_path != '':
-            self.helper.load_model(self.model, self.model_path, optimizer)
-        elif self.bert_model_path is not None and self.bert_model_path != '':
+        if self.bert_model_path is not None and self.bert_model_path != '':
             self.helper.load_model(self.model.bert, self.bert_model_path)
         criterion_lm = CrossEntropyLoss(ignore_index=-1)
         if isinstance(self.model, BertPretrainingTasks):
@@ -189,7 +187,10 @@ class BertPretrainier(object):
         def adjustment_every_step(model, dataset, loss, total_steps, global_step, optimizer, batch_size):
             if per_save_steps > 0 and total_steps > 0 and total_steps % per_save_steps == 0:
                 output_model_file = os.path.join(save_dir, model.__class__.__name__ + "_train_model.pt")
-                save(model, output_model_file, optimizer)
+                if self.helper.num_gpu > 1:
+                    save(model.module, output_model_file, optimizer)
+                else:
+                    save(model, output_model_file, optimizer)
                 if "dump_last_indices" in dir(dataset):
                     dataset.dump_last_indices(total_steps * batch_size)
 
@@ -212,7 +213,10 @@ class BertPretrainier(object):
 
         if is_save_after_training:
             output_model_path = os.path.join(save_dir, "bert.pt")
-            save(self.model.bert, output_model_path)
+            if self.helper.num_gpu > 1:
+                save(self.model.module.bert, output_model_path)
+            else:
+                save(self.model.bert, output_model_path)
         return loss
 
     def evaluate(

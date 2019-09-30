@@ -43,8 +43,8 @@ class Helper(object):
         print("device: {} num_gpu: {} fp16: {}".format(self.device, self.num_gpu, self.fp16))
         self.cli_interval = cli_interval
 
-    def load_model(self, model, model_path, optimizer=None):
-        load(model, model_path, self.device, optimizer)
+    def load_model(self, model, model_path, optimizer=None, strict=True):
+        load(model, model_path, self.device, optimizer, strict)
 
     def train(
         self,
@@ -76,7 +76,7 @@ class Helper(object):
             model = torch.nn.DataParallel(model)
         if model_file is not None and model_file is not '':
             # optimizer attributes override
-            if self.num_gpu == 1 and hasattr(model, 'module'):
+            if self.num_gpu > 1 and hasattr(model, 'module'):
                 load(model.module, model_file, self.device, optimizer)
             else:
                 load(model, model_file, self.device, optimizer)
