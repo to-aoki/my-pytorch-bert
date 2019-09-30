@@ -26,7 +26,6 @@ import math
 import torch
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LambdaLR
-from torch.nn.utils import clip_grad_norm_
 
 logger = logging.getLogger(__name__)
 
@@ -267,7 +266,7 @@ class BertAdam(Optimizer):
                 if group['weight_decay'] > 0.0:
                     update += group['weight_decay'] * p.data
 
-                p.data.add_(update)
+                p.data.add_(-group['lr'] * update)
 
                 state['step'] += 1
 
