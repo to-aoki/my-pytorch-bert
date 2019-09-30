@@ -85,6 +85,8 @@ class BertClassifier(object):
                 self.model = Classifier(config, num_labels=self.dataset.label_num())
 
         self.pretrain = False
+        self.helper = Helper(device=device, fp16=fp16)
+
         if model_path is None and pretrain_path is not None:
             self.helper.load_model(model=self.model.bert, model_path=pretrain_path, strict=not quantize)
             print('pretain model loaded: ' + pretrain_path)
@@ -94,7 +96,6 @@ class BertClassifier(object):
             print('pretain model loaded: ' + tf_pretrain_path)
             self.pretrain = True
 
-        self.helper = Helper(device=device, fp16=fp16)
         if model_path is not None and model_path != '':
             self.model_path = model_path
             self.helper.load_model(self.model, model_path)
