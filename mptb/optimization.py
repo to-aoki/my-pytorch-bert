@@ -265,8 +265,7 @@ class BertAdam(Optimizer):
                 # of the weights to the loss with plain (non-momentum) SGD.
                 if group['weight_decay'] > 0.0:
                     update += group['weight_decay'] * p.data
-
-                p.data.add_(-group['lr'] * update)
+                    p.data.add_(-group['lr'] * update)
 
                 state['step'] += 1
 
