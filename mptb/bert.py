@@ -235,7 +235,7 @@ class AlbertTransformerBlock(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.attention = Attention(config)
-        self.projection = nn.Linear(config.hidden, config.hidden)
+        self.projection = nn.Linear(config.hidden_size, config.hidden_size)
         self.norm1 = LayerNorm(config)
         self.pwff = PositionwiseFeedForward(config)
         self.norm2 = LayerNorm(config)
