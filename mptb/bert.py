@@ -232,13 +232,13 @@ class TransformerBlock(nn.Module):
 
 
 class AlbertTransformerBlock(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, eps=1e-12):
         super().__init__()
         self.attention = Attention(config)
         self.projection = nn.Linear(config.hidden_size, config.hidden_size)
-        self.norm1 = LayerNorm(config)
+        self.norm1 = LayerNorm(config.hidden_size, eps=eps)
         self.pwff = PositionwiseFeedForward(config)
-        self.norm2 = LayerNorm(config)
+        self.norm2 = LayerNorm(config.hidden_size, eps=eps)
 
     def forward(self, hidden_states, attention_mask):
         attention_output = self.attention(hidden_states, attention_mask)
