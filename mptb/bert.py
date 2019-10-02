@@ -236,14 +236,13 @@ class AlbertTransformerBlock(nn.Module):
         super().__init__()
         self.attention = Attention(config)
         self.projection = nn.Linear(config.hidden_size, config.hidden_size)
-        self.norm1 = LayerNorm(config.hidden_size, eps=eps)
+        self.layer_norm = LayerNorm(config.hidden_size, eps=eps)
         self.pwff = PositionwiseFeedForward(config)
-        self.norm2 = LayerNorm(config.hidden_size, eps=eps)
 
     def forward(self, hidden_states, attention_mask):
         attention_output = self.attention(hidden_states, attention_mask)
-        attention_output = self.norm1(attention_output + self.projection(attention_output))
-        return self.norm2(attention_output + self.pwff(attention_output))
+        attention_output = self.layer_norm(self.projection(attention_output))
+        return self.pwff(attention_output)
 
 
 class Encoder(nn.Module):
