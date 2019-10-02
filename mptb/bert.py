@@ -74,24 +74,27 @@ class Embeddings(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.word_embeddings = nn.Embedding(config.vocab_size, config.hidden_size, padding_idx=0)
-        self.position_embeddings = nn.Embedding(config.max_position_embeddings, config.hidden_size, padding_idx=0)
         if config.type_vocab_size > 0:
-            self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size, padding_idx=0)
+            self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size)
+        self.position_embeddings = nn.Embedding(config.max_position_embeddings, config.hidden_size)
 
         self.layer_norm = LayerNorm(config.hidden_size)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
     def forward(self, input_ids, token_type_ids=None, position_ids=None):
+
         if position_ids is None:
             max_position_embeddings = input_ids.size(1)
             position_ids = torch.arange(max_position_embeddings, dtype=torch.long, device=input_ids.device)
             position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
-        token_type_embedded = 0.
+
+        embeddings = self.word_embeddings(input_ids)
         if hasattr(self, 'token_type_embeddings'):
             if token_type_ids is None:
                 token_type_ids = torch.zeros_like(input_ids)
-            token_type_embedded = self.token_type_embeddings(token_type_ids)
-        embeddings = self.word_embeddings(input_ids) + self.position_embeddings(position_ids) + token_type_embedded
+            embeddings += self.token_type_embeddings(token_type_ids)
+        embeddings += self.position_embeddings(position_ids)
+
         return self.dropout(self.layer_norm(embeddings))
 
 
@@ -208,14 +211,16 @@ class Encoder(nn.Module):
         for layer_module in self.blocks_layer:
             layer_module.attention.self_attention.enable_monitor = True
 
-    def forward(self, hidden_states, attention_mask):
+    def forward(self, hidden_states, attention_mask, layer=-1):
         if self.attn_monitor:
             self.attn_data_list = []
-        for layer_module in self.blocks_layer:
+        all_hidden_states = []
+        for i, layer_module in enumerate(self.blocks_layer):
             hidden_states = layer_module(hidden_states, attention_mask)
             if self.attn_monitor:
                 self.attn_data_list.append(layer_module.attention.self_attention.attn_data)
-        return hidden_states
+            all_hidden_states.append(hidden_states)
+        return all_hidden_states[layer]
 
     # for bertviz
     def monitor(self):
@@ -245,7 +250,7 @@ class BertModel(nn.Module):
             module.bias.data.zero_()
             module.weight.data.fill_(1.0)
 
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, position_ids=None):
+    def forward(self, input_ids, token_type_ids=None, attention_mask=None, position_ids=None, layer=-1):
         if attention_mask is None:
             attention_mask = torch.ones_like(input_ids)
         if token_type_ids is None:
@@ -268,7 +273,7 @@ class BertModel(nn.Module):
         extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
 
         embedding_output = self.embeddings(input_ids, token_type_ids, position_ids)
-        hidden_states = self.encoder(embedding_output, extended_attention_mask)
+        hidden_states = self.encoder(embedding_output, extended_attention_mask, layer=layer)
         pooled_output = torch.tanh(self.pool(hidden_states[:, 0]))
 
         return hidden_states, pooled_output

@@ -127,7 +127,7 @@ class Timer(object):
 
 
 def to_bert_ids(
-    max_pos, tokenizer, sentence_a, sentence_b,
+    max_pos, tokenizer, sentence_a, sentence_b=None,
     cls_token='[CLS]', sep_token='[SEP]', pad_token='[PAD]'
 ):
     tokens_a = tokenizer.tokenize(sentence_a)
