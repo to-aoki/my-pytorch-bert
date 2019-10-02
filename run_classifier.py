@@ -46,6 +46,7 @@ def classification(
     task='class',
     device=None,
     quantize=False,
+    arlbert=False,
 ):
 
     if under_sampling_cycle:
@@ -67,6 +68,7 @@ def classification(
             task=task,
             device=device,
             quantize=quantize,
+            arlbert=arlbert
         )
 
         estimator.train(
@@ -103,6 +105,7 @@ def classification(
             fp16=fp16,
             device=device,
             quantize=quantize,
+            arlbert=arlbert
         )
         score = estimator.evaluate(batch_size=batch_size, log_dir=log_dir)
         print(score)
@@ -168,6 +171,7 @@ if __name__ == '__main__':
     parser.add_argument('--device', nargs='?', type=str, default=None, help='Target Runing device name.')
     parser.add_argument('--quantize', action='store_true',
                         help='Use quantized bert (testing),')
+    parser.add_argument('--albert', action='store_true', help='Use ALBERT model')
     args = parser.parse_args()
     classification(
         config_path=args.config_path,
@@ -198,4 +202,5 @@ if __name__ == '__main__':
         task=args.task,
         device=args.device,
         quantize=args.quantize
+
     )

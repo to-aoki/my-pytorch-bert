@@ -48,6 +48,7 @@ class BertPretrainier(object):
         pickle_path=None,
         max_words_length=4,
         bert_model_path=None,
+        albert=False
     ):
 
         if tokenizer is None and vocab_path is not None:
@@ -67,7 +68,7 @@ class BertPretrainier(object):
         print(config)
         self.max_pos = max_pos
         if model == 'mlm':
-            self.model = OnlyMaskedLMTasks(config)
+            self.model = OnlyMaskedLMTasks(config, albert)
             print('Task: Only MaskedLM')
         else:
             self.model = BertPretrainingTasks(config)

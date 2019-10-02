@@ -20,35 +20,51 @@ import torch
 import torch.nn as nn
 
 from .models import gelu, LayerNorm
-from .bert import BertModel
+from .bert import BertModel, AlbertModel
 
 
 class OnlyMaskedLMTasks(nn.Module):
     """Bert Pre-training Tasks"""
 
-    def __init__(self, config):
+    def __init__(self, config, is_albert=False):
         super().__init__()
-        self.bert = BertModel(config)
+        self.is_albert = is_albert
+        if is_albert:
+            self.bert = AlbertModel(config)
+        else:
+            self.bert = BertModel(config)
         self.masked_lm = MaskedLM(config, self.bert.embeddings.word_embeddings.weight.size(0))
 
     def forward(self, input_ids, segment_ids, input_mask):
         hidden_state, _ = self.bert(input_ids, segment_ids, input_mask)
-        logits_lm = self.masked_lm.forward(hidden_state, self.bert.embeddings.word_embeddings.weight)
+        if self.is_albert:
+            logits_lm = self.masked_lm.forward(
+                hidden_state, self.bert.embeddings.word_embeddings.weight, self.bert.embeddings.projection.weight)
+        else:
+            logits_lm = self.masked_lm.forward(hidden_state, self.bert.embeddings.word_embeddings.weight)
         return logits_lm, None
 
 
 class BertPretrainingTasks(nn.Module):
     """Bert Pre-training Tasks"""
 
-    def __init__(self, config):
+    def __init__(self, config, is_albert):
         super().__init__()
-        self.bert = BertModel(config)
+        self.is_albert = is_albert
+        if is_albert:
+            self.bert = AlbertModel(config)
+        else:
+            self.bert = BertModel(config)
         self.masked_lm = MaskedLM(config, self.bert.embeddings.word_embeddings.weight.size(0))
         self.next_sentence_prediction = NextSentencePrediction(config)
 
     def forward(self, input_ids, segment_ids, input_mask):
         hidden_state, pooled_output = self.bert(input_ids, segment_ids, input_mask)
-        logits_lm = self.masked_lm.forward(hidden_state, self.bert.embeddings.word_embeddings.weight)
+        if self.is_albert:
+            logits_lm = self.masked_lm.forward(
+                hidden_state, self.bert.embeddings.word_embeddings.weight, self.bert.embeddings.projection.weight)
+        else:
+            logits_lm = self.masked_lm.forward(hidden_state, self.bert.embeddings.word_embeddings.weight)
         logits_nsp = self.next_sentence_prediction(pooled_output)
         return logits_lm, logits_nsp
 
@@ -64,10 +80,14 @@ class MaskedLM(nn.Module):
         self.dense.weight.data = torch.fmod(
             torch.randn(self.dense.weight.size()), config.initializer_range)
 
-    def forward(self, hidden_states, word_embeddings_weight):
+    def forward(self, hidden_states, word_embeddings_weight, projetion_weight=None):
         hidden_states = gelu(self.dense(hidden_states))
         hidden_states = self.layer_norm(hidden_states)
-        return torch.matmul(hidden_states, word_embeddings_weight.transpose(0, 1)) + self.bias
+        if projetion_weight is not None:
+            hidden_states = torch.matmul(hidden_states, projetion_weight)
+            return torch.matmul(hidden_states, word_embeddings_weight.transpose(0, 1)) + self.bias
+        else:
+            return torch.matmul(hidden_states, word_embeddings_weight.transpose(0, 1)) + self.bias
 
 
 class NextSentencePrediction(nn.Module):

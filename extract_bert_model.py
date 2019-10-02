@@ -27,10 +27,11 @@ def extract_model(
     only_bert=False,
     mlm=False,
     parallel=False,
+    albert=False,
 ):
     config = Config.from_json(config_path)
     if mlm:
-        model = OnlyMaskedLMTasks(config)
+        model = OnlyMaskedLMTasks(config, is_albert=albert)
     else:
         model = BertPretrainingTasks(config)
     if parallel:
@@ -61,8 +62,9 @@ if __name__ == '__main__':
                         help='Use bert only output.')
     parser.add_argument('--output_path', help='Output model path.', required=True,
                         type=str)
+    parser.add_argument('--albert', action='store_true', help='Use ALBERT model')
     args = parser.parse_args()
     extract_model(config_path=args.config_path, model_path=args.model_path,
                   load_strict=not args.loose,
                   output_path=args.output_path, only_bert=args.only_bert,
-                  parallel=args.parallel, mlm=args.mlm)
+                  parallel=args.parallel, mlm=args.mlm, albert=args.albert)

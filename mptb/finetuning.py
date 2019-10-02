@@ -19,16 +19,20 @@
 import torch
 import torch.nn as nn
 
-from . bert import BertModel
+from . bert import BertModel, AlbertModel
 
 
 class Classifier(nn.Module):
     """Bert fine-tuning classifier"""
 
-    def __init__(self, config, num_labels):
+    def __init__(self, config, num_labels, is_albert=False):
         super().__init__()
 
-        self.bert = BertModel(config)
+        if is_albert:
+            self.bert = AlbertModel(config)
+        else:
+            self.bert = BertModel(config)
+
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.classifier = nn.Linear(config.hidden_size, num_labels)
         self.classifier.weight.data = torch.fmod(
@@ -44,10 +48,13 @@ class Classifier(nn.Module):
 class TokenClassifier(nn.Module):
     """Bert fine-tuning Token classifier"""
 
-    def __init__(self, config, num_labels):
+    def __init__(self, config, num_labels, is_albert=False):
         super().__init__()
         self.num_labels = num_labels
-        self.bert = BertModel(config)
+        if is_albert:
+            self.bert = AlbertModel(config)
+        else:
+            self.bert = BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.classifier = nn.Linear(config.hidden_size, num_labels)
         self.classifier.weight.data = torch.fmod(
@@ -62,9 +69,12 @@ class TokenClassifier(nn.Module):
 class MultipleChoiceSelector(nn.Module):
     """Bert fine-tuning Token classifier"""
 
-    def __init__(self, config):
+    def __init__(self, config, is_albert=False):
         super().__init__()
-        self.bert = BertModel(config)
+        if is_albert:
+            self.bert = AlbertModel(config)
+        else:
+            self.bert = BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.classifier = nn.Linear(config.hidden_size, 1)
         self.classifier.weight.data = torch.fmod(
@@ -88,10 +98,13 @@ class MultipleChoiceSelector(nn.Module):
 class QuestionRespondent(nn.Module):
     """Bert fine-tuning Question respondent"""
 
-    def __init__(self, config, num_labels):
+    def __init__(self, config, num_labels, is_albert=False):
         super().__init__()
         self.num_labels = num_labels
-        self.bert = BertModel(config)
+        if is_albert:
+            self.bert = AlbertModel(config)
+        else:
+            self.bert = BertModel(config)
         self.qa_outputs = nn.Linear(config.hidden_size, num_labels)
         self.qa_outputs.weight.data = torch.fmod(
             torch.randn(self.classifier.weight.size()), config.initializer_range)

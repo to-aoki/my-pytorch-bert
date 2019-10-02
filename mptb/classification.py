@@ -51,6 +51,7 @@ class BertClassifier(object):
         task='class',
         device=None,
         quantize=False,
+        albert=False,
     ):
         if tokenizer is None:
             self.tokenizer = get_tokenizer(
@@ -72,7 +73,7 @@ class BertClassifier(object):
             self.dataset = self.get_dataset(
                 self.tokenizer, dataset_path, header_skip=header_skip, under_sampling=under_sampling)
         if self.task == 'choice':
-            self.model = MultipleChoiceSelector(config)
+            self.model = MultipleChoiceSelector(config, is_albert=albert)
         else:
             if label_num != -1 and label_num != self.dataset.label_num():
                 raise ValueError(
@@ -82,7 +83,7 @@ class BertClassifier(object):
                 from .quantized_bert import QuantizedBertForSequenceClassification
                 self.model = QuantizedBertForSequenceClassification(config, num_labels=self.dataset.label_num())
             else:
-                self.model = Classifier(config, num_labels=self.dataset.label_num())
+                self.model = Classifier(config, num_labels=self.dataset.label_num(), is_albert=albert)
 
         self.pretrain = False
         self.helper = Helper(device=device, fp16=fp16)
