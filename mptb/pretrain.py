@@ -48,7 +48,8 @@ class BertPretrainier(object):
         pickle_path=None,
         max_words_length=4,
         bert_model_path=None,
-        albert=False
+        albert=False,
+        optimizer='bert'
     ):
 
         if tokenizer is None and vocab_path is not None:
@@ -78,6 +79,7 @@ class BertPretrainier(object):
         self.model_path = model_path
         self.bert_model_path = bert_model_path
         self.learned = False
+        self.optimizer_name=optimizer
         super().__init__()
 
     def get_dataset(
@@ -158,7 +160,7 @@ class BertPretrainier(object):
 
         max_steps = int(len(dataset) / batch_size * epochs)
         warmup_steps = int(max_steps * warmup_proportion)
-        optimizer = get_optimizer(model=self.model, lr=lr)
+        optimizer = get_optimizer(model=self.model, lr=lr, optimzier=self.optimizer_name)
         scheduler = get_scheduler(optimizer, warmup_steps=warmup_steps, max_steps=max_steps)
         if self.bert_model_path is not None and self.bert_model_path != '':
             self.helper.load_model(self.model.bert, self.bert_model_path)
