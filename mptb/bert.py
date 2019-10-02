@@ -231,29 +231,15 @@ class TransformerBlock(nn.Module):
         return self.pwff(attention_output)
 
 
-class AlbertTransformerBlock(nn.Module):
-    def __init__(self, config, eps=1e-12):
-        super().__init__()
-        self.attention = Attention(config)
-        self.projection = nn.Linear(config.hidden_size, config.hidden_size)
-        self.layer_norm = LayerNorm(config.hidden_size, eps=eps)
-        self.pwff = PositionwiseFeedForward(config)
-
-    def forward(self, hidden_states, attention_mask):
-        attention_output = self.attention(hidden_states, attention_mask)
-        attention_output = self.layer_norm(self.projection(attention_output))
-        return self.pwff(attention_output)
-
-
 class Encoder(nn.Module):
     def __init__(self, config, is_albert=False):
         super().__init__()
 
         self.num_hidden_layers = config.num_hidden_layers
+        layer = TransformerBlock(config)
         if is_albert:
-            self.blocks_layer = AlbertTransformerBlock(config)
+            self.blocks_layer = layer
         else:
-            layer = TransformerBlock(config)
             self.blocks_layer = nn.ModuleList([copy.deepcopy(layer) for _ in range(self.num_hidden_layers)])
         self.is_albert = is_albert
         self.attn_data_list = []
