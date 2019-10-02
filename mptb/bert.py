@@ -232,23 +232,36 @@ class TransformerBlock(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, is_albert=False):
         super().__init__()
         layer = TransformerBlock(config)
-        self.blocks_layer = nn.ModuleList([copy.deepcopy(layer) for _ in range(config.num_hidden_layers)])
+        self.num_hidden_layers = config.num_hidden_layers
+        if is_albert:
+            self.blocks_layer = layer
+        else:
+            self.blocks_layer = nn.ModuleList([copy.deepcopy(layer) for _ in range(self.num_hidden_layers)])
+        self.is_albert = is_albert
         self.attn_data_list = []
         self.attn_monitor = False
 
     def enable_monitor(self):
         self.attn_monitor = True
-        for layer_module in self.blocks_layer:
+        if self.is_albert:
+            self.blocks_layer.attention.self_attention.enable_monitor = True
+            return
+        for i in range(self.num_hidden_layers):
+            layer_module = self.blocks_layer[i]
             layer_module.attention.self_attention.enable_monitor = True
 
     def forward(self, hidden_states, attention_mask, layer=-1):
         if self.attn_monitor:
             self.attn_data_list = []
         all_hidden_states = []
-        for i, layer_module in enumerate(self.blocks_layer):
+        for i in range(self.num_hidden_layers):
+            if self.is_albert:
+                layer_module = self.blocks_layer
+            else:
+                layer_module = self.blocks_layer[i]
             hidden_states = layer_module(hidden_states, attention_mask)
             if self.attn_monitor:
                 self.attn_data_list.append(layer_module.attention.self_attention.attn_data)
@@ -319,7 +332,7 @@ class AlbertModel(nn.Module):
         super().__init__()
         self.initializer_range = config.initializer_range
         self.embeddings = FactorizedEmbeddings(config)
-        self.encoder = Encoder(config)
+        self.encoder = Encoder(config, is_albert=True)
         self.pool = nn.Linear(config.hidden_size, config.hidden_size)
         self.apply(self.init_bert_weights)
 
