@@ -46,7 +46,7 @@ def classification(
     task='class',
     device=None,
     quantize=False,
-    arlbert=False,
+    albert=False,
 ):
 
     if under_sampling_cycle:
@@ -68,7 +68,7 @@ def classification(
             task=task,
             device=device,
             quantize=quantize,
-            arlbert=arlbert
+            albert=albert
         )
 
         estimator.train(
@@ -201,6 +201,6 @@ if __name__ == '__main__':
         fp16=args.fp16,
         task=args.task,
         device=args.device,
-        quantize=args.quantize
-
+        quantize=args.quantize,
+        albert=args.albert
     )
