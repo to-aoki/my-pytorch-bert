@@ -113,8 +113,8 @@ class Helper(object):
                 optimizer.step()
                 optimizer.zero_grad()
                 scheduler.step()
-
                 global_step += 1
+
                 if adjustment_every_step is not None:
                     adjustment_every_step(model, dataset, loss, total_steps, global_step, optimizer, batch_size)
 

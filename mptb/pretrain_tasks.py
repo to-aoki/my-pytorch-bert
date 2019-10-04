@@ -48,7 +48,7 @@ class OnlyMaskedLMTasks(nn.Module):
 class BertPretrainingTasks(nn.Module):
     """Bert Pre-training Tasks"""
 
-    def __init__(self, config, is_albert):
+    def __init__(self, config, is_albert=False):
         super().__init__()
         self.is_albert = is_albert
         if is_albert:
@@ -80,11 +80,11 @@ class MaskedLM(nn.Module):
         self.dense.weight.data = torch.fmod(
             torch.randn(self.dense.weight.size()), config.initializer_range)
 
-    def forward(self, hidden_states, word_embeddings_weight, projetion_weight=None):
+    def forward(self, hidden_states, word_embeddings_weight, projection_weight=None):
         hidden_states = gelu(self.dense(hidden_states))
         hidden_states = self.layer_norm(hidden_states)
-        if projetion_weight is not None:
-            hidden_states = torch.matmul(hidden_states, projetion_weight)
+        if projection_weight is not None:
+            hidden_states = torch.matmul(hidden_states, projection_weight)
             return torch.matmul(hidden_states, word_embeddings_weight.transpose(0, 1)) + self.bias
         else:
             return torch.matmul(hidden_states, word_embeddings_weight.transpose(0, 1)) + self.bias

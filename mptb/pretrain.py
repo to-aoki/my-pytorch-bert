@@ -72,14 +72,14 @@ class BertPretrainier(object):
             self.model = OnlyMaskedLMTasks(config, albert)
             print('Task: Only MaskedLM')
         else:
-            self.model = BertPretrainingTasks(config)
+            self.model = BertPretrainingTasks(config, albert)
             print('Task: With  Next Sentence Predict')
         self.model_name = model
         self.helper = Helper(fp16=fp16)
         self.model_path = model_path
         self.bert_model_path = bert_model_path
         self.learned = False
-        self.optimizer_name=optimizer
+        self.optimizer_name = optimizer
         super().__init__()
 
     def get_dataset(
@@ -95,13 +95,13 @@ class BertPretrainier(object):
         pretensor_data_length=-1,
         max_words_length=4
     ):
-        if pretensor_data_path is not None and pretensor_data_length > 0:
-            print('Dataset : PreTensorPretrainDataset')
-            return PreTensorPretrainDataset(pretensor_data_path, pretensor_data_length)
-
         if hasattr(self, 'max_pos'):
             max_pos = self.max_pos
 
+        if pretensor_data_path is not None and pretensor_data_length > 0:
+            print('Dataset : PreTensorPretrainDataset')
+            return PreTensorPretrainDataset(tokenizer=tokenizer, max_pos=max_pos, dataset_path=pretensor_data_path,
+                                            length=pretensor_data_length)
         if max_pos < 5 and dataset_path is not None:
             # max_pos = statistics.median(all-sentence-tokens)
             import statistics

@@ -276,7 +276,6 @@ class Encoder(nn.Module):
 
 class BertModel(nn.Module):
     """BERT model ("Bidirectional Embedding Representations from a Transformer")."""
-
     def __init__(self, config):
         super().__init__()
         self.initializer_range = config.initializer_range
@@ -327,7 +326,7 @@ class BertModel(nn.Module):
 
 
 class AlbertModel(nn.Module):
-    """ALBERT model ("A Little Bidirectional Embedding Representations from a Transformer")."""
+    """ A Lite Bert For Self-Supervised Learning Language Representations."""
 
     def __init__(self, config):
         super().__init__()

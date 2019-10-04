@@ -39,7 +39,7 @@ import pickle
 class OneSegmentDataset(Dataset):
 
     def __init__(self, tokenizer, max_pos, dataset_path=None, documents=[], encoding="utf-8",
-                 sentence_stack=True, pickle_path=None, max_words_length=4):
+                 sentence_stack=True, pickle_path=None, max_words_length=4, is_sop=False):
         self.tokenizer = tokenizer
         self.max_pos = max_pos
         self.dataset_path = dataset_path
@@ -130,6 +130,13 @@ class OneSegmentDataset(Dataset):
     def __getitem__(self, item):
         # transform sample to features
         features = self.convert_example_to_features(self.all_documents[self.indices[item]], self.max_pos)
+
+        # zero padding
+        num_zero_pad = self.max_pos - len(features[0])
+        features[2].extend([1] * len(features[0]))
+        features[2].extend([0] * num_zero_pad)
+        features[0].extend([self.pad_id] * num_zero_pad)
+        features[4].extend([self.pad_id] * num_zero_pad)
         return [torch.tensor(x, dtype=torch.long) for x in features]
 
     def convert_example_to_features(
@@ -188,11 +195,6 @@ class OneSegmentDataset(Dataset):
 
         input_ids = tokens
         label_ids = tokens_a_ids
-
-        # zero padding
-        num_zero_pad = max_pos - len(input_ids)
-        input_ids.extend([self.pad_id]*num_zero_pad)
-        label_ids.extend([self.pad_id]*num_zero_pad)
 
         return [input_ids, [], [], [], label_ids]
 
@@ -526,7 +528,13 @@ class PretrainDataGeneration(object):
 
 class PreTensorPretrainDataset(Dataset):
 
-    def __init__(self, dataset_path=None, length=-1, last_step=-1):
+    def __init__(self, tokenizer=None, max_pos=-1, dataset_path=None, length=-1, last_step=-1):
+
+        # BERT reserved tokens
+        if tokenizer is not None:
+            self.pad_id = tokenizer.convert_tokens_to_ids(["[PAD]"])[0]
+        self.max_pos = max_pos
+
         if length < 0:
             raise ValueError('length must be positive.')
         if dataset_path.endswith("gz"):
