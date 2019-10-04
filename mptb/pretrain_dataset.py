@@ -130,13 +130,6 @@ class OneSegmentDataset(Dataset):
     def __getitem__(self, item):
         # transform sample to features
         features = self.convert_example_to_features(self.all_documents[self.indices[item]], self.max_pos)
-
-        # zero padding
-        num_zero_pad = self.max_pos - len(features[0])
-        features[2].extend([1] * len(features[0]))
-        features[2].extend([0] * num_zero_pad)
-        features[0].extend([self.pad_id] * num_zero_pad)
-        features[4].extend([self.pad_id] * num_zero_pad)
         return [torch.tensor(x, dtype=torch.long) for x in features]
 
     def convert_example_to_features(
@@ -196,7 +189,13 @@ class OneSegmentDataset(Dataset):
         input_ids = tokens
         label_ids = tokens_a_ids
 
-        return [input_ids, [], [], [], label_ids]
+        # zero padding
+        num_zero_pad = self.max_pos - len(input_ids)
+        input_mask = [1] * len(input_ids)
+        input_mask.extend([0] * num_zero_pad)
+        input_ids.extend([self.pad_id] * num_zero_pad)
+        label_ids.extend([self.pad_id] * num_zero_pad)
+        return [input_ids, [], input_mask, [], label_ids]
 
     def get_random_token_id(self):
         return self.tokenizer.get_random_token_id()
