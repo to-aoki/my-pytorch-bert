@@ -58,6 +58,7 @@ class BertPretrainier(object):
         else:
             self.tokenizer = tokenizer
 
+        self.is_albert = albert
         self.dataset = self.get_dataset(dataset_path, self.tokenizer, max_pos=max_pos, on_memory=on_memory,
                                         model=model, sentence_stack=sentence_stack, pickle_path=pickle_path,
                                         pretensor_data_path=pretensor_data_path,
@@ -111,7 +112,13 @@ class BertPretrainier(object):
             max_pos = median_pos * 2 + 3  # [CLS]a[SEP]b[SEP]
             print("max_pos (median):", max_pos)
 
-        if model == 'mlm' and (dataset_path is not None or pickle_path is not None):
+        if self.is_albert and (dataset_path is not None or pickle_path is not None):
+            print('Dataset : AlbertDataset')
+            return OneSegmentDataset(
+                tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path,
+                sentence_stack=True, pickle_path=pickle_path, max_words_length=max_words_length, is_sop=True
+            )
+        elif model == 'mlm' and (dataset_path is not None or pickle_path is not None):
             print('Dataset : OneSegmentDataset')
             return OneSegmentDataset(
                 tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path,

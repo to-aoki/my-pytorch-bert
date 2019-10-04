@@ -53,6 +53,8 @@ class OneSegmentDataset(Dataset):
         self.sentence_stack = sentence_stack
         self.max_words_length = max_words_length
         self.all_documents = []
+        self.bert_ids_num = 3 if is_sop else 2
+        self.is_sop = is_sop
 
         if pickle_path is not None:
             if pickle_path.endswith("gz"):
@@ -107,15 +109,17 @@ class OneSegmentDataset(Dataset):
     def _load_text(self, text, stack):
         text = text.strip()
         if text == "":
-            if len(stack) > 0:
+            if len(stack) > 2:
                 self.all_documents.append(self.tokenizer.convert_tokens_to_ids(stack))
+                stack = []
+            elif 0 < len(stack) < 2:
                 stack = []
         else:
             if self.sentence_stack:
                 tokens = self.tokenizer.tokenize(text) if self.tokenizer is not None else text
-                if len(stack) + len(tokens) > self.max_pos - 2:
+                if (len(stack) + len(tokens)) > (self.max_pos - self.bert_ids_num):
                     self.all_documents.append(self.tokenizer.convert_tokens_to_ids(stack))
-                    stack = []
+                    stack = [tokens]
                     return stack
                 stack.extend(tokens)
                 return stack
@@ -133,35 +137,77 @@ class OneSegmentDataset(Dataset):
         return [torch.tensor(x, dtype=torch.long) for x in features]
 
     def convert_example_to_features(
-            self, tokens_a, max_pos, short_seq_prob=0.1, masked_lm_prob=0.15):
+            self, token_ids, max_pos, short_seq_prob=0.1, masked_lm_prob=0.15):
         """
         Convert a raw sample (pair of sentences as tokenized strings) into a proper training sample with
         IDs, LM labels, input_mask, CLS and SEP tokens etc.
-        :param tokens_a: str, example tokens.
+        :param token_ids: str, example tokens.
         :param max_pos: int, maximum length of sequence.4
         :param short_seq_prob: float, Probability of creating sequences which are shorter than the maximum length.
         :param masked_lm_prob: float, Masked LM probability.
         :return: features
         """
 
-        target_max_pos = max_pos - 2
-
-        tokens_a_ids = copy.copy(tokens_a)
-        # However, sequences to minimize the mismatch between pre-training and fine-tuning.
+        target_max_pos = max_pos - self.bert_ids_num
         if random() < short_seq_prob:
             target_max_pos = randint(2, target_max_pos)
-        truncate_seq_pair(tokens_a_ids, [], target_max_pos)
 
-        # Add Special Tokens
-        tokens_a_ids = [self.cls_id] + tokens_a_ids
-        tokens_a_ids = tokens_a_ids + [self.sep_id]
+        if self.is_sop and self.sentence_stack:
+            split_ids = copy.copy(token_ids)
+            if len(split_ids) > target_max_pos:
+                split_ids = split_ids[:target_max_pos]
 
-        tokens = copy.copy(tokens_a_ids)
+            split_id = 1
+            if len(split_ids) >= 2:
+                split_id = randint(1, len(split_ids) - 1)
+
+            tokens_a = []
+            for i in range(split_id):
+                tokens_a.append(split_ids[i])
+
+            tokens_b = []
+            for i in range(split_id, len(split_ids)):
+                tokens_b.append(split_ids[i])
+
+            if len(tokens_b) > 0 and random() < 0.5:
+                is_random_next = 1
+                temp = tokens_a
+                tokens_a = tokens_b
+                tokens_b = temp
+            else:
+                is_random_next = 0
+
+            # Add Special Tokens
+            tokens_a.insert(0, self.cls_id)
+            tokens_a.append(self.sep_id)
+            if len(tokens_b) > 0:
+                tokens_b.append(self.sep_id)
+            else:
+                tokens_b = []
+
+            bert_token_ids = copy.copy(tokens_a)
+            bert_token_ids.extend(copy.copy(tokens_b))
+            label_ids = tokens_a + tokens_b
+            # Add next sentence segment
+            segment_ids = [0] * len(tokens_a) + [1] * len(tokens_b)
+
+        else:
+            label_ids = copy.copy(token_ids)
+            # However, sequences to minimize the mismatch between pre-training and fine-tuning.
+
+            truncate_seq_pair(label_ids, [], target_max_pos)
+
+            # Add Special Tokens
+            label_ids = [self.cls_id] + label_ids + [self.sep_id]
+
+            bert_token_ids = copy.copy(label_ids)
+            segment_ids = []
+            is_random_next = []
 
         # mask prediction calc
-        mask_prediction = int(round(len(tokens) * masked_lm_prob))
+        mask_prediction = round((len(bert_token_ids) - self.bert_ids_num) * masked_lm_prob)
         mask_candidate_pos = [i for i, token in enumerate(
-            tokens) if token != self.cls_id and token != self.sep_id]
+            bert_token_ids) if token != self.cls_id and token != self.sep_id]
         mask_length = np.random.geometric(0.4)
         if mask_length > self.max_words_length:
             mask_length = self.max_words_length
@@ -177,25 +223,27 @@ class OneSegmentDataset(Dataset):
                 for pos in words:
                     masked += 1
                     if random() < 0.8:  # 80%
-                        tokens[pos] = self.mask_id
+                        bert_token_ids[pos] = self.mask_id
                     elif random() < 0.5:  # 10%
-                        tokens[pos] = self.get_random_token_id()
+                        bert_token_ids[pos] = self.get_random_token_id()
                     # 10% not mask and not modify
                     if masked == mask_prediction:
                         break
                 if masked == mask_prediction:
                     break
 
-        input_ids = tokens
-        label_ids = tokens_a_ids
+        input_ids = bert_token_ids
 
         # zero padding
         num_zero_pad = self.max_pos - len(input_ids)
         input_mask = [1] * len(input_ids)
+        if segment_ids:
+            segment_ids.extend([0] * num_zero_pad)
         input_mask.extend([0] * num_zero_pad)
         input_ids.extend([self.pad_id] * num_zero_pad)
         label_ids.extend([self.pad_id] * num_zero_pad)
-        return [input_ids, [], input_mask, [], label_ids]
+
+        return [input_ids, segment_ids, input_mask, is_random_next, label_ids]
 
     def get_random_token_id(self):
         return self.tokenizer.get_random_token_id()
@@ -430,7 +478,7 @@ class PretrainDataset(Dataset):
 
         # Add Special Tokens
         tokens_a_ids.insert(0, self.cls_id)
-        tokens_b_ids.append(self.sep_id)
+        tokens_a_ids.append(self.sep_id)
         if len(tokens_b_ids) != 0:
             tokens_b_ids.append(self.sep_id)
         else:

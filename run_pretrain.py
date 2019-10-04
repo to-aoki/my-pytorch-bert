@@ -89,7 +89,7 @@ if __name__ == '__main__':
     parser.add_argument('--pretensor_dataset_length',
                         help='Pre-tensor masked dataset tensor length for BERT to pre-training.',
                         nargs='?', type=int, default=-1)
-    parser.add_argument('--pickle_path', help='Pre-tensor pickle dataset file path for BERT to pre-training.',
+    parser.add_argument('--pickle_path', help='Pre-load texts pickle dataset file path for BERT to pre-training.',
                         nargs='?', type=str, default=None)
     parser.add_argument('--model_path', help='Pre-training model path.', nargs='?',
                         type=str, default=None)
