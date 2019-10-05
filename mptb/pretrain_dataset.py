@@ -157,17 +157,20 @@ class OneSegmentDataset(Dataset):
             if len(split_ids) > target_max_pos:
                 split_ids = split_ids[:target_max_pos]
 
-            split_id = 0
+            split_id = 1
             if len(split_ids) > 2:
                 split_id = randint(1, len(split_ids) - 1)
 
-            tokens_a = []
-            for i in range(split_id):
-                tokens_a.append(split_ids[i])
+                tokens_a = []
+                for i in range(split_id):
+                    tokens_a.append(split_ids[i])
 
-            tokens_b = []
-            for i in range(split_id, len(split_ids)):
-                tokens_b.append(split_ids[i])
+                tokens_b = []
+                for i in range(split_id, len(split_ids)):
+                    tokens_b.append(split_ids[i])
+            else:
+                tokens_a = [split_ids[0]]
+                tokens_b = []
 
             if len(tokens_b) > 0 and random() < 0.5:
                 is_random_next = 1
