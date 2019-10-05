@@ -150,15 +150,15 @@ class OneSegmentDataset(Dataset):
 
         target_max_pos = max_pos - self.bert_ids_num
         if random() < short_seq_prob:
-            target_max_pos = randint(2, target_max_pos)
+            target_max_pos = randint(2, target_max_pos - 1)
 
-        if self.is_sop and self.sentence_stack:
+        if self.is_sop:
             split_ids = copy.copy(token_ids)
             if len(split_ids) > target_max_pos:
                 split_ids = split_ids[:target_max_pos]
 
             split_id = 1
-            if len(split_ids) >= 2:
+            if len(split_ids) >= 3:
                 split_id = randint(1, len(split_ids) - 1)
 
             tokens_a = []
@@ -193,7 +193,6 @@ class OneSegmentDataset(Dataset):
 
         else:
             label_ids = copy.copy(token_ids)
-            # However, sequences to minimize the mismatch between pre-training and fine-tuning.
 
             truncate_seq_pair(label_ids, [], target_max_pos)
 
@@ -473,7 +472,7 @@ class PretrainDataset(Dataset):
         tokens_b_ids = copy.copy(tokens_b)
         # However, sequences to minimize the mismatch between pre-training and fine-tuning.
         if random() < short_seq_prob:
-            target_max_pos = randint(2, target_max_pos)
+            target_max_pos = randint(2, target_max_pos -1)
         truncate_seq_pair(tokens_a_ids, tokens_b_ids, target_max_pos)
 
         # Add Special Tokens
