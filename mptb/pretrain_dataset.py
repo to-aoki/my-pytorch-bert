@@ -157,8 +157,8 @@ class OneSegmentDataset(Dataset):
             if len(split_ids) > target_max_pos:
                 split_ids = split_ids[:target_max_pos]
 
-            split_id = 1
-            if len(split_ids) >= 3:
+            split_id = 0
+            if len(split_ids) > 2:
                 split_id = randint(1, len(split_ids) - 1)
 
             tokens_a = []
