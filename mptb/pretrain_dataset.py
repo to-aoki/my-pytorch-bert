@@ -112,14 +112,13 @@ class OneSegmentDataset(Dataset):
             if len(stack) > 2:
                 self.all_documents.append(self.tokenizer.convert_tokens_to_ids(stack))
                 stack = []
-            elif 0 < len(stack) < 2:
+            elif len(stack) < 2:
                 stack = []
         else:
             if self.sentence_stack:
                 tokens = self.tokenizer.tokenize(text) if self.tokenizer is not None else text
                 if (len(stack) + len(tokens)) > (self.max_pos - self.bert_ids_num):
-                    self.all_documents.append(self.tokenizer.convert_tokens_to_ids(stack))
-                    stack = [tokens]
+                    stack = tokens
                     return stack
                 stack.extend(tokens)
                 return stack
