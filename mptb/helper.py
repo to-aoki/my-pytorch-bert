@@ -118,10 +118,6 @@ class Helper(object):
                 if adjustment_every_step is not None:
                     adjustment_every_step(model, dataset, loss, total_steps, global_step, optimizer, batch_size)
 
-                cpu_device = torch.device('cpu')
-                tuple(t.to(cpu_device) for t in batch)
-                torch.cuda.empty_cache()
-
             if per_save_epochs > 0 and (e + 1) % per_save_epochs is 0:
                 output_model_file = os.path.join(save_dir, "train_model.pt")
                 save(model, output_model_file, optimizer)
@@ -174,7 +170,6 @@ class Helper(object):
                 total_steps += 1
                 iter_bar.set_description("E-{:0=2} : {:2.4f} avg loss ".format(e, total_loss / total_steps),
                                          refresh=False)
-
                 global_step += 1
 
             if examples_reports is not None:
@@ -227,5 +222,10 @@ class Helper(object):
             with torch.no_grad():
                 predict = process(batch, model, step)
                 predicts.append(predict)
+
+            cpu_device = torch.device('cpu')
+            tuple(t.to(cpu_device) for t in batch)
+            torch.cuda.empty_cache()
+
         return predicts
 
