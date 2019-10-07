@@ -33,7 +33,7 @@ def extract_model(
     if mlm:
         model = OnlyMaskedLMTasks(config, is_albert=albert)
     else:
-        model = BertPretrainingTasks(config)
+        model = BertPretrainingTasks(config, is_albert=albert)
     if parallel:
         import torch
         model = torch.nn.DataParallel(model)
