@@ -112,7 +112,7 @@ class BertPretrainier(object):
             max_pos = median_pos * 2 + 3  # [CLS]a[SEP]b[SEP]
             print("max_pos (median):", max_pos)
 
-        if self.is_albert and (dataset_path is not None or pickle_path is not None) and not model != 'mlm':
+        if self.is_albert and (dataset_path is not None or pickle_path is not None) and model != 'mlm':
             print('Dataset : AlbertDataset')
             return OneSegmentDataset(
                 tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path,
