@@ -69,8 +69,7 @@ def classification(
             task=task,
             device=device,
             quantize=quantize,
-            albert=albert,
-            optimizer=optimizer
+            albert=albert
         )
 
         estimator.train(
