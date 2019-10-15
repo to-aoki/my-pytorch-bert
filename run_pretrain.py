@@ -62,14 +62,13 @@ def bert_pretraining(
         pickle_path=pickle_path,
         max_words_length=max_words_length,
         bert_model_path=bert_model_path,
-        albert=albert,
-        optimizer=optimizer
-    )
+        albert=albert    )
 
     if mode == 'train':
         score = estimator.train(
             traing_model_path=model_path, batch_size=batch_size, epochs=epochs, per_save_epochs=per_save_epochs,
-            per_save_steps=per_save_steps, lr=lr, warmup_proportion=warmup_proportion, save_dir=save_dir
+            per_save_steps=per_save_steps, lr=lr, warmup_proportion=warmup_proportion, save_dir=save_dir,
+            optimizer_name=optimizer
         )
         print(score)
     else:

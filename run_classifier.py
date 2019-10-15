@@ -47,6 +47,7 @@ def classification(
     device=None,
     quantize=False,
     albert=False,
+    optimizer='bert'
 ):
 
     if under_sampling_cycle:
@@ -68,7 +69,8 @@ def classification(
             task=task,
             device=device,
             quantize=quantize,
-            albert=albert
+            albert=albert,
+            optimizer=optimizer
         )
 
         estimator.train(
@@ -80,7 +82,8 @@ def classification(
             balance_sample=balance_sample,
             under_sampling_cycle=under_sampling_cycle,
             save_dir=save_dir,
-            per_save_epochs=per_save_epochs
+            per_save_epochs=per_save_epochs,
+            optimizer_name=optimizer
         )
         if eval_dataset_path is None:
             return
@@ -105,7 +108,7 @@ def classification(
             fp16=fp16,
             device=device,
             quantize=quantize,
-            arlbert=arlbert
+            albert=albert
         )
         score = estimator.evaluate(batch_size=batch_size, log_dir=log_dir)
         print(score)
@@ -172,6 +175,10 @@ if __name__ == '__main__':
     parser.add_argument('--quantize', action='store_true',
                         help='Use quantized bert (testing),')
     parser.add_argument('--albert', action='store_true', help='Use ALBERT model')
+    parser.add_argument('--optimizer', nargs='?', type=str, default='bert',
+                        help=
+                        'Select from the following name groups optimizer. (bert, adamw, lamb)'
+                        )
     args = parser.parse_args()
     classification(
         config_path=args.config_path,
@@ -202,5 +209,6 @@ if __name__ == '__main__':
         task=args.task,
         device=args.device,
         quantize=args.quantize,
-        albert=args.albert
+        albert=args.albert,
+        optimizer=args.optimizer
     )

@@ -51,7 +51,7 @@ class BertClassifier(object):
         task='class',
         device=None,
         quantize=False,
-        albert=False,
+        albert=False
     ):
         if tokenizer is None:
             self.tokenizer = get_tokenizer(
@@ -158,7 +158,8 @@ class BertClassifier(object):
         under_sampling_cycle=False,
         save_dir='../classifier/',
         per_save_epochs=1,
-        is_save_after_training=True
+        is_save_after_training=True,
+        optimizer_name='bert'
     ):
 
         if dataset is None:
@@ -190,7 +191,7 @@ class BertClassifier(object):
 
         max_steps = int(len(dataset) / batch_size * epochs)
         warmup_steps = int(max_steps * warmup_proportion)
-        optimizer = get_optimizer(model=self.model, lr=lr)
+        optimizer = get_optimizer(model=self.model, lr=lr, optimzier=optimizer_name)
         scheduler = get_scheduler(optimizer, warmup_steps=warmup_steps, max_steps=max_steps)
 
         balance_weights = None
