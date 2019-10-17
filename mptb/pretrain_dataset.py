@@ -22,6 +22,7 @@
 """for BERT pre-training dataset."""
 
 import os
+import itertools
 import gzip
 from random import random, randint, shuffle, randrange
 import numpy as np
@@ -86,7 +87,13 @@ class OneSegmentDataset(Dataset):
                         stack = self._load_text(text, stack)
             # FIX to last rows ""... . last line is not "" and EOF
             if len(stack) > 0:
-                self.all_documents.append(self.tokenizer.convert_tokens_to_ids(stack))
+                if self.is_sop:
+                    ids = []
+                    for t in stack:
+                        ids.append(self.tokenizer.convert_tokens_to_ids(t))
+                    self.all_documents.append(ids)
+                else:
+                    self.all_documents.append(self.tokenizer.convert_tokens_to_ids(stack))
 
         if len(self.all_documents) is 0:
             raise ValueError(dataset_path + ' were not includes documents.')
@@ -110,18 +117,37 @@ class OneSegmentDataset(Dataset):
         text = text.strip()
         if text == "":
             if len(stack) > 2:
-                self.all_documents.append(self.tokenizer.convert_tokens_to_ids(stack))
+                if self.is_sop:
+                    ids = []
+                    for t in stack:
+                        ids.append(self.tokenizer.convert_tokens_to_ids(t))
+                    self.all_documents.append(ids)
+                else:
+                    self.all_documents.append(self.tokenizer.convert_tokens_to_ids(stack))
                 stack = []
             elif len(stack) < 2:
                 stack = []
         else:
-            if self.sentence_stack:
+            if self.is_sop:
+                tokens = self.tokenizer.tokenize(text) if self.tokenizer is not None else text
+                token_len = 0
+                for x in stack:
+                    token_len = len(x)
+                if token_len > (self.max_pos - self.bert_ids_num):
+                    ids = []
+                    for t in stack:
+                        ids.append(self.tokenizer.convert_tokens_to_ids(t))
+                    self.all_documents.append(ids)
+                    stack = tokens
+                    return stack
+                stack.append(tokens)
+            elif self.sentence_stack:
                 tokens = self.tokenizer.tokenize(text) if self.tokenizer is not None else text
                 if (len(stack) + len(tokens)) > (self.max_pos - self.bert_ids_num):
+                    self.all_documents.append(self.tokenizer.convert_tokens_to_ids(stack))
                     stack = tokens
                     return stack
                 stack.extend(tokens)
-                return stack
             else:
                 tokens = self.tokenizer.tokenize(text) if self.tokenizer is not None else text
                 self.all_documents.append(self.tokenizer.convert_tokens_to_ids(tokens))
@@ -153,12 +179,8 @@ class OneSegmentDataset(Dataset):
 
         if self.is_sop:
             split_ids = copy.copy(token_ids)
-            if len(split_ids) > target_max_pos:
-                split_ids = split_ids[:target_max_pos]
-
             if len(split_ids) > 2:
                 split_id = randint(1, len(split_ids) - 1)
-
                 tokens_a = []
                 for i in range(split_id):
                     tokens_a.append(split_ids[i])
@@ -177,6 +199,8 @@ class OneSegmentDataset(Dataset):
                 tokens_b = temp
             else:
                 is_random_next = 0
+            tokens_a = list(itertools.chain.from_iterable(tokens_a))
+            tokens_b = list(itertools.chain.from_iterable(tokens_b))
 
             # Add Special Tokens
             tokens_a.insert(0, self.cls_id)
@@ -524,21 +548,26 @@ class PretrainDataGeneration(object):
 
     def __init__(
         self,
-        dataset_path=None,
-        output_path='data/jawiki_norm',
-        vocab_path='data/32023.vocab',
-        sp_model_path='data/32023.model',
+        dataset_path='data/jawiki_norm.txt',
+        output_path='data/jawiki_norm.pickle',
+        vocab_path='config/wiki-ja_1003.vocab',
+        sp_model_path='config/wiki-ja_1003.model',
         max_pos=512,
         epochs=20,
         tokenizer_name='sp_pos',
         task='mlm',
         sentence_stack=True,
-        pickle_path='data/jawiki_norm.pickle'
+        pickle_path=None
     ):
         tokenizer = get_tokenizer(
             vocab_path=vocab_path, sp_model_path=sp_model_path, name=tokenizer_name)
 
-        if task == 'mlm':
+        if task == 'sop':
+            self.dataset = OneSegmentDataset(
+                tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path,
+                pickle_path=pickle_path, is_sop=True
+            )
+        elif task == 'mlm':
             self.dataset = OneSegmentDataset(
                 tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path,
                 sentence_stack=sentence_stack, pickle_path=pickle_path
