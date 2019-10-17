@@ -16,7 +16,7 @@
 
 import numpy as np
 import torch
-from .bert import Config, BertModel
+from .bert import Config, BertModel, AlbertModel
 from .utils import get_tokenizer, load, to_bert_ids
 
 
@@ -31,6 +31,7 @@ class BertSWEM(object):
         sp_model_path=None,
         bert_model_path=None,
         device='cpu',
+        albert=False
     ):
         if vocab_path is None or bert_model_path is None:
             raise ValueError('Require vocab_path and bert_model_path')
@@ -40,7 +41,10 @@ class BertSWEM(object):
 
         config = Config.from_json(config_path, len(self.tokenizer), max_pos)
         print(config)
-        self.bert_model = BertModel(config)
+        if albert:
+            self.bert_model = AlbertModel(config)
+        else:
+            self.bert_model = BertModel(config)
         self.max_pos = config.max_position_embeddings
         load(self.bert_model, bert_model_path, device)
         super().__init__()
@@ -49,7 +53,8 @@ class BertSWEM(object):
         self,
         text=None,
         pooling_layer=-1,
-        pooling_strategy='REDUCE_MEAN'
+        pooling_strategy='REDUCE_MEAN',
+        hier_pool_window=-1
     ):
         ids = to_bert_ids(max_pos=self.max_pos, tokenizer=self.tokenizer, sentence_a=text)
         tensor = [torch.tensor([x], dtype=torch.long) for x in ids]
@@ -68,6 +73,13 @@ class BertSWEM(object):
             return np.r_[np.max(embedding, axis=0), np.mean(embedding, axis=0)]
         elif pooling_strategy == "CLS_TOKEN":
             return embedding[0]
+        elif pooling_strategy == 'HIER':
+            text_len = embedding.shape[0]
+            if hier_pool_window > text_len:
+                hier_pool_window = text_len
+            window_average_pooling = [np.mean(embedding[i:i + hier_pool_window], axis=0)
+                                      for i in range(text_len - hier_pool_window + 1)]
+            return np.max(window_average_pooling, axis=0)
         else:
-            raise ValueError("Support pooling_strategy: {REDUCE_MEAN, REDUCE_MAX, REDUCE_MEAN_MAX, CLS_TOKEN}")
+            raise ValueError("Support pooling_strategy: {REDUCE_MEAN, REDUCE_MAX, REDUCE_MEAN_MAX, CLS_TOKEN, HIER}")
 

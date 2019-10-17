@@ -28,7 +28,8 @@ def swem(
     text_a='吾輩は猫である。',
     text_b=None,
     layer='-1',
-    strategy='REDUCE_MEAN'
+    strategy='REDUCE_MEAN',
+    albert=False
 ):
     swem = BertSWEM(
         config_path=config_path,
@@ -38,6 +39,7 @@ def swem(
         tokenizer_name=tokenizer_name,
         bert_model_path=bert_model_path,
         device=device,
+        albert=albert
     )
     text_a_vector = swem.embedding_vector(text_a, pooling_layer=layer, pooling_strategy=strategy)
     print(text_a, text_a_vector)
@@ -71,10 +73,11 @@ if __name__ == '__main__':
     parser.add_argument('--compare', nargs='?', type=str, default='None', help='Compare sentence')
     parser.add_argument('--layer', nargs='?', type=int, default='-1', help='Use Bert pooling layer')
     parser.add_argument('--strategy', nargs='?', type=str, default='REDUCE_MEAN',
-                        help='Use SWEM operation (REDUCE_MEAN, REDUCE_MAX, REDUCE_MEAN_MAX, CLS_TOKEN)')
+                        help='Use SWEM operation (REDUCE_MEAN, REDUCE_MAX, REDUCE_MEAN_MAX, CLS_TOKEN, HIER)')
+    parser.add_argument('--albert', action='store_true', help='Use ALBERT model')
 
     args = parser.parse_args()
     swem(config_path=args.config_path, max_pos=args.max_pos,
          vocab_path=args.vocab_path, sp_model_path=args.sp_model_path, tokenizer_name=args.tokenizer,
          bert_model_path=args.model_path, device=args.device,
-         text_a=args.text, text_b=args.compare, layer=args.layer, strategy=args.strategy)
+         text_a=args.text, text_b=args.compare, layer=args.layer, strategy=args.strategy, albert=args.albert)
