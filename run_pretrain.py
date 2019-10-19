@@ -133,7 +133,7 @@ if __name__ == '__main__':
                         'Select from the following name groups pretrain task(bert or mlm)'
                         )
     parser.add_argument('--stack', action='store_true',
-                        help='Sentencestack option when task=mlm effective.')
+                        help='Sentence stack option when task=mlm effective.')
     parser.add_argument('--max_words_length', help='Masked Consecutive words(tokens) max length', nargs='?',
                         type=int, default=4)
     parser.add_argument('--albert', action='store_true', help='Use ALBERT model')

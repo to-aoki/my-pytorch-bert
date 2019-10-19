@@ -37,7 +37,7 @@ import copy
 import pickle
 
 
-class OneSegmentDataset(Dataset):
+class StackedSentenceDataset(Dataset):
 
     def __init__(self, tokenizer, max_pos, dataset_path=None, documents=[], encoding="utf-8",
                  sentence_stack=True, pickle_path=None, max_words_length=4, is_sop=False):
@@ -277,7 +277,7 @@ class OneSegmentDataset(Dataset):
         return name
 
 
-class PretrainDataset(Dataset):
+class NextSentencePredictionDataset(Dataset):
 
     def __init__(self, tokenizer, max_pos, dataset_path=None, documents=[], encoding="utf-8", on_memory=True):
         self.tokenizer = tokenizer
@@ -563,17 +563,17 @@ class PretrainDataGeneration(object):
             vocab_path=vocab_path, sp_model_path=sp_model_path, name=tokenizer_name)
 
         if task == 'sop':
-            self.dataset = OneSegmentDataset(
+            self.dataset = StackedSentenceDataset(
                 tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path,
                 pickle_path=pickle_path, is_sop=True
             )
         elif task == 'mlm':
-            self.dataset = OneSegmentDataset(
+            self.dataset = StackedSentenceDataset(
                 tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path,
                 sentence_stack=sentence_stack, pickle_path=pickle_path
             )
         else:
-            self.dataset = PretrainDataset(
+            self.dataset = NextSentencePredictionDataset(
                 tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path, on_memory=True
             )
 
@@ -581,7 +581,7 @@ class PretrainDataGeneration(object):
         self.epochs = epochs
 
     def generate_text_tensor(self):
-        if not isinstance(self.dataset, OneSegmentDataset):
+        if not isinstance(self.dataset, StackedSentenceDataset):
             raise('Not support dataset class {}: ', self.dataset.____class__.__name__)
         self.dataset.dump_ids_documents(self.output_path)
 

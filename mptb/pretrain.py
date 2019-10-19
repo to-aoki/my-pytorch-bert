@@ -22,7 +22,7 @@ from torch.utils.data import SequentialSampler, RandomSampler
 from .bert import Config
 from .pretrain_tasks import BertPretrainingTasks, OnlyMaskedLMTasks
 from .optimization import get_optimizer, get_scheduler
-from .pretrain_dataset import PretrainDataset, PreTensorPretrainDataset, OneSegmentDataset
+from .pretrain_dataset import NextSentencePredictionDataset, PreTensorPretrainDataset, StackedSentenceDataset
 from .helper import Helper
 from .utils import save, get_logger, get_tokenizer
 
@@ -113,19 +113,19 @@ class BertPretrainier(object):
 
         if self.is_albert and (dataset_path is not None or pickle_path is not None) and model != 'mlm':
             print('Dataset : AlbertDataset')
-            return OneSegmentDataset(
+            return StackedSentenceDataset(
                 tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path,
                 sentence_stack=True, pickle_path=pickle_path, max_words_length=max_words_length, is_sop=True
             )
         elif model == 'mlm' and (dataset_path is not None or pickle_path is not None):
             print('Dataset : OneSegmentDataset')
-            return OneSegmentDataset(
+            return StackedSentenceDataset(
                 tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path,
                 sentence_stack=sentence_stack, pickle_path=pickle_path, max_words_length=max_words_length
             )
         elif dataset_path is not None:
             print('Dataset : NextSentenceDataset')
-            return PretrainDataset(
+            return NextSentencePredictionDataset(
                 tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path, on_memory=on_memory
             )
         else:
@@ -160,7 +160,7 @@ class BertPretrainier(object):
                 raise ValueError('require dataset')
 
         if sampler is None:
-            if isinstance(dataset, PreTensorPretrainDataset) or isinstance(dataset, OneSegmentDataset):
+            if isinstance(dataset, PreTensorPretrainDataset) or isinstance(dataset, StackedSentenceDataset):
                 sampler = SequentialSampler(dataset)
             else:
                 sampler = RandomSampler(dataset)
@@ -239,7 +239,6 @@ class BertPretrainier(object):
         is_reports_output=False,
         log_dir=None
     ):
-
         if model_path is None and hasattr(self, 'model_path'):
             model_path = self.model_path
             self.learned = True

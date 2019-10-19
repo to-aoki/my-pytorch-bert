@@ -1,5 +1,5 @@
 import unittest
-from mptb.pretrain_dataset import PretrainDataset
+from mptb.pretrain_dataset import NextSentencePredictionDataset, StackedSentenceDataset
 from mptb.tokenization_sentencepiece import FullTokenizer
 
 
@@ -11,7 +11,7 @@ class PretrainDatasetTestCase(unittest.TestCase):
             "sample_text.model", "sample_text.vocab")
 
     def test_instance(self):
-        dataset = PretrainDataset(
+        dataset = NextSentencePredictionDataset(
             self.tokenizer,
             max_pos=128,
             dataset_path="sample_text.txt",
@@ -29,7 +29,7 @@ class PretrainDatasetTestCase(unittest.TestCase):
 
     def test_empty_file_load(self):
         with self.assertRaises(ValueError):
-            PretrainDataset(
+            NextSentencePredictionDataset(
                 self.tokenizer,
                 max_pos=128,
                 dataset_path="empty.txt",
@@ -38,7 +38,7 @@ class PretrainDatasetTestCase(unittest.TestCase):
 
     def test_not_found_file_load(self):
         with self.assertRaises(FileNotFoundError):
-            PretrainDataset(
+            NextSentencePredictionDataset(
                 self.tokenizer,
                 max_pos=128,
                 dataset_path="not_found_text.txt",
@@ -46,13 +46,13 @@ class PretrainDatasetTestCase(unittest.TestCase):
             )
 
     def test_last_row_empty_file_load(self):
-        sample_text = PretrainDataset(
+        sample_text = NextSentencePredictionDataset(
             self.tokenizer,
             max_pos=128,
             dataset_path="sample_text.txt",
             on_memory=True
         )
-        last_row_empty = PretrainDataset(
+        last_row_empty = NextSentencePredictionDataset(
             self.tokenizer,
             max_pos=128,
             dataset_path="last_row_empty.txt",
@@ -61,7 +61,7 @@ class PretrainDatasetTestCase(unittest.TestCase):
         self.assertEqual(len(sample_text), len(last_row_empty))
 
     def test_get_item_one(self):
-        dataset = PretrainDataset(
+        dataset = NextSentencePredictionDataset(
             self.tokenizer,
             max_pos=128,
             dataset_path="sample_text.txt",
@@ -71,13 +71,30 @@ class PretrainDatasetTestCase(unittest.TestCase):
 
     def test_get_item_use_not_item_index(self):
         with self.assertRaises(AssertionError):
-            dataset = PretrainDataset(
+            dataset = NextSentencePredictionDataset(
                 self.tokenizer,
                 max_pos=128,
                 dataset_path="sample_text.txt",
                 on_memory=True
             )
             dataset.__getitem__([1, 2])
+
+    def test_sop_instance(self):
+        dataset = StackedSentenceDataset(
+            self.tokenizer,
+            max_pos=128,
+            dataset_path="sample_text.txt",
+            on_memory=True
+        )
+        delim_return = 0
+        num_docs = 3
+        start_zero = 1  # index 0 start
+        with open("sample_text.txt",  encoding="UTF-8") as f:
+            for line in f:
+                line = line.strip()
+                if line != "":
+                    delim_return += 1
+        self.assertEqual(delim_return-num_docs-start_zero, len(dataset))
 
 
 if __name__ == '__main__':

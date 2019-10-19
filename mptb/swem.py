@@ -75,7 +75,7 @@ class BertSWEM(object):
             return embedding[0]
         elif pooling_strategy == 'HIER':
             text_len = embedding.shape[0]
-            if hier_pool_window > text_len:
+            if hier_pool_window > text_len or hier_pool_window < 1:
                 hier_pool_window = text_len
             window_average_pooling = [np.mean(embedding[i:i + hier_pool_window], axis=0)
                                       for i in range(text_len - hier_pool_window + 1)]
