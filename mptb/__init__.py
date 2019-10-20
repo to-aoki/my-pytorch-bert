@@ -1,6 +1,6 @@
 __version__ = "0.0.1"
 from .class_dataset import ClassDataset
-from .pretrain_dataset import PretrainDataset, PretrainDataGeneration
+from .pretrain_dataset import NextSentencePredictionDataset, PretrainDataGeneration
 from .finetuning import *
 from .helper import Helper
 from .bert import Config, BertModel
