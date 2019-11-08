@@ -49,7 +49,7 @@ class BertPretrainier(object):
         max_words_length=4,
         bert_model_path=None,
         albert=False,
-        optimizer='bert'
+        device=None
     ):
 
         if tokenizer is None and vocab_path is not None:
@@ -76,7 +76,7 @@ class BertPretrainier(object):
             self.model = BertPretrainingTasks(config, albert)
             print('Task: With  Next Sentence Predict')
         self.model_name = model
-        self.helper = Helper(fp16=fp16)
+        self.helper = Helper(device=device, fp16=fp16)
         self.model_path = model_path
         self.bert_model_path = bert_model_path
         self.learned = False
@@ -93,7 +93,7 @@ class BertPretrainier(object):
         pickle_path=None,
         pretensor_data_path=None,
         pretensor_data_length=-1,
-        max_words_length=4
+        max_words_length=4,
     ):
         if hasattr(self, 'max_pos'):
             max_pos = self.max_pos
@@ -112,21 +112,23 @@ class BertPretrainier(object):
             print("max_pos (median):", max_pos)
 
         if self.is_albert and (dataset_path is not None or pickle_path is not None) and model != 'mlm':
-            print('Dataset : AlbertDataset')
+            print('Dataset : SOP')
             return StackedSentenceDataset(
                 tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path,
-                sentence_stack=True, pickle_path=pickle_path, max_words_length=max_words_length, is_sop=True
+                sentence_stack=True, pickle_path=pickle_path, max_words_length=max_words_length, is_sop=True,
+                lazy=not on_memory
             )
         elif model == 'mlm' and (dataset_path is not None or pickle_path is not None):
-            print('Dataset : OneSegmentDataset')
+            print('Dataset : Stack')
             return StackedSentenceDataset(
                 tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path,
-                sentence_stack=sentence_stack, pickle_path=pickle_path, max_words_length=max_words_length
+                sentence_stack=sentence_stack, pickle_path=pickle_path, max_words_length=max_words_length,
+                lazy=not on_memory
             )
         elif dataset_path is not None:
             print('Dataset : NextSentenceDataset')
             return NextSentencePredictionDataset(
-                tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path, on_memory=on_memory
+                tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path, on_memory=on_memory,
             )
         else:
             raise ValueError('require dataset_path')

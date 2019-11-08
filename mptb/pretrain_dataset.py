@@ -40,7 +40,7 @@ import pickle
 class StackedSentenceDataset(Dataset):
 
     def __init__(self, tokenizer, max_pos, dataset_path=None, documents=[], encoding="utf-8",
-                 sentence_stack=True, pickle_path=None, max_words_length=4, is_sop=False):
+                 sentence_stack=True, pickle_path=None, max_words_length=4, is_sop=False, lazy=False):
         self.tokenizer = tokenizer
         self.max_pos = max_pos
         self.dataset_path = dataset_path
@@ -56,6 +56,7 @@ class StackedSentenceDataset(Dataset):
         self.all_documents = []
         self.bert_ids_num = 3 if is_sop else 2
         self.is_sop = is_sop
+        self.lazy = lazy
 
         if pickle_path is not None:
             if pickle_path.endswith("gz"):
@@ -75,6 +76,18 @@ class StackedSentenceDataset(Dataset):
             print('Pickled text tensor loaded : ' + str(len(self.indices)))
             return
 
+        if self.lazy:
+            self.indices = []
+            with open(dataset_path, "r", encoding=encoding) as reader:
+                for line in tqdm(reader, desc="Loading Dataset"):
+                    if line.strip() != "":
+                        self.indices.append(1)
+            self.file = open(dataset_path, "rb")
+            self.read_counts = 0
+            self.buffer = None
+            self.limit = 0
+            return
+
         # load samples into memory
         if len(documents) > 0 or dataset_path is not None:
             stack = []
@@ -85,6 +98,7 @@ class StackedSentenceDataset(Dataset):
                 with open(dataset_path, "r", encoding=encoding) as reader:
                     for text in tqdm(reader, desc="Loading Dataset"):
                         stack = self._load_text(text, stack)
+
             # FIX to last rows ""... . last line is not "" and EOF
             if len(stack) > 0:
                 if self.is_sop:
@@ -132,8 +146,8 @@ class StackedSentenceDataset(Dataset):
                 tokens = self.tokenizer.tokenize(text) if self.tokenizer is not None else text
                 token_len = 0
                 for x in stack:
-                    token_len = len(x)
-                if token_len > (self.max_pos - self.bert_ids_num):
+                    token_len += len(x)
+                if token_len + len(tokens) > (self.max_pos - self.bert_ids_num):
                     ids = []
                     for t in stack:
                         ids.append(self.tokenizer.convert_tokens_to_ids(t))
@@ -153,12 +167,59 @@ class StackedSentenceDataset(Dataset):
                 self.all_documents.append(self.tokenizer.convert_tokens_to_ids(tokens))
         return stack
 
+    def _load_lazy_text(self):
+        ids = []
+        if self.buffer is not None:
+            ids = [self.buffer]
+            self.buffer = None
+
+        while True:
+            text = self.file.__next__().rstrip()
+            if hasattr(text, 'decode'):
+                text = text.decode(self.encoding)
+            self.read_counts += 1
+            if self.read_counts == len(self.indices):
+                self.file.close()
+                self.file = open(self.dataset_path, "r", encoding=self.encoding)
+                self.read_counts = 0
+                break
+            if text == '':
+                continue
+            tokens = self.tokenizer.tokenize(text)
+            if self.is_sop:
+                token_len = 0
+                for x in ids:
+                    token_len += len(x)
+                if token_len + len(tokens) > (self.max_pos - self.bert_ids_num):
+                    self.buffer = self.tokenizer.convert_tokens_to_ids(tokens)
+                    break
+                else:
+                    ids.append(self.tokenizer.convert_tokens_to_ids(tokens))
+            else:
+                if len(ids) + len(tokens) > (self.max_pos - self.bert_ids_num):
+                    self.buffer = self.tokenizer.convert_tokens_to_ids(tokens)
+                    break
+                else:
+                    ids.extend(self.tokenizer.convert_tokens_to_ids(tokens))
+
+        if self.limit > 3:
+            raise ValueError('dataset empty strings continue.')
+
+        if len(ids) == 0:
+            self.limit += 1
+            return self._load_lazy_text()
+        self.limit = 0
+        return ids
+
     def __len__(self):
         return len(self.indices)
 
     def __getitem__(self, item):
         # transform sample to features
-        features = self.convert_example_to_features(self.all_documents[self.indices[item]], self.max_pos)
+        if self.lazy:
+            features = self.convert_example_to_features(self._load_lazy_text(), self.max_pos)
+        else:
+            features = self.convert_example_to_features(self.all_documents[self.indices[item]], self.max_pos)
         return [torch.tensor(x, dtype=torch.long) for x in features]
 
     def convert_example_to_features(
@@ -167,7 +228,7 @@ class StackedSentenceDataset(Dataset):
         Convert a raw sample (pair of sentences as tokenized strings) into a proper training sample with
         IDs, LM labels, input_mask, CLS and SEP tokens etc.
         :param token_ids: str, example tokens.
-        :param max_pos: int, maximum length of sequence.4
+        :param max_pos: int, maximum length of sequence.
         :param short_seq_prob: float, Probability of creating sequences which are shorter than the maximum length.
         :param masked_lm_prob: float, Masked LM probability.
         :return: features

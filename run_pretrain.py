@@ -43,7 +43,8 @@ def bert_pretraining(
     max_words_length=4,
     bert_model_path=None,
     albert=False,
-    optimizer='bert'
+    optimizer='bert',
+    device=None
 ):
 
     estimator = BertPretrainier(
@@ -62,7 +63,9 @@ def bert_pretraining(
         pickle_path=pickle_path,
         max_words_length=max_words_length,
         bert_model_path=bert_model_path,
-        albert=albert    )
+        albert=albert,
+        device=device
+    )
 
     if mode == 'train':
         score = estimator.train(
@@ -141,6 +144,7 @@ if __name__ == '__main__':
                         help=
                         'Select from the following name groups optimizer. (bert, adamw, lamb)'
                         )
+    parser.add_argument('--device', nargs='?', type=str, default=None, help='Target Runing device name.')
     args = parser.parse_args()
     bert_pretraining(args.config_path, args.dataset_path, args.pretensor_dataset_path, args.pretensor_dataset_length,
                      args.pickle_path,
