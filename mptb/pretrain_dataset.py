@@ -170,7 +170,10 @@ class StackedSentenceDataset(Dataset):
     def _load_lazy_text(self):
         ids = []
         if self.buffer is not None:
-            ids = [self.buffer]
+            if self.is_sop:
+                ids = [self.buffer]
+            else:
+                ids = self.buffer
             self.buffer = None
 
         while True:
