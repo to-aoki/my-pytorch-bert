@@ -90,17 +90,20 @@ def load_vocab(vocab_file):
 
 def token_vocab_build(reader):
     vocab = collections.OrderedDict()
+    vocab_score = collections.OrderedDict()
     index = 0
     while True:
         token = convert_to_unicode(reader.readline())
         if not token:
             break
-        token, _ = token.split("\t")
+        token, score = token.split("\t")
         token = token.strip()
+        score = float(score)
         vocab[token] = index
+        vocab_score[index] = score
         index += 1
 
-    return vocab
+    return vocab, vocab_score
 
 
 def convert_by_vocab(vocab, items, unk_info):
@@ -130,7 +133,7 @@ class FullTokenizer(object):
 
     def __init__(self, model_file, vocab_file, preprocessor=None):
         self.tokenizer = SentencePieceTokenizer(model_file, preprocessor=preprocessor)
-        self.vocab = load_vocab(vocab_file)
+        self.vocab, self.vocab_score = load_vocab(vocab_file)
         assert(0 < len(self.vocab))
         self.inv_vocab = {}
         self.control_len = 1  # <unk>
