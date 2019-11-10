@@ -40,7 +40,7 @@ import pickle
 class StackedSentenceDataset(Dataset):
 
     def __init__(self, tokenizer, max_pos, dataset_path=None, documents=[], encoding="utf-8",
-                 sentence_stack=True, pickle_path=None, max_words_length=4, is_sop=False, lazy=False):
+                 sentence_stack=True, pickle_path=None, max_words_length=3, is_sop=False, lazy=False):
         self.tokenizer = tokenizer
         self.max_pos = max_pos
         self.dataset_path = dataset_path
@@ -69,10 +69,11 @@ class StackedSentenceDataset(Dataset):
             shuffle(self.indices)
             self.last_indices_path = pickle_path + '.index'
             if os.path.exists(self.last_indices_path):
-                with open(self.last_indices_path, "rb") as idx_reader:
-                    last_indices = pickle.load(idx_reader)
-                    self.indices = list(dict.fromkeys(last_indices + self.indices))
-                    print('Last indices loaded : ' + str(len(last_indices)))
+                with open(self.last_indices_path, "rb") as index_reader:
+                    last_indices = pickle.load(index_reader)
+                    if isinstance(last_indices, list):
+                        self.indices = list(dict.fromkeys(last_indices + self.indices))
+                        print('Last indices loaded : ' + str(len(last_indices)))
             print('Pickled text tensor loaded : ' + str(len(self.indices)))
             return
 
@@ -83,8 +84,24 @@ class StackedSentenceDataset(Dataset):
                     if line.strip() != "":
                         self.indices.append(1)
             self.file = open(dataset_path, "rb")
+            self.last_indices_path = dataset_path + '.index'
+            print(self.last_indices_path)
             self.read_counts = 0
             self.buffer = None
+            if os.path.exists(self.last_indices_path):
+                with open(self.last_indices_path, "rb") as index_reader:
+                    last_indices = pickle.load(index_reader)
+                    if isinstance(last_indices, dict):
+                        self.read_counts = last_indices.get('read_counts', 0)
+                        self.buffer = last_indices.get('buffer', None)
+                    print('Last indices loaded : ', self.read_counts)
+                if self.read_counts == len(self.indices):
+                    self.file.close()
+                    self.file = open(self.dataset_path, "r", encoding=self.encoding)
+                    self.read_counts = 0
+                for i in range(self.read_counts):
+                    self.file.__next__()
+
             self.limit = 0
             return
 
@@ -115,9 +132,19 @@ class StackedSentenceDataset(Dataset):
 
     def dump_last_indices(self, steps):
         if hasattr(self, 'last_indices_path'):
-            last_indices = steps % len(self.indices)
-            with open(self.last_indices_path, "wb") as f:
-                pickle.dump(self.indices[last_indices:], f)
+            if self.lazy:
+                # lazy mode
+                if self.buffer is not None:
+                    lazy_dump = {'read_counts': self.read_counts, 'buffer': self.buffer}
+                else:
+                    lazy_dump = {'read_counts': self.read_counts}
+                with open(self.last_indices_path, "wb") as f:
+                    pickle.dump(lazy_dump, f)
+            else:
+                # pickled token indices loaded
+                last_indices = steps % len(self.indices)
+                with open(self.last_indices_path, "wb") as f:
+                    pickle.dump(self.indices[last_indices:], f)
 
     def dump_ids_documents(self, output_path, is_gzip=False):
         if is_gzip:
@@ -194,6 +221,8 @@ class StackedSentenceDataset(Dataset):
                 for x in ids:
                     token_len += len(x)
                 if token_len + len(tokens) > (self.max_pos - self.bert_ids_num):
+                    if len(tokens) > (self.max_pos - self.bert_ids_num):
+                        tokens = tokens[:(self.max_pos - self.bert_ids_num)]
                     self.buffer = self.tokenizer.convert_tokens_to_ids(tokens)
                     break
                 else:
@@ -265,6 +294,8 @@ class StackedSentenceDataset(Dataset):
                 is_random_next = 0
             tokens_a = list(itertools.chain.from_iterable(tokens_a))
             tokens_b = list(itertools.chain.from_iterable(tokens_b))
+
+            truncate_seq_pair(tokens_a, tokens_b, target_max_pos)
 
             # Add Special Tokens
             tokens_a.insert(0, self.cls_id)

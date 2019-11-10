@@ -46,7 +46,7 @@ class BertPretrainier(object):
         model='bert',
         sentence_stack=False,
         pickle_path=None,
-        max_words_length=4,
+        max_words_length=3,
         bert_model_path=None,
         albert=False,
         device=None
@@ -93,7 +93,7 @@ class BertPretrainier(object):
         pickle_path=None,
         pretensor_data_path=None,
         pretensor_data_length=-1,
-        max_words_length=4,
+        max_words_length=3,
     ):
         if hasattr(self, 'max_pos'):
             max_pos = self.max_pos

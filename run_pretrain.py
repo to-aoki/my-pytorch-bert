@@ -40,7 +40,7 @@ def bert_pretraining(
     on_disk=False,
     task='bert',
     stack=False,
-    max_words_length=4,
+    max_words_length=3,
     bert_model_path=None,
     albert=False,
     optimizer='bert',
@@ -138,7 +138,7 @@ if __name__ == '__main__':
     parser.add_argument('--stack', action='store_true',
                         help='Sentence stack option when task=mlm effective.')
     parser.add_argument('--max_words_length', help='Masked Consecutive words(tokens) max length', nargs='?',
-                        type=int, default=4)
+                        type=int, default=3)
     parser.add_argument('--albert', action='store_true', help='Use ALBERT model')
     parser.add_argument('--optimizer', nargs='?', type=str, default='bert',
                         help=
