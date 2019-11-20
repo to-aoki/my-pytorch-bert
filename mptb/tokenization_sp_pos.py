@@ -4,7 +4,7 @@
 #
 # This file is based on
 # https://raw.githubusercontent.com/yoheikikuta/bert-japanese/master/src/tokenization_sentencepiece.py.
-# Add get_random_token and len and calculate control chars.
+# Added unknown token support using ginza/spacy POS.
 #
 # Original Author yoheikikuta
 # Copyright 2018 The Google AI Language Team Authors.
@@ -108,8 +108,9 @@ class FullTokenizer(object):
     def convert_tokens_to_ids(self, tokens):
         output = []
         for item in tokens:
-            if item in self.vocab:
-                output.append(self.vocab[item])
+            append_id = self.vocab.get(item, None)
+            if append_id is not None:
+                output.append(append_id)
             else:
                 found = False
                 try:
@@ -118,8 +119,9 @@ class FullTokenizer(object):
                         for token in sent:
                             if token.pos_ is not None and token.orth_ == item:
                                 pos = '[' + token.pos_ + ']'
-                                if pos in self.vocab:
-                                    output.append(self.vocab[pos])
+                                append_id = self.vocab.get(pos, None)
+                                if append_id is not None:
+                                    output.append(append_id)
                                     found = True
                                     break
                         if found:
@@ -130,7 +132,7 @@ class FullTokenizer(object):
                     warnings.warn(item)
                     pass
                 if not found:
-                    output.append(0)
+                    output.append(self.vocab['<unk>'])
         return output
 
     def convert_ids_to_tokens(self, ids):

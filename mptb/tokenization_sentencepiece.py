@@ -4,7 +4,7 @@
 #
 # This file is based on
 # https://raw.githubusercontent.com/yoheikikuta/bert-japanese/master/src/tokenization_sentencepiece.py.
-# Add get_random_token and len and calculate control chars.
+# Added random_token method and len.
 #
 # Original Author yoheikikuta
 # Copyright 2018 The Google AI Language Team Authors.

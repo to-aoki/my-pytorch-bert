@@ -39,7 +39,7 @@ import pickle
 
 class StackedSentenceDataset(Dataset):
 
-    def __init__(self, tokenizer, max_pos, dataset_path=None, documents=[], encoding="utf-8",
+    def __init__(self, tokenizer, max_pos, dataset_path=None, documents=[], encoding="UTF-8",
                  sentence_stack=True, pickle_path=None, max_words_length=3, is_sop=False, lazy=False):
         self.tokenizer = tokenizer
         self.max_pos = max_pos
@@ -156,17 +156,16 @@ class StackedSentenceDataset(Dataset):
 
     def _load_text(self, text, stack):
         text = text.strip()
-        if text == "":
-            if len(stack) > 2:
+        if text == '':
+            if len(stack) > 0:
                 if self.is_sop:
                     ids = []
                     for t in stack:
                         ids.append(self.tokenizer.convert_tokens_to_ids(t))
-                    self.all_documents.append(ids)
+                    if len(ids) > 0:
+                        self.all_documents.append(ids)
                 else:
                     self.all_documents.append(self.tokenizer.convert_tokens_to_ids(stack))
-                stack = []
-            elif len(stack) < 2:
                 stack = []
         else:
             if self.is_sop:
@@ -178,20 +177,28 @@ class StackedSentenceDataset(Dataset):
                     ids = []
                     for t in stack:
                         ids.append(self.tokenizer.convert_tokens_to_ids(t))
-                    self.all_documents.append(ids)
+                    if len(ids) > 0:
+                        self.all_documents.append(ids)
+                    elif len(tokens) > (self.max_pos - self.bert_ids_num):
+                        tokens = tokens[:(self.max_pos - self.bert_ids_num)]
                     stack = tokens
                     return stack
                 stack.append(tokens)
+
             elif self.sentence_stack:
                 tokens = self.tokenizer.tokenize(text) if self.tokenizer is not None else text
-                if (len(stack) + len(tokens)) > (self.max_pos - self.bert_ids_num):
-                    self.all_documents.append(self.tokenizer.convert_tokens_to_ids(stack))
+                if len(stack) + len(tokens) > (self.max_pos - self.bert_ids_num):
+                    if len(stack) > 0:
+                        self.all_documents.append(self.tokenizer.convert_tokens_to_ids(stack))
+                    elif len(tokens) > (self.max_pos - self.bert_ids_num):
+                        tokens = tokens[:(self.max_pos - self.bert_ids_num)]
                     stack = tokens
                     return stack
                 stack.extend(tokens)
             else:
                 tokens = self.tokenizer.tokenize(text) if self.tokenizer is not None else text
                 self.all_documents.append(self.tokenizer.convert_tokens_to_ids(tokens))
+
         return stack
 
     def _load_lazy_text(self):
@@ -215,6 +222,7 @@ class StackedSentenceDataset(Dataset):
                 break
             if text == '':
                 continue
+
             tokens = self.tokenizer.tokenize(text)
             if self.is_sop:
                 token_len = 0

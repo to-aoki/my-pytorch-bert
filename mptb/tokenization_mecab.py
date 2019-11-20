@@ -111,7 +111,7 @@ class MeCabTokenizer(object):
     def __init__(
         self, args='-d /usr/lib/x86_64-linux-gnu/mecab/dic/mecab-ipadic-neologd',
         preprocessor=None,
-        lemmatize=True,
+        lemmatize=False,
         stopwords=[],
         collect_futures=[]
     ):
@@ -131,6 +131,7 @@ class MeCabTokenizer(object):
             (surface, features) = chunk.split('\t')
             token = surface.strip()
             feature = features.split(',')
+            pos_text = '.'.join(feature[:4])
             if self.lemmatize and 6 < len(feature) and feature[6] != '*' and feature[6] != '':
                 token = feature[6].strip()
             if token in self.stopwords:

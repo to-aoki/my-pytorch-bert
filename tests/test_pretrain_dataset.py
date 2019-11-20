@@ -79,22 +79,20 @@ class PretrainDatasetTestCase(unittest.TestCase):
             )
             dataset.__getitem__([1, 2])
 
-    def test_sop_instance(self):
+    def test_stack_instance(self):
         dataset = StackedSentenceDataset(
             self.tokenizer,
             max_pos=128,
             dataset_path="sample_text.txt",
-            on_memory=True
         )
         delim_return = 0
         num_docs = 3
-        start_zero = 1  # index 0 start
         with open("sample_text.txt",  encoding="UTF-8") as f:
             for line in f:
                 line = line.strip()
                 if line != "":
                     delim_return += 1
-        self.assertEqual(delim_return-num_docs-start_zero, len(dataset))
+        self.assertLessEqual(len(dataset), delim_return - num_docs)
 
 
 if __name__ == '__main__':
