@@ -172,6 +172,10 @@ def get_tokenizer(
             # sentencepiece + UD POS (ginza)
             from .tokenization_sp_pos import FullTokenizer
             return FullTokenizer(sp_model_path, vocab_path, preprocessor=preprocessor)
+        elif name == 'sp_mecab':
+            # sentencepiece + mecab POS
+            from .tokenization_sp_mecab import FullTokenizer
+            return FullTokenizer(sp_model_path, vocab_path, preprocessor=preprocessor)
         else:
             from .tokenization_sentencepiece import FullTokenizer
             return FullTokenizer(sp_model_path, vocab_path, preprocessor=preprocessor)
