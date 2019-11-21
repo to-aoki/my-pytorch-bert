@@ -153,16 +153,19 @@ pip install mojimoji
 pip install "https://github.com/megagonlabs/ginza/releases/download/latest/ginza-latest.tar.gz"
 ```
 
-#### LAMB Optimzer 
+### LAMB Optimzer 
 ```
 pip install pytorch_lamb
 ```
  and --optimizer='lamb' option attach.
 
 
-#### ALBERT mode
+### ALBERT mode
  --albert option attach.
+ 
+### Pretrained model
 
+[Pretrained ALBERT model and trained SentencePiece + Ginza/POS model](https://drive.google.com/drive/folders/1JnBPSvIJa_61QS0Sv0MZ_uQY2flVtlTJ) (wikipedia-ja 2019/10/03 corpus)
 
 ### Classification result of my-pytorch-bert
 - Dataset : [livedoor ニュースコーパス](https://www.rondhuit.com/download.html)  6(training): 2(test) 2(dev not-use) 
@@ -207,7 +210,7 @@ weighted avg       0.97      0.97      0.97      1473
 weighted avg       0.95      0.95      0.95      1473
 ```
 
-3. [Pretrained ALBERT model and trained SentencePiece + Ginza/POS model](https://drive.google.com/drive/folders/1JnBPSvIJa_61QS0Sv0MZ_uQY2flVtlTJ) (wikipedia-ja 2019/10/03 corpus)
+3. Pretrained ALBERT model and trained SentencePiece + Ginza/POS model
 
 ```
              precision    recall  f1-score   support
