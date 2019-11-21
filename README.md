@@ -2,7 +2,9 @@
 These codes are [BERT](https://arxiv.org/abs/1810.04805) implementation by PyTorch.
 
 The base of this implementation is [google BERT](https://github.com/google-research/bert) and [pytorch-pretrained-BERT](https://github.com/huggingface/pytorch-pretrained-BERT).
-And we add [bert-japanese](https://github.com/yoheikikuta/bert-japanese) as [SentencePiece](https://github.com/google/sentencepiece) Tokenizer.
+And we add [bert-japanese](https://github.com/yoheikikuta/bert-japanese) as [SentencePiece](https://github.com/google/sentencepiece) Tokenizer.<br/>
+
+You can choose from several japanese tokenizers.
 
 ### How to convert from TensorFlow model to my model
 ```
@@ -121,17 +123,19 @@ python run_classifier.py \
 ```
 '--tokenizer' becomes effective when '--sp_model_path' option is not attached.
 
-tokenizer : mecab | juman | other-strings (google-bert basic tokenizer)
+tokenizer : mecab | juman | sp_pos | other-strings (google-bert basic tokenizer)
 
-### use MeCab
+#### use MeCab
 ```
-apt-get -q -y install sudo file mecab libmecab-dev mecab-ipadic-utf8 git curl python-mecab 
+sudo apt install mecab
+sudo apt install libmecab-dev
+sudo apt install mecab-ipadic-utf8
 git clone --depth 1 https://github.com/neologd/mecab-ipadic-neologd.git 
 echo yes | mecab-ipadic-neologd/bin/install-mecab-ipadic-neologd -n 
 pip install mecab-python3
 ```
 
-### use Juman++
+#### use Juman++
 ```
 wget https://github.com/ku-nlp/jumanpp/releases/download/v2.0.0-rc2/jumanpp-2.0.0-rc2.tar.xz
 tar xfv jumanpp-2.0.0-rc2.tar.xz  
@@ -144,9 +148,27 @@ pip install pyknp
 pip install mojimoji
 ```
 
+#### use sp_pos (Sentence Piece with ginza)
+```
+pip install "https://github.com/megagonlabs/ginza/releases/download/latest/ginza-latest.tar.gz"
+```
+
+### LAMB Optimzer 
+```
+pip install pytorch_lamb
+```
+ and --optimizer='lamb' option attach.
+
+
+### ALBERT mode
+ --albert option attach.
+ 
+### Pretrained model
+
+[Pretrained ALBERT model and trained SentencePiece + Ginza/POS model](https://drive.google.com/drive/folders/1JnBPSvIJa_61QS0Sv0MZ_uQY2flVtlTJ) (wikipedia-ja 2019/10/03 corpus)
 
 ### Classification result of my-pytorch-bert
-- Dataset : [livedoor ニュースコーパス](https://www.rondhuit.com/download.html)  6(training): 2(test) 2(dev un-use) 
+- Dataset : [livedoor ニュースコーパス](https://www.rondhuit.com/download.html)  6(training): 2(test) 2(dev not-use) 
 - train epoch : 10
 
 1. [Pretrained BERT model and trained SentencePiece model](https://drive.google.com/drive/folders/1Zsm9DD40lrUVu6iAnIuTH2ODIkh-WM-O?usp=sharing) (model converted).
@@ -188,6 +210,27 @@ weighted avg       0.97      0.97      0.97      1473
 weighted avg       0.95      0.95      0.95      1473
 ```
 
+3. Pretrained ALBERT model and trained SentencePiece + Ginza/POS model
+
+```
+             precision    recall  f1-score   support
+
+           0       0.95      0.94      0.95       178
+           1       0.96      0.95      0.96       172
+           2       0.99      0.97      0.98       176
+           3       0.88      0.89      0.89        95
+           4       0.98      0.99      0.98       158
+           5       0.94      0.98      0.96       174
+           6       0.98      0.99      0.98       167
+           7       0.98      0.99      0.98       190
+           8       0.98      0.96      0.97       163
+
+    accuracy                           0.97      1473
+   macro avg       0.96      0.96      0.96      1473
+weighted avg       0.97      0.97      0.97      1473
+
+```
+
 
 ## Acknowledgments
 This project incorporates code from the following repos:
@@ -197,3 +240,5 @@ This project incorporates code from the following repos:
 
 This project incorporates dict from the following repos:
 * http://svn.sourceforge.jp/svnroot/slothlib/CSharp/Version1/SlothLib/NLP/Filter/StopWord/word/Japanese.txt
+
+
