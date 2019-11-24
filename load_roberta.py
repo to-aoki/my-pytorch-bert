@@ -33,13 +33,11 @@ def load_roberta(
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser(description='Convert from TensorFlow BERT to my-pytorch-bert model.',
+    parser = argparse.ArgumentParser(description='Convert from fairseq roberta to my-pytorch-bert model.',
                                      usage='%(prog)s [options]')
     parser.add_argument('--config_path', help='JSON file path for defines BERT.', nargs='?',
                         type=str, default='config/bert_base.json')
-    parser.add_argument('--roberta_path', help='Roberta model path.', required=True,
-                       type=str)
-    parser.add_argument('--output_path', help='Output model path.', required=True,
-                       type=str)
+    parser.add_argument('--roberta_path', help='Roberta model path.', required=True, type=str)
+    parser.add_argument('--output_path', help='Output model path.', required=True, type=str)
     args = parser.parse_args()
     load_roberta(args.config_path, args.tfmodel_path, args.output_path)
