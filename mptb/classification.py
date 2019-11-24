@@ -51,11 +51,14 @@ class BertClassifier(object):
         task='class',
         device=None,
         quantize=False,
-        albert=False
+        albert=False,
+        encoder_json_path=None,
+        vocab_bpe_path=None,
     ):
         if tokenizer is None:
             self.tokenizer = get_tokenizer(
-                vocab_path=vocab_path, sp_model_path=sp_model_path, name=tokenizer_name)
+                vocab_path=vocab_path, sp_model_path=sp_model_path,
+                encoder_json_path=encoder_json_path, vocab_bpe_path=vocab_bpe_path, name=tokenizer_name)
         else:
             self.tokenizer = tokenizer
 

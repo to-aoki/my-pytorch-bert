@@ -72,21 +72,26 @@ def copy_tf_tensor(checkpoint_dir, tf_name, pyt_attr):
 def load_from_pt_roberta_model(model, r):
 
     d = model.embeddings
+    print(torch.nn.Parameter(r['decoder.sentence_encoder.embed_tokens.weight']))
+    print(torch.nn.Parameter(r['decoder.sentence_encoder.embed_tokens.weight']).size())
     d.word_embeddings.weight = torch.nn.Parameter(r['decoder.sentence_encoder.embed_tokens.weight'])
     d.position_embeddings.weight = torch.nn.Parameter(r['decoder.sentence_encoder.embed_positions.weight'])
-    d.layer_norm.weight = torch.nn.Parameter(r['decoder.sentence_encoder.emb_layer_norm.weight'])
-    d.layer_norm.bias = torch.nn.Parameter(r['decoder.sentence_encoder.emb_layer_norm.bias'])
+    print(torch.nn.Parameter(r['decoder.sentence_encoder.embed_positions.weight']))
+    print(torch.nn.Parameter(r['decoder.sentence_encoder.embed_positions.weight']).size())
+
+    d.layer_norm.weight.data = torch.nn.Parameter(r['decoder.sentence_encoder.emb_layer_norm.weight'])
+    d.layer_norm.bias.data = torch.nn.Parameter(r['decoder.sentence_encoder.emb_layer_norm.bias'])
 
     s = 'decoder.sentence_encoder.layers.'
     d = model.encoder.blocks_layer
     for i in range(len(model.encoder.blocks_layer)):
         size = int(r[s+str(i)+'.self_attn.in_proj_bias'].size()[0] / 3)
-        d[i].attention.self_attention.query.weight.data = r[s+str(i)+'.self_attn.in_proj_weight'][:size, :]
-        d[i].attention.self_attention.query.bias.data = r[s+str(i)+'.self_attn.in_proj_bias'][:size]
-        d[i].attention.self_attention.key.weight.data = r[s+str(i)+'.self_attn.in_proj_weight'][size:size*2, :]
-        d[i].attention.self_attention.key.bias.data = r[s+str(i)+'.self_attn.in_proj_bias'][size:size*2]
-        d[i].attention.self_attention.value.weight.data = r[s+str(i)+'.self_attn.in_proj_weight'][size*2:, :]
-        d[i].attention.self_attention.value.bias.data = r[s+str(i)+'.self_attn.in_proj_bias'][size*2:]
+        d[i].attention.self_attention.query.weight.data = r[s+str(i)+'.self_attn.in_proj_weight'][:size, :][:]
+        d[i].attention.self_attention.query.bias.data = r[s+str(i)+'.self_attn.in_proj_bias'][:size][:]
+        d[i].attention.self_attention.key.weight.data = r[s+str(i)+'.self_attn.in_proj_weight'][size:size*2, :][:]
+        d[i].attention.self_attention.key.bias.data = r[s+str(i)+'.self_attn.in_proj_bias'][size:size*2][:]
+        d[i].attention.self_attention.value.weight.data = r[s+str(i)+'.self_attn.in_proj_weight'][size*2:, :][:]
+        d[i].attention.self_attention.value.bias.data = r[s+str(i)+'.self_attn.in_proj_bias'][size*2:][:]
         d[i].attention.output.dense.weight = torch.nn.Parameter(r[s+str(i)+'.self_attn.out_proj.weight'])
         d[i].attention.output.dense.bias = torch.nn.Parameter(r[s+str(i)+'.self_attn.out_proj.bias'])
         d[i].attention.output.layer_norm.weight = torch.nn.Parameter(r[s+str(i)+'.self_attn_layer_norm.weight'])
@@ -194,6 +199,8 @@ def get_tokenizer(
     preprocessor=None,
     vocab_path=None,
     sp_model_path=None,
+    encoder_json_path=None,
+    vocab_bpe_path=None,
     name='google'
 ):
     if preprocessor is None:
@@ -211,6 +218,11 @@ def get_tokenizer(
         else:
             from .tokenization_sentencepiece import FullTokenizer
             return FullTokenizer(sp_model_path, vocab_path, preprocessor=preprocessor)
+    elif encoder_json_path is not None and vocab_bpe_path is not None and vocab_bpe_path is not None:
+        from .tokenization_roberta import FullTokenizer
+        return FullTokenizer(
+            dict_path=vocab_path, encoder_json_path=encoder_json_path, vocab_bpe_path=vocab_bpe_path,
+            preprocessor=preprocessor)
     elif vocab_path is not None:
         name = name.lower()
         if name == 'mecab':

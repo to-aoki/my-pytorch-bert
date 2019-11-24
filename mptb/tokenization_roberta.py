@@ -42,7 +42,7 @@ class RobertaDictionary(object):
             eos='[SEP]',
             unk='[UNK]',
             bos='[CLS]',
-            extra_special_symbols=None,
+            extra_special_symbols=['[MASK]'],
     ):
         self.unk_word, self.pad_word, self.eos_word, self.bos_word = unk, pad, eos, bos
         self.symbols = []
@@ -217,24 +217,30 @@ class FullTokenizer(object):
 
     """Runs end-to-end tokenziation."""
 
-    def __init__(self, dict_path, encoder_json_path, vocab_bpe_path):
+    def __init__(self, dict_path, encoder_json_path, vocab_bpe_path, preprocessor=None):
         self.roberta_dict = RobertaDictionary.load(dict_path)
         self.gpt2_get_encoder = get_encoder(encoder_json_path, vocab_bpe_path)
+        self.preprocessor = preprocessor
 
     def tokenize(self, text):
+        text = self.preprocessor(text) if self.preprocessor else text
         return self.roberta_dict.tokenize_line(' '.join(map(str, self.gpt2_get_encoder.encode(text))))
 
     def convert_tokens_to_ids(self, tokens):
         return self.roberta_dict.encode_tokens(tokens)
 
-    def convert_ids_to_tokens(self, ids):
+    def _extract_text_tokens(self, ids):
         tokens = np.array(ids)
         if tokens[0] == self.roberta_dict.bos():
             tokens = tokens[1:]  # remove <s>
         eos_mask = (tokens == self.roberta_dict.eos())
         doc_mask = eos_mask[1:] & eos_mask[:-1]
-        sentences = np.split(tokens, doc_mask.nonzero()[0] + 1)
-        sentences = [self.gpt2_get_encoder.decode_tokens(map(int, self.roberta_dict.string(s).split())) for s in sentences]
+        return np.split(tokens, doc_mask.nonzero()[0] + 1)
+
+    def convert_ids_to_tokens(self, ids):
+        sentences = self._extract_text_tokens(ids)
+        sentences = [self.gpt2_get_encoder.decode_tokens(
+            map(int, self.roberta_dict.string(s).split())) for s in sentences]
         return sentences[0]
 
     def convert_text_to_ids(self, text):
@@ -243,12 +249,7 @@ class FullTokenizer(object):
             ' '.join(map(str, self.gpt2_get_encoder.encode(text))) + ' ' + self.roberta_dict.eos_word)
 
     def convert_ids_to_text(self, ids):
-        tokens = np.array(ids)
-        if tokens[0] == self.roberta_dict.bos():
-            tokens = tokens[1:]  # remove <s>
-        eos_mask = (tokens == self.roberta_dict.eos())
-        doc_mask = eos_mask[1:] & eos_mask[:-1]
-        sentences = np.split(tokens, doc_mask.nonzero()[0] + 1)
+        sentences = self._extract_text_tokens(ids)
         sentences = [self.gpt2_get_encoder.decode(map(int, self.roberta_dict.string(s).split())) for s in sentences]
         return sentences
 

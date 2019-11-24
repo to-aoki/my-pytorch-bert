@@ -47,7 +47,9 @@ def classification(
     device=None,
     quantize=False,
     albert=False,
-    optimizer='bert'
+    optimizer='bert',
+    encoder_json_path=None,
+    vocab_bpe_path=None,
 ):
 
     if under_sampling_cycle:
@@ -69,7 +71,9 @@ def classification(
             task=task,
             device=device,
             quantize=quantize,
-            albert=albert
+            albert=albert,
+            encoder_json_path=encoder_json_path,
+            vocab_bpe_path=vocab_bpe_path,
         )
 
         estimator.train(
@@ -107,7 +111,9 @@ def classification(
             fp16=fp16,
             device=device,
             quantize=quantize,
-            albert=albert
+            albert=albert,
+            encoder_json_path=encoder_json_path,
+            vocab_bpe_path=vocab_bpe_path,
         )
         score = estimator.evaluate(batch_size=batch_size, log_dir=log_dir)
         print(score)
@@ -178,6 +184,8 @@ if __name__ == '__main__':
                         help=
                         'Select from the following name groups optimizer. (bert, adamw, lamb)'
                         )
+    parser.add_argument('--encoder_json_path', help='GPT2 encoder JSON file path.', nargs='?', type=str)
+    parser.add_argument('--vocab_bpe_path', help='GPT2 encoder bpe file path.', nargs='?', type=str)
     args = parser.parse_args()
     classification(
         config_path=args.config_path,
@@ -209,5 +217,7 @@ if __name__ == '__main__':
         device=args.device,
         quantize=args.quantize,
         albert=args.albert,
-        optimizer=args.optimizer
+        optimizer=args.optimizer,
+        encoder_json_path=args.encoder_json_path,
+        vocab_bpe_path=args.vocab_bpe_path,
     )
