@@ -42,7 +42,7 @@ class RobertaDictionary(object):
             eos='[SEP]',
             unk='[UNK]',
             bos='[CLS]',
-            extra_special_symbols=['[MASK]'],
+            extra_special_symbols=None,
     ):
         self.unk_word, self.pad_word, self.eos_word, self.bos_word = unk, pad, eos, bos
         self.symbols = []
@@ -115,8 +115,11 @@ class RobertaDictionary(object):
         """Helper to get index of unk symbol"""
         return self.unk_index
 
+    def mask(self):
+        return self.mask_index
+
     @classmethod
-    def load(cls, f, ignore_utf_errors=False):
+    def load(cls, f, ignore_utf_errors=False, mask_token='[MASK]'):
         """Loads the dictionary from a text file with the format:
         ```
         <symbol0> <count0>
@@ -126,6 +129,7 @@ class RobertaDictionary(object):
         """
         d = cls()
         d.add_from_file(f, ignore_utf_errors)
+        d.mask_index = d.add_symbol(mask_token)
         return d
 
     def add_from_file(self, f, ignore_utf_errors=False):

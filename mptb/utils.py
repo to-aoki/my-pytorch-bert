@@ -72,13 +72,8 @@ def copy_tf_tensor(checkpoint_dir, tf_name, pyt_attr):
 def load_from_pt_roberta_model(model, r):
 
     d = model.embeddings
-    print(torch.nn.Parameter(r['decoder.sentence_encoder.embed_tokens.weight']))
-    print(torch.nn.Parameter(r['decoder.sentence_encoder.embed_tokens.weight']).size())
     d.word_embeddings.weight = torch.nn.Parameter(r['decoder.sentence_encoder.embed_tokens.weight'])
-    d.position_embeddings.weight = torch.nn.Parameter(r['decoder.sentence_encoder.embed_positions.weight'])
-    print(torch.nn.Parameter(r['decoder.sentence_encoder.embed_positions.weight']))
-    print(torch.nn.Parameter(r['decoder.sentence_encoder.embed_positions.weight']).size())
-
+    d.position_embeddings.weight = torch.nn.Parameter(r['decoder.sentence_encoder.embed_positions.weight'][2:, :])
     d.layer_norm.weight.data = torch.nn.Parameter(r['decoder.sentence_encoder.emb_layer_norm.weight'])
     d.layer_norm.bias.data = torch.nn.Parameter(r['decoder.sentence_encoder.emb_layer_norm.bias'])
 
