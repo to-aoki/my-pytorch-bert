@@ -231,7 +231,7 @@ class StackedSentenceDataset(Dataset):
                 if token_len + len(tokens) > (self.max_pos - self.bert_ids_num):
                     if len(tokens) > (self.max_pos - self.bert_ids_num):
                         tokens = tokens[:(self.max_pos - self.bert_ids_num)]
-                    self.buffer = tokens
+                    self.buffer = self.tokenizer.convert_tokens_to_ids(tokens)
                     break
                 else:
                     ids.append(self.tokenizer.convert_tokens_to_ids(tokens))
@@ -239,7 +239,7 @@ class StackedSentenceDataset(Dataset):
                 if len(ids) + len(tokens) > (self.max_pos - self.bert_ids_num):
                     if len(tokens) > (self.max_pos - self.bert_ids_num):
                         tokens = tokens[:(self.max_pos - self.bert_ids_num)]
-                    self.buffer = tokens
+                    self.buffer = self.tokenizer.convert_tokens_to_ids(tokens)
                     break
                 else:
                     ids.extend(self.tokenizer.convert_tokens_to_ids(tokens))
