@@ -85,7 +85,6 @@ class StackedSentenceDataset(Dataset):
                         self.indices.append(1)
             self.file = open(dataset_path, "rb")
             self.last_indices_path = dataset_path + '.index'
-            print(self.last_indices_path)
             self.read_counts = 0
             self.buffer = None
             if os.path.exists(self.last_indices_path):
@@ -167,33 +166,36 @@ class StackedSentenceDataset(Dataset):
                 else:
                     self.all_documents.append(self.tokenizer.convert_tokens_to_ids(stack))
                 stack = []
+
         else:
             if self.is_sop:
                 tokens = self.tokenizer.tokenize(text) if self.tokenizer is not None else text
                 token_len = 0
                 for x in stack:
                     token_len += len(x)
-                if token_len + len(tokens) > (self.max_pos - self.bert_ids_num):
+                if token_len + len(tokens) > self.max_pos - self.bert_ids_num:
                     ids = []
                     for t in stack:
                         ids.append(self.tokenizer.convert_tokens_to_ids(t))
                     if len(ids) > 0:
                         self.all_documents.append(ids)
-                    elif len(tokens) > (self.max_pos - self.bert_ids_num):
-                        tokens = tokens[:(self.max_pos - self.bert_ids_num)]
+                    if len(tokens) > self.max_pos - self.bert_ids_num:
+                        tokens = tokens[:self.max_pos - self.bert_ids_num]
                     stack = tokens
                     return stack
+
                 stack.append(tokens)
 
             elif self.sentence_stack:
                 tokens = self.tokenizer.tokenize(text) if self.tokenizer is not None else text
-                if len(stack) + len(tokens) > (self.max_pos - self.bert_ids_num):
+                if len(stack) + len(tokens) > self.max_pos - self.bert_ids_num:
                     if len(stack) > 0:
                         self.all_documents.append(self.tokenizer.convert_tokens_to_ids(stack))
-                    elif len(tokens) > (self.max_pos - self.bert_ids_num):
-                        tokens = tokens[:(self.max_pos - self.bert_ids_num)]
+                    if len(tokens) > self.max_pos - self.bert_ids_num:
+                        tokens = tokens[:self.max_pos - self.bert_ids_num]
                     stack = tokens
                     return stack
+
                 stack.extend(tokens)
             else:
                 tokens = self.tokenizer.tokenize(text) if self.tokenizer is not None else text
@@ -222,7 +224,7 @@ class StackedSentenceDataset(Dataset):
                 break
             if text == '':
                 if len(ids) > 0:
-                    return ids
+                    break
                 else:
                     continue
 
@@ -231,17 +233,17 @@ class StackedSentenceDataset(Dataset):
                 token_len = 0
                 for x in ids:
                     token_len += len(x)
-                if token_len + len(tokens) > (self.max_pos - self.bert_ids_num):
+                if token_len + len(tokens) > self.max_pos - self.bert_ids_num:
                     if len(tokens) > (self.max_pos - self.bert_ids_num):
-                        tokens = tokens[:(self.max_pos - self.bert_ids_num)]
+                        tokens = tokens[:self.max_pos - self.bert_ids_num]
                     self.buffer = self.tokenizer.convert_tokens_to_ids(tokens)
                     break
                 else:
                     ids.append(self.tokenizer.convert_tokens_to_ids(tokens))
             else:
-                if len(ids) + len(tokens) > (self.max_pos - self.bert_ids_num):
-                    if len(tokens) > (self.max_pos - self.bert_ids_num):
-                        tokens = tokens[:(self.max_pos - self.bert_ids_num)]
+                if len(ids) + len(tokens) > self.max_pos - self.bert_ids_num:
+                    if len(tokens) > self.max_pos - self.bert_ids_num:
+                        tokens = tokens[:self.max_pos - self.bert_ids_num]
                     self.buffer = self.tokenizer.convert_tokens_to_ids(tokens)
                     break
                 else:
@@ -253,6 +255,7 @@ class StackedSentenceDataset(Dataset):
         if len(ids) == 0:
             self.limit += 1
             return self._load_lazy_text()
+
         self.limit = 0
         return ids
 
@@ -326,12 +329,9 @@ class StackedSentenceDataset(Dataset):
 
         else:
             label_ids = copy.copy(token_ids)
-
             truncate_seq_pair(label_ids, [], target_max_pos)
-
             # Add Special Tokens
             label_ids = [self.cls_id] + label_ids + [self.sep_id]
-
             bert_token_ids = copy.copy(label_ids)
             segment_ids = []
             is_random_next = []
