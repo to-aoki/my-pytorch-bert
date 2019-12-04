@@ -221,7 +221,10 @@ class StackedSentenceDataset(Dataset):
                 self.read_counts = 0
                 break
             if text == '':
-                continue
+                if len(ids) > 0:
+                    return ids
+                else:
+                    continue
 
             tokens = self.tokenizer.tokenize(text)
             if self.is_sop:
