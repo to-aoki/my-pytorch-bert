@@ -152,5 +152,5 @@ if __name__ == '__main__':
                      args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr, args.warmup_steps,
                      args.epochs, args.per_save_epochs, args.per_save_steps,
                      args.mode, args.tokenizer, args.fp16, args.on_disk, args.task, args.stack,
-                     args.max_words_length, args.bert_model_path, args.albert, args.optimizer)
+                     args.max_words_length, args.bert_model_path, args.albert, args.optimizer, args.device)
 
