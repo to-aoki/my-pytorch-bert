@@ -39,7 +39,7 @@ import pickle
 
 class StackedSentenceDataset(Dataset):
 
-    def __init__(self, tokenizer, max_pos, dataset_path=None, documents=[], encoding="UTF-8",
+    def __init__(self, tokenizer, max_pos, dataset_path=None, documents=[], encoding='utf-8',
                  sentence_stack=True, pickle_path=None, max_words_length=3, is_sop=False, lazy=False):
         self.tokenizer = tokenizer
         self.max_pos = max_pos
@@ -215,7 +215,11 @@ class StackedSentenceDataset(Dataset):
         while True:
             text = self.file.__next__().rstrip()
             if hasattr(text, 'decode'):
-                text = text.decode(self.encoding)
+                try:
+                    text = text.decode(self.encoding)
+                except:
+                    # decode errors sometimes occur when using torch/xla (google colab)
+                    pass
             self.read_counts += 1
             if self.read_counts == len(self.indices):
                 self.file.close()

@@ -24,8 +24,7 @@ from .pretrain_tasks import BertPretrainingTasks, OnlyMaskedLMTasks
 from .optimization import get_optimizer, get_scheduler
 from .pretrain_dataset import NextSentencePredictionDataset, PreTensorPretrainDataset, StackedSentenceDataset
 from .helper import Helper
-from .utils import save, get_logger, get_tokenizer
-
+from .utils import save, get_logger, get_tokenizer, load
 
 class BertPretrainier(object):
 
@@ -68,15 +67,21 @@ class BertPretrainier(object):
 
         config = Config.from_json(config_path, len(self.tokenizer), max_pos)
         print(config)
+
         self.max_pos = max_pos
         if model == 'mlm':
             self.model = OnlyMaskedLMTasks(config, albert)
             print('Task: Only MaskedLM')
         else:
             self.model = BertPretrainingTasks(config, albert)
-            print('Task: With  Next Sentence Predict')
+            print('Task: With Next Sentence Predict')
         self.model_name = model
-        self.helper = Helper(device=device, fp16=fp16)
+        self.is_tpu = False
+        if device == 'tpu':
+            self.is_tpu = True
+            self.helper = None
+        else:
+            self.helper = Helper(device=device, fp16=fp16)
         self.model_path = model_path
         self.bert_model_path = bert_model_path
         self.learned = False
@@ -149,6 +154,18 @@ class BertPretrainier(object):
         is_save_after_training=True,
         optimizer_name='bert'
     ):
+        if self.is_tpu:
+            from .tpu_helper import tpu_pretrain
+            my_model = self.model
+            if my_model is None:
+                if self.bert_model_path is not None and self.bert_model_path != '':
+                    my_model = load(self.model.bert, self.bert_model_path)
+            tpu_pretrain(
+                my_model, self.dataset,
+                epochs, batch_size, lr, warmup_proportion, save_dir,
+                per_save_epochs, per_save_steps, optimizer_name
+            )
+            return
 
         if tokenizer is None and hasattr(self, 'tokenizer'):
             tokenizer = self.tokenizer
@@ -162,7 +179,7 @@ class BertPretrainier(object):
                 raise ValueError('require dataset')
 
         if sampler is None:
-            if isinstance(dataset, PreTensorPretrainDataset) or isinstance(dataset, StackedSentenceDataset):
+            if isinstance(dataset, PreTensorPretrainDataset) or hasattr(dataset, 'lazy') and dataset.lazy:
                 sampler = SequentialSampler(dataset)
             else:
                 sampler = RandomSampler(dataset)
