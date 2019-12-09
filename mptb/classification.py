@@ -25,7 +25,7 @@ from .finetuning import Classifier, MultipleChoiceSelector
 from .class_dataset import ClassDataset
 from .choice_dataset import SwagDataset
 from .helper import Helper
-from .utils import save, load, get_logger, make_balanced_classes_weights, \
+from .utils import save, get_logger, make_balanced_classes_weights, \
     get_tokenizer, load_from_google_bert_model, AttributeDict
 
 
@@ -51,7 +51,7 @@ class BertClassifier(object):
         task='class',
         device=None,
         quantize=False,
-        albert=False,
+        model_name='bert',
         encoder_json_path=None,
         vocab_bpe_path=None,
     ):
@@ -75,18 +75,18 @@ class BertClassifier(object):
         if dataset_path is not None:
             self.dataset = self.get_dataset(
                 self.tokenizer, dataset_path, header_skip=header_skip, under_sampling=under_sampling)
-        if self.task == 'choice':
-            self.model = MultipleChoiceSelector(config, is_albert=albert)
-        else:
-            if label_num != -1 and label_num != self.dataset.label_num():
-                raise ValueError(
-                    'label num mismatch. input : {} datset : {}'.format(label_num, self.dataset.label_num()))
-            if quantize:
-                print('quantized classification model')
-                from .quantized_bert import QuantizedBertForSequenceClassification
-                self.model = QuantizedBertForSequenceClassification(config, num_labels=self.dataset.label_num())
+            if self.task == 'choice':
+                self.model = MultipleChoiceSelector(config, model_name=model_name)
             else:
-                self.model = Classifier(config, num_labels=self.dataset.label_num(), is_albert=albert)
+                if label_num != -1 and label_num != self.dataset.label_num():
+                    raise ValueError(
+                        'label num mismatch. input : {} datset : {}'.format(label_num, self.dataset.label_num()))
+                if quantize:
+                    print('quantized classification model')
+                    from .quantized_bert import QuantizedBertForSequenceClassification
+                    self.model = QuantizedBertForSequenceClassification(config, num_labels=self.dataset.label_num())
+                else:
+                    self.model = Classifier(config, num_labels=self.dataset.label_num(), model_name=model_name)
 
         self.pretrain = False
         self.helper = Helper(device=device, fp16=fp16)

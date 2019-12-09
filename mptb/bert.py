@@ -60,45 +60,13 @@ class Config(NamedTuple):
                 del config['hidden_act']
             if 'directionality' in config:    # ?
                 del config['directionality']
-            delete_keys =[]
+            delete_keys = []
             for key in config.keys():
                 if key.startswith("pooler"):
                     delete_keys.append(key)
             for key in delete_keys:
                 del config[key]
         return cls(**config)
-
-
-class FactorizedEmbeddings(nn.Module):
-    """Construct the embeddings from word, position and token_type embeddings."""
-
-    def __init__(self, config):
-        super().__init__()
-        self.word_embeddings = nn.Embedding(config.vocab_size, config.embedding_size, padding_idx=0)
-        self.projection = nn.Linear(config.embedding_size, config.hidden_size, bias=False)
-
-        if config.type_vocab_size > 0:
-            self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size)
-        self.position_embeddings = nn.Embedding(config.max_position_embeddings, config.hidden_size)
-
-        self.layer_norm = LayerNorm(config.hidden_size)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-
-    def forward(self, input_ids, token_type_ids=None, position_ids=None):
-        if position_ids is None:
-            max_position_embeddings = input_ids.size(1)
-            position_ids = torch.arange(max_position_embeddings, dtype=torch.long, device=input_ids.device)
-            position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
-
-        embeddings = self.word_embeddings(input_ids)
-        embeddings = self.projection(embeddings)
-        if hasattr(self, 'token_type_embeddings'):
-            if token_type_ids is None:
-                token_type_ids = torch.zeros_like(input_ids)
-            embeddings += self.token_type_embeddings(token_type_ids)
-        embeddings += self.position_embeddings(position_ids)
-
-        return self.dropout(self.layer_norm(embeddings))
 
 
 class Embeddings(nn.Module):
@@ -178,8 +146,8 @@ class SelfAttention(nn.Module):
         attention_probs = self.dropout(attention_probs)
 
         context_layer = torch.matmul(attention_probs, value_layer)
+        context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
 
-        context_layer = context_layer.transpose(2, 1).contiguous()
         new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,)
         context_layer = context_layer.view(*new_context_layer_shape)
 
@@ -232,24 +200,17 @@ class TransformerBlock(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self, config, is_albert=False):
+    def __init__(self, config):
         super().__init__()
 
         self.num_hidden_layers = config.num_hidden_layers
         layer = TransformerBlock(config)
-        if is_albert:
-            self.blocks_layer = layer
-        else:
-            self.blocks_layer = nn.ModuleList([copy.deepcopy(layer) for _ in range(self.num_hidden_layers)])
-        self.is_albert = is_albert
+        self.blocks_layer = nn.ModuleList([copy.deepcopy(layer) for _ in range(self.num_hidden_layers)])
         self.attn_data_list = []
         self.attn_monitor = False
 
     def enable_monitor(self):
         self.attn_monitor = True
-        if self.is_albert:
-            self.blocks_layer.attention.self_attention.enable_monitor = True
-            return
         for i in range(self.num_hidden_layers):
             layer_module = self.blocks_layer[i]
             layer_module.attention.self_attention.enable_monitor = True
@@ -259,10 +220,7 @@ class Encoder(nn.Module):
             self.attn_data_list = []
         all_hidden_states = []
         for i in range(self.num_hidden_layers):
-            if self.is_albert:
-                layer_module = self.blocks_layer
-            else:
-                layer_module = self.blocks_layer[i]
+            layer_module = self.blocks_layer[i]
             hidden_states = layer_module(hidden_states, attention_mask)
             if self.attn_monitor:
                 self.attn_data_list.append(layer_module.attention.self_attention.attn_data)
@@ -324,54 +282,3 @@ class BertModel(nn.Module):
 
         return hidden_states, pooled_output
 
-
-class AlbertModel(nn.Module):
-    """ A Lite Bert For Self-Supervised Learning Language Representations."""
-
-    def __init__(self, config):
-        super().__init__()
-        self.initializer_range = config.initializer_range
-        self.embeddings = FactorizedEmbeddings(config)
-        self.encoder = Encoder(config, is_albert=True)
-        self.pool = nn.Linear(config.hidden_size, config.hidden_size)
-        self.apply(self.init_bert_weights)
-
-    def init_bert_weights(self, module):
-        """ Initialize the weights."""
-        if isinstance(module, (nn.Linear, nn.Embedding)):
-            # tiny truncate norm
-            module.weight.data = torch.fmod(
-                torch.randn(module.weight.size()), self.initializer_range)
-            if isinstance(module, nn.Linear) and module.bias is not None:
-                module.bias.data.zero_()
-        elif isinstance(module, LayerNorm):
-            module.bias.data.zero_()
-            module.weight.data.fill_(1.0)
-
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, position_ids=None, layer=-1):
-        if attention_mask is None:
-            attention_mask = torch.ones_like(input_ids)
-        if token_type_ids is None:
-            token_type_ids = torch.zeros_like(input_ids)
-
-        # We create a 3D attention mask from a 2D tensor mask.
-        # Sizes are [batch_size, 1, 1, to_seq_length]
-        # So we can broadcast to [batch_size, num_heads, from_seq_length, to_seq_length]
-        # this attention mask is more simple than the triangular masking of causal attention
-        # used in OpenAI GPT, we just need to prepare the broadcast dimension here.
-        extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)
-
-        # Since attention_mask is 1.0 for positions we want to attend and 0.0 for
-        # masked positions, this operation will create a tensor which is 0.0 for
-        # positions we want to attend and -10000.0 for masked positions.
-        # Since we are adding it to the raw scores before the softmax, this is
-        # effectively the same as removing these entirely.
-        extended_attention_mask = extended_attention_mask.to(
-            dtype=next(self.parameters()).dtype)  # fp16 compatibility
-        extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
-
-        embedding_output = self.embeddings(input_ids, token_type_ids, position_ids)
-        hidden_states = self.encoder(embedding_output, extended_attention_mask, layer=layer)
-        pooled_output = torch.tanh(self.pool(hidden_states[:, 0]))
-
-        return hidden_states, pooled_output

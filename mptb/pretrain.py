@@ -20,11 +20,14 @@ from torch.nn import CrossEntropyLoss, NLLLoss
 from torch.utils.data import SequentialSampler, RandomSampler
 
 from .bert import Config
+from .embed_projection_albert import ProjectionMaskedLM, ProjectionAlbertPretrainingTasks
+from .albert import AlbertOnlyMaskedLMTasks, AlbertPretrainingTasks
 from .pretrain_tasks import BertPretrainingTasks, OnlyMaskedLMTasks
 from .optimization import get_optimizer, get_scheduler
 from .pretrain_dataset import NextSentencePredictionDataset, PreTensorPretrainDataset, StackedSentenceDataset
 from .helper import Helper
 from .utils import save, get_logger, get_tokenizer, load
+
 
 class BertPretrainier(object):
 
@@ -47,7 +50,7 @@ class BertPretrainier(object):
         pickle_path=None,
         max_words_length=3,
         bert_model_path=None,
-        albert=False,
+        model_name='bert',
         device=None
     ):
 
@@ -57,7 +60,7 @@ class BertPretrainier(object):
         else:
             self.tokenizer = tokenizer
 
-        self.is_albert = albert
+        self.model_name = model_name
         self.dataset = self.get_dataset(dataset_path, self.tokenizer, max_pos=max_pos, on_memory=on_memory,
                                         model=model, sentence_stack=sentence_stack, pickle_path=pickle_path,
                                         pretensor_data_path=pretensor_data_path,
@@ -69,11 +72,23 @@ class BertPretrainier(object):
         print(config)
 
         self.max_pos = max_pos
-        if model == 'mlm':
-            self.model = OnlyMaskedLMTasks(config, albert)
+        if model == 'mlm' and model_name == 'proj':
+            self.model = ProjectionMaskedLM(config)
+            print('Task: Only MaskedLM/Projection')
+        elif model_name == 'proj':
+            self.model = ProjectionAlbertPretrainingTasks(config)
+            print('Task: With Sentence Order Predict/Projection')
+        elif model == 'mlm' and model_name =='albert':
+            self.model = AlbertOnlyMaskedLMTasks(config)
+            print('Task: Only MaskedLM/ALBERT')
+        elif model_name == 'albert':
+            self.model = AlbertPretrainingTasks(config)
+            print('Task: With Sentence Order Predict/ALBERT')
+        elif model == 'mlm':
+            self.model = OnlyMaskedLMTasks(config)
             print('Task: Only MaskedLM')
         else:
-            self.model = BertPretrainingTasks(config, albert)
+            self.model = BertPretrainingTasks(config)
             print('Task: With Next Sentence Predict')
         self.model_name = model
         self.is_tpu = False
@@ -116,14 +131,16 @@ class BertPretrainier(object):
             max_pos = median_pos * 2 + 3  # [CLS]a[SEP]b[SEP]
             print("max_pos (median):", max_pos)
 
-        if self.is_albert and (dataset_path is not None or pickle_path is not None) and model != 'mlm':
+        if self.model_name == 'proj' or self.model_name == 'albert' and \
+                (dataset_path is not None or pickle_path is not None) and model != 'mlm':
             print('Dataset : SOP')
             return StackedSentenceDataset(
                 tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path,
                 sentence_stack=True, pickle_path=pickle_path, max_words_length=max_words_length, is_sop=True,
                 lazy=not on_memory
             )
-        elif model == 'mlm' and (dataset_path is not None or pickle_path is not None):
+        elif self.model_name == 'proj' or self.model_name == 'albert' and \
+                (dataset_path is not None or pickle_path is not None):
             print('Dataset : Stack')
             return StackedSentenceDataset(
                 tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path,
@@ -191,7 +208,9 @@ class BertPretrainier(object):
         if self.bert_model_path is not None and self.bert_model_path != '':
             self.helper.load_model(self.model.bert, self.bert_model_path)
         criterion_lm = CrossEntropyLoss(ignore_index=-1)
-        if isinstance(self.model, BertPretrainingTasks):
+        if isinstance(self.model, BertPretrainingTasks) or \
+                isinstance(self.model, ProjectionAlbertPretrainingTasks) or \
+                isinstance(self.model, AlbertPretrainingTasks):
             criterion_ns = CrossEntropyLoss(ignore_index=-1)
 
         def process(batch, model, iter_bar, epoch, step):

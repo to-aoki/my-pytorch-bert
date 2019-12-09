@@ -19,16 +19,20 @@
 import torch
 import torch.nn as nn
 
-from . bert import BertModel, AlbertModel
+from . bert import BertModel
+from . embed_projection_albert import EmbedProjectionAlbertModel
+from . albert import AlbertModel
 
 
 class Classifier(nn.Module):
     """Bert fine-tuning classifier"""
 
-    def __init__(self, config, num_labels, is_albert=False):
+    def __init__(self, config, num_labels, model_name='bert'):
         super().__init__()
 
-        if is_albert:
+        if model_name == 'proj':
+            self.bert = EmbedProjectionAlbertModel(config)
+        elif model_name == 'albert':
             self.bert = AlbertModel(config)
         else:
             self.bert = BertModel(config)
@@ -48,10 +52,12 @@ class Classifier(nn.Module):
 class TokenClassifier(nn.Module):
     """Bert fine-tuning Token classifier"""
 
-    def __init__(self, config, num_labels, is_albert=False):
+    def __init__(self, config, num_labels, model_name='bert'):
         super().__init__()
         self.num_labels = num_labels
-        if is_albert:
+        if model_name == 'proj':
+            self.bert = EmbedProjectionAlbertModel(config)
+        elif model_name == 'albert':
             self.bert = AlbertModel(config)
         else:
             self.bert = BertModel(config)
@@ -69,9 +75,11 @@ class TokenClassifier(nn.Module):
 class MultipleChoiceSelector(nn.Module):
     """Bert fine-tuning Token classifier"""
 
-    def __init__(self, config, is_albert=False):
+    def __init__(self, config, model_name='bert'):
         super().__init__()
-        if is_albert:
+        if model_name == 'proj':
+            self.bert = EmbedProjectionAlbertModel(config)
+        elif model_name == 'albert':
             self.bert = AlbertModel(config)
         else:
             self.bert = BertModel(config)
@@ -98,10 +106,12 @@ class MultipleChoiceSelector(nn.Module):
 class QuestionRespondent(nn.Module):
     """Bert fine-tuning Question respondent"""
 
-    def __init__(self, config, num_labels, is_albert=False):
+    def __init__(self, config, num_labels, model_name='bert'):
         super().__init__()
         self.num_labels = num_labels
-        if is_albert:
+        if model_name == 'proj':
+            self.bert = EmbedProjectionAlbertModel(config)
+        elif model_name == 'albert':
             self.bert = AlbertModel(config)
         else:
             self.bert = BertModel(config)

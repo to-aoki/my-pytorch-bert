@@ -46,7 +46,7 @@ def classification(
     task='class',
     device=None,
     quantize=False,
-    albert=False,
+    model_name='bert',
     optimizer='bert',
     encoder_json_path=None,
     vocab_bpe_path=None,
@@ -71,7 +71,7 @@ def classification(
             task=task,
             device=device,
             quantize=quantize,
-            albert=albert,
+            model_name=model_name,
             encoder_json_path=encoder_json_path,
             vocab_bpe_path=vocab_bpe_path,
         )
@@ -111,7 +111,7 @@ def classification(
             fp16=fp16,
             device=device,
             quantize=quantize,
-            albert=albert,
+            model_name=model_name,
             encoder_json_path=encoder_json_path,
             vocab_bpe_path=vocab_bpe_path,
         )
@@ -179,7 +179,10 @@ if __name__ == '__main__':
     parser.add_argument('--device', nargs='?', type=str, default=None, help='Target Runing device name.')
     parser.add_argument('--quantize', action='store_true',
                         help='Use quantized bert (testing),')
-    parser.add_argument('--albert', action='store_true', help='Use ALBERT model')
+    parser.add_argument('--model_name', nargs='?', type=str, default='bert',
+                        help=
+                        'Select from the following name groups model. (bert, proj, albert)'
+                        )
     parser.add_argument('--optimizer', nargs='?', type=str, default='bert',
                         help=
                         'Select from the following name groups optimizer. (bert, adamw, lamb)'
@@ -216,7 +219,7 @@ if __name__ == '__main__':
         task=args.task,
         device=args.device,
         quantize=args.quantize,
-        albert=args.albert,
+        model_name=args.model_name,
         optimizer=args.optimizer,
         encoder_json_path=args.encoder_json_path,
         vocab_bpe_path=args.vocab_bpe_path,

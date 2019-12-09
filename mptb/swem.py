@@ -16,7 +16,9 @@
 
 import numpy as np
 import torch
-from .bert import Config, BertModel, AlbertModel
+from .bert import Config, BertModel
+from .albert import AlbertModel
+from .embed_projection_albert import EmbedProjectionAlbertModel
 from .utils import get_tokenizer, load, to_bert_ids
 
 
@@ -31,7 +33,7 @@ class BertSWEM(object):
         sp_model_path=None,
         bert_model_path=None,
         device='cpu',
-        albert=False
+        model_name='bert'
     ):
         if vocab_path is None or bert_model_path is None:
             raise ValueError('Require vocab_path and bert_model_path')
@@ -41,7 +43,9 @@ class BertSWEM(object):
 
         config = Config.from_json(config_path, len(self.tokenizer), max_pos)
         print(config)
-        if albert:
+        if model_name == 'proj':
+            self.bert_model = EmbedProjectionAlbertModel(config)
+        elif model_name == 'albert':
             self.bert_model = AlbertModel(config)
         else:
             self.bert_model = BertModel(config)

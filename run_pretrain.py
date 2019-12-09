@@ -42,7 +42,7 @@ def bert_pretraining(
     stack=False,
     max_words_length=3,
     bert_model_path=None,
-    albert=False,
+    model_name='bert',
     optimizer='bert',
     device=None
 ):
@@ -63,7 +63,7 @@ def bert_pretraining(
         pickle_path=pickle_path,
         max_words_length=max_words_length,
         bert_model_path=bert_model_path,
-        albert=albert,
+        model_name=model_name,
         device=device
     )
 
@@ -139,11 +139,10 @@ if __name__ == '__main__':
                         help='Sentence stack option when task=mlm effective.')
     parser.add_argument('--max_words_length', help='Masked Consecutive words(tokens) max length', nargs='?',
                         type=int, default=3)
-    parser.add_argument('--albert', action='store_true', help='Use ALBERT model')
+    parser.add_argument('--model_name', nargs='?', type=str, default='bert',
+                        help='Select from the following name groups model. (bert, proj, albert)')
     parser.add_argument('--optimizer', nargs='?', type=str, default='bert',
-                        help=
-                        'Select from the following name groups optimizer. (bert, adamw, lamb)'
-                        )
+                        help='Select from the following name groups optimizer. (bert, adamw, lamb)')
     parser.add_argument('--device', nargs='?', type=str, default=None, help='Target Runing device name.')
     args = parser.parse_args()
     bert_pretraining(args.config_path, args.dataset_path, args.pretensor_dataset_path, args.pretensor_dataset_length,
@@ -152,5 +151,5 @@ if __name__ == '__main__':
                      args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr, args.warmup_steps,
                      args.epochs, args.per_save_epochs, args.per_save_steps,
                      args.mode, args.tokenizer, args.fp16, args.on_disk, args.task, args.stack,
-                     args.max_words_length, args.bert_model_path, args.albert, args.optimizer, args.device)
+                     args.max_words_length, args.bert_model_path, args.model_name, args.optimizer, args.device)
 
