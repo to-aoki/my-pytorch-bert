@@ -161,7 +161,7 @@ pip install pytorch_lamb
 
 
 ### ALBERT mode
- --albert option attach.
+ --model_name=proj or --model_name=albert
  
 ### Pretrained model
 
