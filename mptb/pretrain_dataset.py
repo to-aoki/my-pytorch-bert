@@ -40,7 +40,7 @@ import pickle
 class StackedSentenceDataset(Dataset):
 
     def __init__(self, tokenizer, max_pos, dataset_path=None, documents=[], encoding='utf-8',
-                 sentence_stack=True, pickle_path=None, max_words_length=3, is_sop=False, lazy=False):
+                 sentence_stack=True, pickle_path=None, max_words_length=4, is_sop=False, lazy=False):
         self.tokenizer = tokenizer
         self.max_pos = max_pos
         self.dataset_path = dataset_path
