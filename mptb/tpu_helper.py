@@ -15,8 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import time
-
+import os
 import torch
 from torch.nn import CrossEntropyLoss
 from torch.utils.data import DataLoader, SequentialSampler, RandomSampler
@@ -25,7 +24,7 @@ import torch_xla.core.xla_model as xm
 import torch_xla.distributed.parallel_loader as pl
 import torch_xla.distributed.xla_multiprocessing as xmp
 
-from .utils import set_seeds
+from .utils import set_seeds, save
 from .optimization import get_optimizer, get_scheduler
 from .pretrain_dataset import PreTensorPretrainDataset
 from .pretrain_tasks import BertPretrainingTasks
@@ -33,9 +32,10 @@ from .pretrain_tasks import BertPretrainingTasks
 
 def tpu_pretrain(
     model, dataset,
-    epochs, batch_size, lr, warmup_proportion, save_dir,
-    per_save_epocs, per_save_steps, optimizer_name,
-    num_cores=8, log_steps=20, metrics_debug=False,
+    epochs, batch_size, lr, warmup_proportion,
+    save_dir, per_save_epocs, per_save_steps,
+    optimizer_name,
+    num_cores=8, cli_interval=100, metrics_debug=True,
 ):
 
     def train():
@@ -57,16 +57,18 @@ def tpu_pretrain(
             sampler = RandomSampler(dataset)
         data_loader = DataLoader(dataset, sampler=sampler, batch_size=1)
 
-        def train_loop_fn(per_device_loader):
+        def train_loop_fn(per_device_loader, e):
             tracker = xm.RateTracker()
             model.train()
+            total_loss = 0.0
+            total_steps = 0
             for step, batch in enumerate(per_device_loader):
                 batch = tuple(t.to(device) for t in batch)
                 input_ids, segment_ids, input_mask, next_sentence_labels, label_ids = batch
                 optimizer.zero_grad()
                 masked_lm_logists, auxiliary_logits = model(input_ids, segment_ids, input_mask)
 
-                # Is the operation of the transpose method different??
+                # Is the operation of the view method different??
                 masked_lm_loss = criterion_lm(
                     masked_lm_logists.view(-1, label_ids.size(1)).transpose(0, 1), label_ids.view(-1))
                 # mlm
@@ -74,21 +76,33 @@ def tpu_pretrain(
                     loss = masked_lm_loss
                 # nsp
                 else:
-                    loss = criterion_ns(auxiliary_logits.view(-1, 2), next_sentence_labels.view(-1))
+                    loss = masked_lm_loss + criterion_ns(auxiliary_logits.view(-1, 2), next_sentence_labels.view(-1))
                 loss.backward()
+
+                total_steps += 1
+                total_loss += loss.item()
+                tracker.add(batch_size)
+                if metrics_debug:
+                    if step % cli_interval == 0:
+                        print('[xla:{}]({}) Loss={:.5f} Rate={:.2f} GlobalRate={:.2f}'.format(
+                            xm.get_ordinal(), step, loss.item(), tracker.rate(),
+                            tracker.global_rate()), flush=True)
+                if step % per_save_steps == 0:
+                    output_model_file = os.path.join(save_dir, "train_model.pt")
+                    if xm.get_ordinal() == 0:
+                        save(model, output_model_file, optimizer)
+
                 xm.optimizer_step(optimizer)
                 scheduler.step()
 
-                tracker.add(batch_size)
-                if step % log_steps == 0:
-                    print('[xla:{}]({}) Loss={:.5f} Rate={:.2f} GlobalRate={:.2f} Time={}'.format(
-                        xm.get_ordinal(), step, loss.item(), tracker.rate(),
-                        tracker.global_rate(), time.asctime()), flush=True)
-
-        for epoch in range(1, epochs + 1):
+        for e in range(1, epochs +1):
             p_loader = pl.ParallelLoader(data_loader, [device])
-            train_loop_fn(p_loader.per_device_loader(device))
-            xm.master_print("Finished training epoch {}".format(epoch))
+            train_loop_fn(p_loader.per_device_loader(device), e)
+            xm.master_print("Finished training epoch {}".format(e))
+            if e % per_save_epocs == 0:
+                output_model_file = os.path.join(save_dir, "train_model.pt")
+                if xm.get_ordinal() == 0:
+                    save(model, output_model_file, optimizer)
 
     def _mp_train_fn(rank, flags):
         torch.set_default_tensor_type('torch.FloatTensor')
