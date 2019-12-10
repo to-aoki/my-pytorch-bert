@@ -115,17 +115,26 @@ class FullTokenizer(object):
                 found = False
                 try:
                     doc = self.nlp(item)
-                    for sent in doc.sents:
-                        for token in sent:
-                            if token.pos_ is not None and token.orth_ == item:
-                                pos = '[' + token.pos_ + ']'
-                                append_id = self.vocab.get(pos, None)
-                                if append_id is not None:
-                                    output.append(append_id)
-                                    found = True
-                                    break
-                        if found:
-                            break
+                    for ent in doc.ents:
+                        if ent.label_ is not None:
+                            ner = '[' + ent.label_ + ']'
+                            append_id = self.vocab.get(ner, None)
+                            if append_id is not None:
+                                output.append(append_id)
+                                found = True
+                                break
+                    if not found:
+                        for sent in doc.sents:
+                            for token in sent:
+                                if token.pos_ is not None and token.orth_ == item:
+                                    pos = '[' + token.pos_ + ']'
+                                    append_id = self.vocab.get(pos, None)
+                                    if append_id is not None:
+                                        output.append(append_id)
+                                        found = True
+                                        break
+                            if found:
+                                break
                 except struct.error:
                     # '𥝱'
                     import warnings
