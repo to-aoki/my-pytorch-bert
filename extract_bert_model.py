@@ -16,6 +16,8 @@
 
 from mptb import Config
 from mptb.pretrain_tasks import BertPretrainingTasks, OnlyMaskedLMTasks
+from mptb.embed_projection_albert import ProjectionMaskedLM, ProjectionAlbertPretrainingTasks
+from mptb.albert import AlbertOnlyMaskedLMTasks, AlbertPretrainingTasks
 from mptb.utils import load, save
 
 
@@ -27,16 +29,23 @@ def extract_model(
     only_bert=False,
     mlm=False,
     parallel=False,
-    albert=False,
+    model_name='bert',
 ):
+
     config = Config.from_json(config_path)
-    if mlm:
-        model = OnlyMaskedLMTasks(config, is_albert=albert)
+    if mlm and model_name == 'proj':
+        model = ProjectionMaskedLM(config)
+    elif model_name == 'proj':
+        model = ProjectionAlbertPretrainingTasks(config)
+    elif mlm and model_name == 'albert':
+        model = AlbertOnlyMaskedLMTasks(config)
+    elif model_name == 'albert':
+        model = AlbertPretrainingTasks(config)
+    elif mlm:
+        model = OnlyMaskedLMTasks(config)
     else:
-        model = BertPretrainingTasks(config, is_albert=albert)
-    if parallel:
-        import torch
-        model = torch.nn.DataParallel(model)
+        model = BertPretrainingTasks(config)
+
     load(model, model_path, 'cpu', strict=load_strict)
     if parallel:
         model = model.module
@@ -62,9 +71,12 @@ if __name__ == '__main__':
                         help='Use bert only output.')
     parser.add_argument('--output_path', help='Output model path.', required=True,
                         type=str)
-    parser.add_argument('--albert', action='store_true', help='Use ALBERT model')
+    parser.add_argument('--model_name', nargs='?', type=str, default='bert',
+                        help=
+                        'Select from the following name groups model. (bert, proj, albert)'
+                        )
     args = parser.parse_args()
     extract_model(config_path=args.config_path, model_path=args.model_path,
                   load_strict=not args.loose,
                   output_path=args.output_path, only_bert=args.only_bert,
-                  parallel=args.parallel, mlm=args.mlm, albert=args.albert)
+                  parallel=args.parallel, mlm=args.mlm, albert=args.model_name)
