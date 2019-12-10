@@ -440,6 +440,7 @@ class NextSentencePredictionDataset(Dataset):
 
         # load samples later lazily from disk
         else:
+            self.num_docs = 0
             with open(dataset_path, "r", encoding=encoding) as reader:
                 for line in tqdm(reader, desc="Loading Dataset", total=self.corpus_lines):
                     if line.strip() == "":
