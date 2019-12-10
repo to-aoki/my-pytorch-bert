@@ -29,7 +29,7 @@ def swem(
     text_b=None,
     layer='-1',
     strategy='REDUCE_MEAN',
-    albert=False
+    model_name='bert'
 ):
     swem = BertSWEM(
         config_path=config_path,
@@ -39,7 +39,7 @@ def swem(
         tokenizer_name=tokenizer_name,
         bert_model_path=bert_model_path,
         device=device,
-        albert=albert
+        model_name=model_name
     )
     text_a_vector = swem.embedding_vector(text_a, pooling_layer=layer, pooling_strategy=strategy)
     print(text_a, text_a_vector)
@@ -74,10 +74,11 @@ if __name__ == '__main__':
     parser.add_argument('--layer', nargs='?', type=int, default='-1', help='Use Bert pooling layer')
     parser.add_argument('--strategy', nargs='?', type=str, default='REDUCE_MEAN',
                         help='Use SWEM operation (REDUCE_MEAN, REDUCE_MAX, REDUCE_MEAN_MAX, CLS_TOKEN, HIER)')
-    parser.add_argument('--albert', action='store_true', help='Use ALBERT model')
+    parser.add_argument('--model_name', nargs='?', type=str, default='bert',
+                        help='Select from the following name groups model. (bert, proj, albert)')
 
     args = parser.parse_args()
     swem(config_path=args.config_path, max_pos=args.max_pos,
          vocab_path=args.vocab_path, sp_model_path=args.sp_model_path, tokenizer_name=args.tokenizer,
          bert_model_path=args.model_path, device=args.device,
-         text_a=args.text, text_b=args.compare, layer=args.layer, strategy=args.strategy, albert=args.albert)
+         text_a=args.text, text_b=args.compare, layer=args.layer, strategy=args.strategy, albert=args.model_name)
