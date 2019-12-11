@@ -16,7 +16,7 @@
 
 from mptb import Config
 from mptb.pretrain_tasks import BertPretrainingTasks, OnlyMaskedLMTasks
-from mptb.embed_projection_albert import ProjectionMaskedLM, ProjectionAlbertPretrainingTasks
+from mptb.embed_projection_albert import ProjectionOnlyMaskedLMTasks, ProjectionAlbertPretrainingTasks
 from mptb.albert import AlbertOnlyMaskedLMTasks, AlbertPretrainingTasks
 from mptb.utils import load, save
 
@@ -34,7 +34,7 @@ def extract_model(
 
     config = Config.from_json(config_path)
     if mlm and model_name == 'proj':
-        model = ProjectionMaskedLM(config)
+        model = ProjectionOnlyMaskedLMTasks(config)
     elif model_name == 'proj':
         model = ProjectionAlbertPretrainingTasks(config)
     elif mlm and model_name == 'albert':
