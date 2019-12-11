@@ -113,7 +113,7 @@ class BertPretrainier(object):
         pickle_path=None,
         pretensor_data_path=None,
         pretensor_data_length=-1,
-        max_words_length=3,
+        max_words_length=4,
     ):
         if hasattr(self, 'max_pos'):
             max_pos = self.max_pos
