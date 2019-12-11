@@ -131,7 +131,7 @@ class BertPretrainier(object):
             max_pos = median_pos * 2 + 3  # [CLS]a[SEP]b[SEP]
             print("max_pos (median):", max_pos)
 
-        if self.model_name == 'proj' or self.model_name == 'albert' and \
+        if (self.model_name == 'proj' or self.model_name == 'albert') and \
                 (dataset_path is not None or pickle_path is not None) and model != 'mlm':
             print('Dataset : SOP')
             return StackedSentenceDataset(
@@ -139,7 +139,7 @@ class BertPretrainier(object):
                 sentence_stack=True, pickle_path=pickle_path, max_words_length=max_words_length, is_sop=True,
                 lazy=not on_memory
             )
-        elif self.model_name == 'proj' or self.model_name == 'albert' and \
+        elif (self.model_name == 'proj' or self.model_name == 'albert') and \
                 (dataset_path is not None or pickle_path is not None):
             print('Dataset : Stack')
             return StackedSentenceDataset(
