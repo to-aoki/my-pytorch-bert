@@ -98,6 +98,7 @@ class StackedSentenceDataset(Dataset):
                     self.file.close()
                     self.file = open(self.dataset_path, "r", encoding=self.encoding)
                     self.read_counts = 0
+                    self.buffer = None
                 for i in range(self.read_counts):
                     self.file.__next__()
 
@@ -213,6 +214,12 @@ class StackedSentenceDataset(Dataset):
             self.buffer = None
 
         while True:
+            if self.read_counts == len(self.indices):
+                self.file.close()
+                self.file = open(self.dataset_path, "r", encoding=self.encoding)
+                self.read_counts = 0
+                break
+
             text = self.file.__next__().rstrip()
             if hasattr(text, 'decode'):
                 try:
@@ -221,11 +228,6 @@ class StackedSentenceDataset(Dataset):
                     # decode errors sometimes occur when using torch/xla (google colab)
                     pass
             self.read_counts += 1
-            if self.read_counts == len(self.indices):
-                self.file.close()
-                self.file = open(self.dataset_path, "r", encoding=self.encoding)
-                self.read_counts = 0
-                break
             if text == '':
                 if len(ids) > 0:
                     break
