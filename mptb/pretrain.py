@@ -20,7 +20,7 @@ from torch.nn import CrossEntropyLoss, NLLLoss
 from torch.utils.data import SequentialSampler, RandomSampler
 
 from .bert import Config
-from .embed_projection_albert import ProjectionMaskedLM, ProjectionAlbertPretrainingTasks
+from .embed_projection_albert import ProjectionOnlyMaskedLMTasks, ProjectionAlbertPretrainingTasks
 from .albert import AlbertOnlyMaskedLMTasks, AlbertPretrainingTasks
 from .pretrain_tasks import BertPretrainingTasks, OnlyMaskedLMTasks
 from .optimization import get_optimizer, get_scheduler
@@ -73,7 +73,7 @@ class BertPretrainier(object):
 
         self.max_pos = max_pos
         if model == 'mlm' and model_name == 'proj':
-            self.model = ProjectionMaskedLM(config)
+            self.model = ProjectionOnlyMaskedLMTasks(config)
             print('Task: Only MaskedLM/Projection')
         elif model_name == 'proj':
             self.model = ProjectionAlbertPretrainingTasks(config)
