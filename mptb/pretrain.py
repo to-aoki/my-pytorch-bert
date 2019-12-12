@@ -147,6 +147,13 @@ class BertPretrainier(object):
                 sentence_stack=sentence_stack, pickle_path=pickle_path, max_words_length=max_words_length,
                 lazy=not on_memory
             )
+        elif (dataset_path is not None or pickle_path is not None) and model == 'mlm':
+            print('Dataset : Stack')
+            return StackedSentenceDataset(
+                tokenizer=tokenizer, max_pos=max_pos, dataset_path=dataset_path,
+                sentence_stack=sentence_stack, pickle_path=pickle_path, max_words_length=max_words_length,
+                lazy=not on_memory
+            )
         elif dataset_path is not None:
             print('Dataset : NextSentenceDataset')
             return NextSentencePredictionDataset(
