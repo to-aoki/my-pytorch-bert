@@ -24,8 +24,8 @@ from . embed_projection_albert import EmbedProjectionAlbertModel
 from . albert import AlbertModel
 
 
-class Classifier(nn.Module):
-    """Bert fine-tuning classifier"""
+class Classification(nn.Module):
+    """Bert fine-tuning classification"""
 
     def __init__(self, config, num_labels, model_name='bert'):
         super().__init__()
@@ -49,8 +49,8 @@ class Classifier(nn.Module):
         return self.classifier(self.dropout(pooled_output))
 
 
-class TokenClassifier(nn.Module):
-    """Bert fine-tuning Token classifier"""
+class TokenClassification(nn.Module):
+    """Bert fine-tuning Token classification"""
 
     def __init__(self, config, num_labels, model_name='bert'):
         super().__init__()
@@ -72,8 +72,8 @@ class TokenClassifier(nn.Module):
         return self.classifier(self.dropout(hidden_state))
 
 
-class MultipleChoiceSelector(nn.Module):
-    """Bert fine-tuning Token classifier"""
+class MultipleChoice(nn.Module):
+    """Bert fine-tuning multiple choice"""
 
     def __init__(self, config, model_name='bert'):
         super().__init__()

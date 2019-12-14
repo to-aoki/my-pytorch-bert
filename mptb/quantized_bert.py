@@ -140,10 +140,10 @@ class QuantizedBertModel(BertModel):
             module.bias.data.zero_()
 
 
-class QuantizedBertForSequenceClassification(Classifier):
+class QuantizedBertForSequenceClassification(Classification):
 
     def __init__(self, config, num_labels):
-        super(Classifier, self).__init__()
+        super(Classification, self).__init__()
         # we only want BertForQuestionAnswering init to run to avoid unnecessary
         # initializations
         self.bert = QuantizedBertModel(config)

@@ -21,7 +21,7 @@ from torch.utils.data import RandomSampler, WeightedRandomSampler
 
 from .bert import Config
 from .optimization import get_optimizer, get_scheduler
-from .finetuning import Classifier, MultipleChoiceSelector
+from .finetuning import Classification, MultipleChoice
 from .class_dataset import ClassDataset
 from .choice_dataset import SwagDataset
 from .helper import Helper
@@ -76,7 +76,7 @@ class BertClassifier(object):
             self.dataset = self.get_dataset(
                 self.tokenizer, dataset_path, header_skip=header_skip, under_sampling=under_sampling)
             if self.task == 'choice':
-                self.model = MultipleChoiceSelector(config, model_name=model_name)
+                self.model = MultipleChoice(config, model_name=model_name)
             else:
                 if label_num != -1 and label_num != self.dataset.label_num():
                     raise ValueError(
@@ -86,7 +86,7 @@ class BertClassifier(object):
                     from .quantized_bert import QuantizedBertForSequenceClassification
                     self.model = QuantizedBertForSequenceClassification(config, num_labels=self.dataset.label_num())
                 else:
-                    self.model = Classifier(config, num_labels=self.dataset.label_num(), model_name=model_name)
+                    self.model = Classification(config, num_labels=self.dataset.label_num(), model_name=model_name)
 
         self.pretrain = False
         self.helper = Helper(device=device, fp16=fp16)
