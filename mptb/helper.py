@@ -62,7 +62,8 @@ class Helper(object):
         adjustment_every_epoch=None,
         adjustment_every_step=None,
         opt_level='O2',
-        max_grad_norm=1.0
+        max_grad_norm=1.0,
+        cpu_param_optimizer=None
     ):
         model.to(self.device)
         model.train()
@@ -90,6 +91,8 @@ class Helper(object):
             iter_bar = tqdm(
                 dataloader, desc="E-{:0=2} : XX.XXXX avg loss ".format(e), position=0, mininterval=self.cli_interval)
             for step, batch in enumerate(iter_bar):
+                optimizer.zero_grad()
+
                 batch = tuple(t.to(self.device) for t in batch)
                 loss = process(batch, model, iter_bar, e, step)
 
@@ -110,8 +113,21 @@ class Helper(object):
                 else:
                     torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
 
-                optimizer.step()
-                optimizer.zero_grad()
+                if cpu_param_optimizer is not None:
+                    for (_, param_optimizer), (_, param_model) in zip(cpu_param_optimizer, model.named_parameters()):
+                        if param_model.grad is not None:
+                            if param_optimizer.grad is None:
+                                param_optimizer.grad = torch.nn.Parameter(
+                                    param_optimizer.data.new().resize_(*param_optimizer.data.size()))
+                            param_optimizer.grad.data.copy_(param_model.grad.data)
+                        else:
+                            param_optimizer.grad = None
+                    optimizer.step()
+                    for (_, param_optimizer), (_, param_model) in zip(cpu_param_optimizer, model.named_parameters()):
+                        param_model.data.copy_(param_optimizer.data)
+
+                else:
+                    optimizer.step()
                 scheduler.step()
                 global_step += 1
 

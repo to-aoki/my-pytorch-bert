@@ -44,7 +44,8 @@ def bert_pretraining(
     bert_model_path=None,
     model_name='bert',
     optimizer='bert',
-    device=None
+    device=None,
+    optimizer_on_cpu=False
 ):
 
     estimator = BertPretrainier(
@@ -71,7 +72,7 @@ def bert_pretraining(
         score = estimator.train(
             traing_model_path=model_path, batch_size=batch_size, epochs=epochs, per_save_epochs=per_save_epochs,
             per_save_steps=per_save_steps, lr=lr, warmup_proportion=warmup_proportion, save_dir=save_dir,
-            optimizer_name=optimizer
+            optimizer_name=optimizer, optimizer_on_cpu=optimizer_on_cpu
         )
         print(score)
     else:
@@ -144,6 +145,7 @@ if __name__ == '__main__':
     parser.add_argument('--optimizer', nargs='?', type=str, default='bert',
                         help='Select from the following name groups optimizer. (bert, adamw, lamb)')
     parser.add_argument('--device', nargs='?', type=str, default=None, help='Target Runing device name.')
+    parser.add_argument('--optimizer_on_cpu', action='store_true', help='Put optimizer parameters on CPU.')
     args = parser.parse_args()
     bert_pretraining(args.config_path, args.dataset_path, args.pretensor_dataset_path, args.pretensor_dataset_length,
                      args.pickle_path,
@@ -151,5 +153,6 @@ if __name__ == '__main__':
                      args.save_dir, args.log_dir, args.batch_size, args.max_pos, args.lr, args.warmup_steps,
                      args.epochs, args.per_save_epochs, args.per_save_steps,
                      args.mode, args.tokenizer, args.fp16, args.on_disk, args.task, args.stack,
-                     args.max_words_length, args.bert_model_path, args.model_name, args.optimizer, args.device)
+                     args.max_words_length, args.bert_model_path, args.model_name, args.optimizer, args.device,
+                     args.optimizer_on_cpu)
 

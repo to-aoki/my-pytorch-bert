@@ -20,14 +20,11 @@
 """PyTorch optimization for BERT model."""
 
 import re
-import logging
 import math
 
 import torch
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LambdaLR
-
-logger = logging.getLogger(__name__)
 
 
 class ConstantLRSchedule(LambdaLR):
@@ -273,9 +270,11 @@ class BertAdam(Optimizer):
 
 
 def get_optimizer(
-    model, lr=5e-5, decoy=0.01, no_decay=('bias', 'layer_norm', 'LayerNorm'), optimzier='bert'
+    model, lr=5e-5, decoy=0.01, no_decay=('bias', 'layer_norm', 'LayerNorm'), optimzier='bert', param_optimizer=None
 ):
-    param_optimizer = list(model.named_parameters())
+
+    if param_optimizer is None:
+        param_optimizer = list(model.named_parameters())
     param_optimizer = [n for n in param_optimizer if 'pool' not in n[0]]
     optimizer_grouped_parameters = [
         {'params': [p for n, p in param_optimizer if _do_use_weight_decay(n, no_decay)], 'weight_decay': decoy},
@@ -287,9 +286,9 @@ def get_optimizer(
             return Lamb(optimizer_grouped_parameters, lr=lr)
         except ImportError:
             pass
-    elif optimzier is 'bert':
-        return BertAdam(optimizer_grouped_parameters, lr=lr)
-    return AdamW(optimizer_grouped_parameters, lr=lr)
+    elif optimzier is 'adamw':
+        return AdamW(optimizer_grouped_parameters, lr=lr)
+    return BertAdam(optimizer_grouped_parameters, lr=lr)
 
 
 SCHEDULES = {
