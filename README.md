@@ -153,7 +153,10 @@ pip install mojimoji
 pip install "https://github.com/megagonlabs/ginza/releases/download/latest/ginza-latest.tar.gz"
 ```
 
+![](pictures/pos_tokenizer.png)
+
 ### LAMB Optimzer 
+
 ```
 pip install pytorch_lamb
 ```
@@ -162,7 +165,7 @@ pip install pytorch_lamb
 
 ### ALBERT mode
  --model_name=proj or --model_name=albert
- 
+
 ### Pretrained model
 
 [Pretrained ALBERT model and trained SentencePiece + Ginza/POS model (model_name=proj)](https://drive.google.com/drive/folders/1JnBPSvIJa_61QS0Sv0MZ_uQY2flVtlTJ) (wikipedia-ja 2019/10/03 corpus)
@@ -240,5 +243,3 @@ This project incorporates code from the following repos:
 
 This project incorporates dict from the following repos:
 * http://svn.sourceforge.jp/svnroot/slothlib/CSharp/Version1/SlothLib/NLP/Filter/StopWord/word/Japanese.txt
-
-
