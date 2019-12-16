@@ -270,7 +270,8 @@ class BertAdam(Optimizer):
 
 
 def get_optimizer(
-    model, lr=5e-5, decoy=0.01, no_decay=('bias', 'layer_norm', 'LayerNorm'), optimizer='bert', param_optimizer=None
+    model, lr=5e-5, decoy=0.01, no_decay=('bias', 'layer_norm', 'LayerNorm'),
+        optimizer_name='bert', param_optimizer=None
 ):
 
     if param_optimizer is None:
@@ -280,13 +281,13 @@ def get_optimizer(
         {'params': [p for n, p in param_optimizer if _do_use_weight_decay(n, no_decay)], 'weight_decay': decoy},
         {'params': [p for n, p in param_optimizer if not _do_use_weight_decay(n, no_decay)], 'weight_decay': 0.0}
     ]
-    if optimizer == 'lamb':
+    if optimizer_name == 'lamb':
         try:
             from pytorch_lamb import Lamb
             return Lamb(optimizer_grouped_parameters, lr=lr)
         except ImportError:
             pass
-    elif optimizer == 'adamw':
+    elif optimizer_name == 'adamw':
         return AdamW(optimizer_grouped_parameters, lr=lr)
     return BertAdam(optimizer_grouped_parameters, lr=lr)
 

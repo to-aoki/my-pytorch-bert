@@ -194,7 +194,7 @@ class BertClassifier(object):
 
         max_steps = int(len(dataset) / batch_size * epochs)
         warmup_steps = int(max_steps * warmup_proportion)
-        optimizer = get_optimizer(model=self.model, lr=lr, optimizer=optimizer_name)
+        optimizer = get_optimizer(model=self.model, lr=lr, optimizer_name=optimizer_name)
         scheduler = get_scheduler(optimizer, warmup_steps=warmup_steps, max_steps=max_steps)
 
         balance_weights = None

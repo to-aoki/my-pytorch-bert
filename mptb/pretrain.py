@@ -216,7 +216,7 @@ class BertPretrainier(object):
             cpu_param_optimizer = [(n, param.clone().detach().to('cpu').requires_grad_())
                                    for n, param in self.model.named_parameters()]
         optimizer = get_optimizer(model=self.model, lr=lr,
-                                  optimizer=optimizer_name, param_optimizer=cpu_param_optimizer)
+                                  optimizer_name=optimizer_name, param_optimizer=cpu_param_optimizer)
         scheduler = get_scheduler(optimizer, warmup_steps=warmup_steps, max_steps=max_steps)
         if self.bert_model_path is not None and self.bert_model_path != '':
             self.helper.load_model(self.model.bert, self.bert_model_path)
