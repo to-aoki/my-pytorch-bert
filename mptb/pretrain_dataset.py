@@ -232,13 +232,14 @@ class StackedSentenceDataset(Dataset):
                 break
 
             text = self.file.__next__().rstrip()
+            self.read_counts += 1
             if hasattr(text, 'decode'):
                 try:
                     text = text.decode(self.encoding)
                 except:
                     # decode errors sometimes occur when using torch/xla (google colab)
                     text = ''
-            self.read_counts += 1
+
             if text == '':
                 if len(ids) > 0:
                     break
@@ -262,7 +263,7 @@ class StackedSentenceDataset(Dataset):
                 else:
                     ids.extend(self.tokenizer.convert_tokens_to_ids(tokens))
 
-        if self.limit > 3:
+        if self.limit > 5:
             raise ValueError('dataset empty strings continue.')
 
         if len(ids) == 0:
