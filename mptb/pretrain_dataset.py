@@ -170,7 +170,7 @@ class StackedSentenceDataset(Dataset):
 
         else:
             if self.is_sop:
-                tokens = self.tokenizer.tokenize(text) if self.tokenizer is not None else text
+                tokens = self.tokenizer.tokenize(text)
                 token_len = 0
                 for x in stack:
                     token_len += len(x)
@@ -188,7 +188,7 @@ class StackedSentenceDataset(Dataset):
                 stack.append(tokens)
 
             elif self.sentence_stack:
-                tokens = self.tokenizer.tokenize(text) if self.tokenizer is not None else text
+                tokens = self.tokenizer.tokenize(text)
                 if len(stack) + len(tokens) > self.max_pos - self.bert_ids_num:
                     if len(stack) > 0:
                         self.all_documents.append(self.tokenizer.convert_tokens_to_ids(stack))
@@ -199,7 +199,7 @@ class StackedSentenceDataset(Dataset):
 
                 stack.extend(tokens)
             else:
-                tokens = self.tokenizer.tokenize(text) if self.tokenizer is not None else text
+                tokens = self.tokenizer.tokenize(text)
                 self.all_documents.append(self.tokenizer.convert_tokens_to_ids(tokens))
 
         return stack
@@ -327,9 +327,9 @@ class StackedSentenceDataset(Dataset):
             else:
                 tokens_b = []
 
+            label_ids = tokens_a + tokens_b
             bert_token_ids = copy.copy(tokens_a)
             bert_token_ids.extend(copy.copy(tokens_b))
-            label_ids = tokens_a + tokens_b
             # Add next sentence segment
             segment_ids = [0] * len(tokens_a) + [1] * len(tokens_b)
 
@@ -339,8 +339,8 @@ class StackedSentenceDataset(Dataset):
             # Add Special Tokens
             label_ids = [self.cls_id] + label_ids + [self.sep_id]
             bert_token_ids = copy.copy(label_ids)
-            segment_ids = []
-            is_random_next = []
+            segment_ids = [0] * len(label_ids)
+            is_random_next = 0
 
         # mask prediction calc
         mask_prediction = round((len(bert_token_ids) - self.bert_ids_num) * masked_lm_prob)
@@ -469,7 +469,7 @@ class NextSentencePredictionDataset(Dataset):
             # store as one sample
             sample = {"doc_id": len(self.all_documents), "line": len(doc)}
             self.sample_to_doc.append(sample)
-            tokens = self.tokenizer.tokenize(text) if self.tokenizer is not None else text
+            tokens = self.tokenizer.tokenize(text)
             doc.append(self.tokenizer.convert_tokens_to_ids(tokens))
             self.corpus_lines += 1
         return doc

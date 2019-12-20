@@ -232,8 +232,6 @@ class BertPretrainier(object):
                 segment_ids = None
             if input_mask.shape[1] == 0:
                 input_mask = None
-            if next_sentence_labels.shape[0] == 0:
-                next_sentence_labels = None
             masked_lm_logists, auxiliary_logits = model(input_ids, segment_ids, input_mask)
             masked_lm_loss = criterion_lm(masked_lm_logists.view(-1, len(tokenizer)), label_ids.view(-1))
 
@@ -325,8 +323,6 @@ class BertPretrainier(object):
                 segment_ids = None
             if input_mask.shape[1] == 0:
                 input_mask = None
-            if next_sentence_labels.shape[1] == 0:
-                next_sentence_labels = None
             masked_lm_logists, auxiliary_logits = model(input_ids, segment_ids, input_mask)
 
             # without nsp
