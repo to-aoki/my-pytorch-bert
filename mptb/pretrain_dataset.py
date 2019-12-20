@@ -182,7 +182,8 @@ class StackedSentenceDataset(Dataset):
                         self.all_documents.append(ids)
                     if len(tokens) > self.max_pos - self.bert_ids_num:
                         tokens = tokens[:self.max_pos - self.bert_ids_num]
-                    stack = tokens
+                        self.all_documents.append(self.tokenizer.convert_tokens_to_ids(tokens))
+                    stack = []
                     return stack
 
                 stack.append(tokens)
@@ -194,10 +195,12 @@ class StackedSentenceDataset(Dataset):
                         self.all_documents.append(self.tokenizer.convert_tokens_to_ids(stack))
                     if len(tokens) > self.max_pos - self.bert_ids_num:
                         tokens = tokens[:self.max_pos - self.bert_ids_num]
-                    stack = tokens
+                        self.all_documents.append(self.tokenizer.convert_tokens_to_ids(tokens))
+                    stack = []
                     return stack
 
                 stack.extend(tokens)
+
             else:
                 tokens = self.tokenizer.tokenize(text)
                 self.all_documents.append(self.tokenizer.convert_tokens_to_ids(tokens))
@@ -208,8 +211,16 @@ class StackedSentenceDataset(Dataset):
         ids = []
         if self.buffer is not None:
             if self.is_sop:
+                if len(self.buffer) > self.max_pos - self.bert_ids_num:
+                    ids = [self.buffer[:self.max_pos - self.bert_ids_num]]
+                    self.buffer = None
+                    return ids
                 ids = [self.buffer]
             else:
+                if len(self.buffer) > self.max_pos - self.bert_ids_num:
+                    ids = self.buffer[:self.max_pos - self.bert_ids_num]
+                    self.buffer = None
+                    return ids
                 ids = self.buffer
             self.buffer = None
 
@@ -226,7 +237,7 @@ class StackedSentenceDataset(Dataset):
                     text = text.decode(self.encoding)
                 except:
                     # decode errors sometimes occur when using torch/xla (google colab)
-                    pass
+                    text = ''
             self.read_counts += 1
             if text == '':
                 if len(ids) > 0:
@@ -240,16 +251,12 @@ class StackedSentenceDataset(Dataset):
                 for x in ids:
                     token_len += len(x)
                 if token_len + len(tokens) > self.max_pos - self.bert_ids_num:
-                    if len(tokens) > (self.max_pos - self.bert_ids_num):
-                        tokens = tokens[:self.max_pos - self.bert_ids_num]
                     self.buffer = self.tokenizer.convert_tokens_to_ids(tokens)
                     break
                 else:
                     ids.append(self.tokenizer.convert_tokens_to_ids(tokens))
             else:
                 if len(ids) + len(tokens) > self.max_pos - self.bert_ids_num:
-                    if len(tokens) > self.max_pos - self.bert_ids_num:
-                        tokens = tokens[:self.max_pos - self.bert_ids_num]
                     self.buffer = self.tokenizer.convert_tokens_to_ids(tokens)
                     break
                 else:
