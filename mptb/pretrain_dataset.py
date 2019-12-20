@@ -214,12 +214,14 @@ class StackedSentenceDataset(Dataset):
                 if len(self.buffer) > self.max_pos - self.bert_ids_num:
                     ids = [self.buffer[:self.max_pos - self.bert_ids_num]]
                     self.buffer = None
+                    self.limit = 0
                     return ids
                 ids = [self.buffer]
             else:
                 if len(self.buffer) > self.max_pos - self.bert_ids_num:
                     ids = self.buffer[:self.max_pos - self.bert_ids_num]
                     self.buffer = None
+                    self.limit = 0
                     return ids
                 ids = self.buffer
             self.buffer = None
@@ -263,7 +265,7 @@ class StackedSentenceDataset(Dataset):
                 else:
                     ids.extend(self.tokenizer.convert_tokens_to_ids(tokens))
 
-        if self.limit > 5:
+        if self.limit > 3:
             raise ValueError('dataset empty strings continue.')
 
         if len(ids) == 0:
