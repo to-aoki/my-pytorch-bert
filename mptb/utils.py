@@ -223,6 +223,9 @@ def get_tokenizer(
         if name == 'mecab':
             from .tokenization_mecab import FullTokenizer
             return FullTokenizer(vocab_path, preprocessor=preprocessor)
+        elif name == 'ginza':
+            from .tokenization_ginza import FullTokenizer
+            return FullTokenizer(vocab_path, preprocessor=preprocessor)
         elif name == 'juman':
             from .tokenization_juman import FullTokenizer
             preprocessor.append(ToZenkaku())

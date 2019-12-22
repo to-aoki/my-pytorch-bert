@@ -25,20 +25,61 @@ from tqdm import tqdm
 
 CONTROL_TOKENS = ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']
 # https://github.com/megagonlabs/ginza/blob/master/ja_ginza/sudachi_tokenizer.py
-UPOS_TOKENS = ['SYM', 'INTJ', 'SPACE', 'ADJ', 'ADP', 'PART', 'SCONJ', 'AUX', 'NOUN',
-               'PRON', 'VERB', 'ADV', 'PUNCT', 'PROPN', 'NUM', 'DET']
+UPOS_TOKENS = ['NOUN', 'PROPN', 'SYM', 'NUM', 'SPACE']
+NER_TOKENS = ['LOC', 'DATE', 'ORG', 'PERSON', 'PRODUCT']
 
 
-def create_vocab(create_file_path, control_tokens=CONTROL_TOKENS, upos_tokens=UPOS_TOKENS):
+def create_vocab(create_file_path,
+                 control_tokens=CONTROL_TOKENS, upos_tokens=UPOS_TOKENS, ner_tokens=NER_TOKENS, vocab_size=32000,
+                 lang='ja_ginza'):
     with open(create_file_path, "w", encoding='utf-8', newline='\n') as f:
-        nlp = spacy.load('ja_ginza_nopn')
+        nlp = spacy.load(lang)
+        num_tokens = vocab_size - (len(control_tokens) + len(upos_tokens) + len(ner_tokens))
+        skiped = []
         for _, vector in enumerate(tqdm(list(nlp.vocab.vectors))):
-            f.write(nlp.vocab.strings[vector] + '\n')
-        for control in control_tokens:
-            f.write(control+'\n')
+            word = nlp.vocab.strings[vector]
+            doc = nlp(word)
+            found = False
+            ner = ''
+            pos = ''
+            for ent in doc.ents:
+                if ent.label_ is not None:
+                    ner = ent.label_
+                    if ner in ner_tokens:
+                        found = True
+                        break
+            for sent in doc.sents:
+                for token in sent:
+                    if token.pos_ is not None:
+                        pos = token.pos_
+                        if pos in upos_tokens:
+                            found = True
+                            break
+            if found:
+                skiped.append({'word': word, 'vector': vector, 'ner': ner, 'pos': pos})
+            else:
+                f.write(word + '\t' + str(vector) + '\t' + ner + '\t' + pos + '\n')
+                num_tokens -= 1
+                if num_tokens == 0:
+                    break
+
+        if num_tokens != 0:
+            for skip in skiped:
+                if skip['pos'] == 'SPACE':
+                    continue
+                f.write(skip['word'] + '\t' + str(skip['vector']) + '\t' + skip['ner'] + '\t' + skip['pos'] + '\n')
+                num_tokens -= 1
+                if num_tokens == 0:
+                    break
+
+        for ner in ner_tokens:
+            f.write('[' + ner + ']' + '\n')
         for upos in upos_tokens:
             f.write('[' + upos + ']' + '\n')
-    return len(nlp.vocab.vectors) + len(control_tokens) + len(upos_tokens)
+        for control in control_tokens:
+            f.write(control+'\n')
+
+    return vocab_size
 
 
 class GinzaTokenizer(object):
@@ -46,15 +87,14 @@ class GinzaTokenizer(object):
     def __init__(
         self,
         preprocessor=None,
-        lemmatize=False,
+        lemmatize=True,
         collect_futures=[],
-        upos_tokens=UPOS_TOKENS
+        lang='ja_ginza'
     ):
-        self.nlp = spacy.load('ja_ginza')
+        self.nlp = spacy.load(lang)
         self.collect_futures = collect_futures
         self.preprocessor = preprocessor
         self.lemmatize = lemmatize
-        self.upos_tokens = upos_tokens
 
     def tokenize(self, text):
         text = self.preprocessor(text) if self.preprocessor is not None else text
@@ -67,10 +107,7 @@ class GinzaTokenizer(object):
                 if self.lemmatize:
                     word = token.lemma_
             else:
-                if token.pos_ in self.upos_tokens:
-                    word = '[' + token.pos_ + ']'
-                else:
-                    word = '[UNK]'
+                word = '[UNK]'
             tokens.append(word)
         return tokens
 
@@ -91,46 +128,81 @@ def token_vocab_build(reader):
     vocab_dict = OrderedDict()
     index = 0
     for _, token in enumerate(tqdm(reader)):
-        word = word.strip()
+        vocabs = token.split("\t")
+        word = vocabs[0].rstrip()
         vocab_dict[word] = index
         index += 1
     return vocab_dict
 
 
-def convert_by_vocab(vocab_dict, items, unk_info, nlp=None):
-    """Converts a sequence of [tokens|ids] using the vocab."""
-    output = []
-    for item in items:
-        if item in vocab_dict:
-            output.append(vocab_dict[item])
-        else:
-            output.append(unk_info)
-    return output
-
-
 class FullTokenizer(object):
     """Runs end-to-end tokenziation."""
 
-    def __init__(self, vocab_file, preprocessor=None, control_tokens=CONTROL_TOKENS):
+    def __init__(self, vocab_file, preprocessor=None,
+                 control_tokens=CONTROL_TOKENS,
+                 upos_tokens=UPOS_TOKENS, ner_tokens=NER_TOKENS):
         self.tokenizer = GinzaTokenizer(preprocessor=preprocessor)
         self.vocab = load_vocab(vocab_file)
         assert (0 < len(self.vocab))
         self.inv_vocab = {}
         self.control_start = 0
         for k, v in self.vocab.items():
-            if v == control_tokens[0]:
-                self.control_start = k
+            if k == control_tokens[0]:
+                self.control_start = v
+            if k == '[UNK]':
+                self.unk_id = v
             self.inv_vocab[v] = k
+        self.upos_tokens = upos_tokens
+        self.ner_tokens = ner_tokens
 
     def tokenize(self, text):
         split_tokens = self.tokenizer.tokenize(text)
         return split_tokens
 
     def convert_tokens_to_ids(self, tokens):
-        return convert_by_vocab(self.vocab, tokens, unk_info=100002)
+        output = []
+        for item in tokens:
+            token_id = self.vocab.get(item)
+            if token_id is not None:
+                output.append(token_id)
+            else:
+                doc = self.tokenizer.nlp(item)
+                found = False
+                for ent in doc.ents:
+                    if ent.label_ is not None:
+                        ner = ent.label_
+                        ner_id = self.vocab.get('[' + ner + ']')
+                        if ner_id is not None:
+                            output.append(ner_id)
+                            found = True
+                            break
+                if found:
+                    continue
+                for sent in doc.sents:
+                    for token in sent:
+                        if token.pos_ is not None:
+                            pos = token.pos_
+                            pos_id = self.vocab.get('[' + pos + ']')
+                            if pos_id is not None:
+                                output.append(pos_id)
+                                found = True
+                                break
+                    if found:
+                        break
+                if found:
+                    continue
+                output.append(self.unk_id)
+        return output
 
     def convert_ids_to_tokens(self, ids):
-        return convert_by_vocab(self.inv_vocab, ids, unk_info='[UNK]')
+        output = []
+        for item in ids:
+            token = self.inv_vocab[item]
+            if token is not None:
+                output.append(token)
+            else:
+                output.append('[UNK]')
+        return output
 
     # add for get random word
     def get_random_token_id(self):
