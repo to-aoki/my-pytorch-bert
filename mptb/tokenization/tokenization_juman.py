@@ -23,7 +23,8 @@ from collections import OrderedDict
 from tqdm import tqdm
 from mptb.tokenization.preprocessing import *
 from mptb.utils import separate_japanese_doc
-from mptb.tokenization import WordpieceTokenizer, BasicTokenizer
+from mptb.tokenization.tokenization import WordpieceTokenizer, BasicTokenizer
+
 
 CONTROL_TOKENS = ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']
 
