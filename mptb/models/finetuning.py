@@ -19,9 +19,9 @@
 import torch
 import torch.nn as nn
 
-from . bert import BertModel
-from . embed_projection_albert import EmbedProjectionAlbertModel
-from . albert import AlbertModel
+from mptb.models.bert import BertModel
+from mptb.models.embed_projection_albert import EmbedProjectionAlbertModel
+from mptb.models.albert import AlbertModel
 
 
 class Classification(nn.Module):

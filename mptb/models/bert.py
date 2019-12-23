@@ -26,7 +26,7 @@ from typing import NamedTuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .models import LayerNorm, PositionwiseFeedForward
+from .commons import LayerNorm, PositionwiseFeedForward
 
 
 class Config(NamedTuple):

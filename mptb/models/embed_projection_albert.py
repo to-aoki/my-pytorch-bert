@@ -20,7 +20,7 @@
 
 import torch
 import torch.nn as nn
-from .models import LayerNorm, gelu
+from .commons import LayerNorm, gelu
 from .bert import BertModel, TransformerBlock
 from .pretrain_tasks import NextSentencePrediction
 

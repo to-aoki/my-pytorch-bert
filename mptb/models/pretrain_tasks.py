@@ -19,7 +19,7 @@
 import torch
 import torch.nn as nn
 
-from .models import gelu, LayerNorm
+from .commons import gelu, LayerNorm
 from .bert import BertModel
 
 

@@ -21,7 +21,7 @@ import random
 import logging
 import numpy as np
 import torch
-from .preprocessing import *
+from mptb.tokenization.preprocessing import *
 
 
 class AttributeDict(object):
@@ -204,35 +204,35 @@ def get_tokenizer(
     if sp_model_path is not None and vocab_path is not None:
         if name == 'sp_pos':
             # sentencepiece + UD POS (ginza)
-            from .tokenization_sp_pos import FullTokenizer
+            from mptb.tokenization.tokenization_sp_pos import FullTokenizer
             return FullTokenizer(sp_model_path, vocab_path, preprocessor=preprocessor)
         elif name == 'sp_mecab':
             # sentencepiece + mecab POS
-            from .tokenization_sp_mecab import FullTokenizer
+            from mptb.tokenization.tokenization_sp_mecab import FullTokenizer
             return FullTokenizer(sp_model_path, vocab_path, preprocessor=preprocessor)
         else:
-            from .tokenization_sentencepiece import FullTokenizer
+            from mptb.tokenization.tokenization_sentencepiece import FullTokenizer
             return FullTokenizer(sp_model_path, vocab_path, preprocessor=preprocessor)
     elif encoder_json_path is not None and vocab_bpe_path is not None and vocab_bpe_path is not None:
-        from .tokenization_roberta import FullTokenizer
+        from mptb.tokenization.tokenization_roberta import FullTokenizer
         return FullTokenizer(
             dict_path=vocab_path, encoder_json_path=encoder_json_path, vocab_bpe_path=vocab_bpe_path,
             preprocessor=preprocessor)
     elif vocab_path is not None:
         name = name.lower()
         if name == 'mecab':
-            from .tokenization_mecab import FullTokenizer
+            from mptb.tokenization.tokenization_mecab import FullTokenizer
             return FullTokenizer(vocab_path, preprocessor=preprocessor)
         elif name == 'ginza':
-            from .tokenization_ginza import FullTokenizer
+            from mptb.tokenization.tokenization_ginza import FullTokenizer
             return FullTokenizer(vocab_path, preprocessor=preprocessor)
         elif name == 'juman':
-            from .tokenization_juman import FullTokenizer
+            from mptb.tokenization.tokenization_juman import FullTokenizer
             preprocessor.append(ToZenkaku())
             return FullTokenizer(vocab_path, preprocessor=preprocessor)
         else:
             # google bert tokenizer use
-            from .tokenization import FullTokenizer
+            from mptb.tokenization.tokenization import FullTokenizer
             return FullTokenizer(vocab_path, preprocessor=preprocessor)
 
 

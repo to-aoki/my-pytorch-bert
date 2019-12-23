@@ -29,7 +29,6 @@ from __future__ import print_function
 
 import collections
 import sentencepiece as sp
-import struct
 
 import MeCab
 from random import randint

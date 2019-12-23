@@ -24,9 +24,8 @@
 Quantized BERT layers and model
 """
 
-from .bert import *
-from .finetuning import *
-from .models import *
+from mptb.models.bert import *
+from mptb.models.finetuning import *
 from nlp_architect.nn.torch.quantization import (QuantizedEmbedding, QuantizedLinear)
 from nlp_architect.models.transformers.quantized_bert import quantized_linear_setup, quantized_embedding_setup
 

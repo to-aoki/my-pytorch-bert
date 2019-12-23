@@ -19,11 +19,11 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.utils.data import RandomSampler, WeightedRandomSampler
 
-from .bert import Config
+from .models.bert import Config
 from .optimization import get_optimizer, get_scheduler
-from .finetuning import Classification, MultipleChoice
-from .class_dataset import ClassDataset
-from .choice_dataset import SwagDataset
+from .models.finetuning import Classification, MultipleChoice
+from .dataset.class_dataset import ClassDataset
+from .dataset.choice_dataset import SwagDataset
 from .helper import Helper
 from .utils import save, get_logger, make_balanced_classes_weights, \
     get_tokenizer, load_from_google_bert_model, AttributeDict
@@ -83,7 +83,7 @@ class BertClassifier(object):
                         'label num mismatch. input : {} datset : {}'.format(label_num, self.dataset.label_num()))
                 if quantize:
                     print('quantized classification model')
-                    from .quantized_bert import QuantizedBertForSequenceClassification
+                    from mptb.models.quantized_bert import QuantizedBertForSequenceClassification
                     self.model = QuantizedBertForSequenceClassification(config, num_labels=self.dataset.label_num())
                 else:
                     self.model = Classification(config, num_labels=self.dataset.label_num(), model_name=model_name)

@@ -1,6 +1,6 @@
 import unittest
-from mptb.pretrain_dataset import NextSentencePredictionDataset, StackedSentenceDataset
-from mptb.tokenization_sentencepiece import FullTokenizer
+from mptb.dataset.pretrain_dataset import NextSentencePredictionDataset, StackedSentenceDataset
+from mptb.tokenization.tokenization_sentencepiece import FullTokenizer
 
 
 class PretrainDatasetTestCase(unittest.TestCase):

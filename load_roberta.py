@@ -14,8 +14,8 @@
 """Convert TensorFlow Bert Model to my-torch-bert."""
 
 import torch
-from mptb.bert import BertModel, Config
-from mptb.utils import load_from_pt_roberta_model, load
+from mptb.models.bert import BertModel, Config
+from mptb.utils import load_from_pt_roberta_model
 
 
 def load_roberta(

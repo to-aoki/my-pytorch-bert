@@ -23,9 +23,9 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .models import LayerNorm
+from .commons import LayerNorm
 from .bert import BertModel, Attention, TransformerBlock
-from .pretrain_tasks import NextSentencePrediction, OnlyMaskedLMTasks, BertPretrainingTasks
+from mptb.models.pretrain_tasks import NextSentencePrediction, OnlyMaskedLMTasks, BertPretrainingTasks
 
 
 def gelu(x):

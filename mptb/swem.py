@@ -16,9 +16,9 @@
 
 import numpy as np
 import torch
-from .bert import Config, BertModel
-from .albert import AlbertModel
-from .embed_projection_albert import EmbedProjectionAlbertModel
+from .models.bert import Config, BertModel
+from .models.albert import AlbertModel
+from .models.embed_projection_albert import EmbedProjectionAlbertModel
 from .utils import get_tokenizer, load, to_bert_ids
 
 

@@ -13,8 +13,8 @@
 # limitations under the License.
 """Juman Tokenizer Test."""
 
-from mptb.tokenization_juman import JumanTokenizer
-from mptb.preprocessing import *
+from mptb.tokenization.tokenization_juman import JumanTokenizer
+from mptb.tokenization.preprocessing import *
 import os
 
 if __name__ == '__main__':

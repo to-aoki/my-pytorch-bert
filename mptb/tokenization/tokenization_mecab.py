@@ -23,7 +23,7 @@ from collections import Counter, OrderedDict
 from tqdm import tqdm
 from math import log
 import sys
-from .preprocessing import *
+from mptb.tokenization.preprocessing import *
 
 CONTROL_TOKENS = ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']
 

@@ -13,8 +13,8 @@
 # limitations under the License.
 """Ginza Tokenizer Test."""
 
-from mptb.tokenization_ginza import GinzaTokenizer, create_vocab
-from mptb.preprocessing import *
+from mptb.tokenization.tokenization_ginza import GinzaTokenizer, create_vocab
+from mptb.tokenization.preprocessing import *
 import os
 import sys
 

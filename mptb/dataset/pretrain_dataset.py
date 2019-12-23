@@ -32,7 +32,7 @@ from torch.utils.data import RandomSampler
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from .utils import truncate_seq_pair, get_tokenizer
+from mptb.utils import truncate_seq_pair, get_tokenizer
 import copy
 import pickle
 

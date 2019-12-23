@@ -21,9 +21,9 @@ from pyknp import Juman
 from random import randint
 from collections import OrderedDict
 from tqdm import tqdm
-from .preprocessing import *
-from .utils import separate_japanese_doc
-from .tokenization import WordpieceTokenizer, BasicTokenizer
+from mptb.tokenization.preprocessing import *
+from mptb.utils import separate_japanese_doc
+from mptb.tokenization import WordpieceTokenizer, BasicTokenizer
 
 CONTROL_TOKENS = ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']
 

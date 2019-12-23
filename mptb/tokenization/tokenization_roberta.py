@@ -29,7 +29,7 @@
 
 import torch
 import re
-from .gpt2_bpe_utils import get_encoder
+from mptb.tokenization.gpt2_bpe_utils import get_encoder
 import numpy as np
 
 

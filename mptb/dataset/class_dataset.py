@@ -20,7 +20,7 @@ import itertools
 import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
-from . utils import to_bert_ids
+from mptb.utils import to_bert_ids
 from collections import defaultdict
 
 

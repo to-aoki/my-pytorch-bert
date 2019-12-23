@@ -26,8 +26,8 @@ import torch_xla.distributed.xla_multiprocessing as xmp
 
 from .utils import set_seeds, save
 from .optimization import get_optimizer, get_scheduler
-from .pretrain_dataset import PreTensorPretrainDataset
-from .pretrain_tasks import BertPretrainingTasks
+from .dataset.pretrain_dataset import PreTensorPretrainDataset
+from mptb.models.pretrain_tasks import BertPretrainingTasks
 
 
 def tpu_pretrain(
@@ -46,7 +46,7 @@ def tpu_pretrain(
 
         max_steps = int(len(dataset) / batch_size * epochs)
         warmup_steps = int(max_steps * warmup_proportion)
-        optimizer = get_optimizer(model=model, lr=lr, optimzier=optimizer_name)
+        optimizer = get_optimizer(model=model, lr=lr, optimizer=optimizer_name)
         scheduler = get_scheduler(optimizer, warmup_steps=warmup_steps, max_steps=max_steps)
         criterion_lm = CrossEntropyLoss(ignore_index=-1)
         if isinstance(model, BertPretrainingTasks):

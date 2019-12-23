@@ -19,12 +19,12 @@ import torch.nn.functional as F
 from torch.nn import CrossEntropyLoss, NLLLoss
 from torch.utils.data import SequentialSampler, RandomSampler
 
-from .bert import Config
-from .embed_projection_albert import ProjectionOnlyMaskedLMTasks, ProjectionAlbertPretrainingTasks
-from .albert import AlbertOnlyMaskedLMTasks, AlbertPretrainingTasks
-from .pretrain_tasks import BertPretrainingTasks, OnlyMaskedLMTasks
+from mptb.models.bert import Config
+from mptb.models.embed_projection_albert import ProjectionOnlyMaskedLMTasks, ProjectionAlbertPretrainingTasks
+from mptb.models.albert import AlbertOnlyMaskedLMTasks, AlbertPretrainingTasks
+from mptb.models.pretrain_tasks import BertPretrainingTasks, OnlyMaskedLMTasks
 from .optimization import get_optimizer, get_scheduler
-from .pretrain_dataset import NextSentencePredictionDataset, PreTensorPretrainDataset, StackedSentenceDataset
+from .dataset.pretrain_dataset import NextSentencePredictionDataset, PreTensorPretrainDataset, StackedSentenceDataset
 from .helper import Helper
 from .utils import save, get_logger, get_tokenizer, load
 

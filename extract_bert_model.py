@@ -15,9 +15,9 @@
 
 
 from mptb import Config
-from mptb.pretrain_tasks import BertPretrainingTasks, OnlyMaskedLMTasks
-from mptb.embed_projection_albert import ProjectionOnlyMaskedLMTasks, ProjectionAlbertPretrainingTasks
-from mptb.albert import AlbertOnlyMaskedLMTasks, AlbertPretrainingTasks
+from mptb.models.pretrain_tasks import BertPretrainingTasks, OnlyMaskedLMTasks
+from mptb.models.embed_projection_albert import ProjectionOnlyMaskedLMTasks, ProjectionAlbertPretrainingTasks
+from mptb.models.albert import AlbertOnlyMaskedLMTasks, AlbertPretrainingTasks
 from mptb.utils import load, save
 
 
