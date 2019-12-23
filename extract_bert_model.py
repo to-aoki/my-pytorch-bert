@@ -14,7 +14,7 @@
 """Extract Bert Model."""
 
 
-from mptb import Config
+from mptb.models.bert import Config
 from mptb.models.pretrain_tasks import BertPretrainingTasks, OnlyMaskedLMTasks
 from mptb.models.embed_projection_albert import ProjectionOnlyMaskedLMTasks, ProjectionAlbertPretrainingTasks
 from mptb.models.albert import AlbertOnlyMaskedLMTasks, AlbertPretrainingTasks

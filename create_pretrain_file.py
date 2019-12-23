@@ -13,7 +13,7 @@
 # limitations under the License.
 """for Bert pre-training input feature file"""
 
-from mptb import PretrainDataGeneration
+from mptb.dataset.pretrain_dataset import PretrainDataGeneration
 
 if __name__ == '__main__':
     import argparse
