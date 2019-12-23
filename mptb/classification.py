@@ -67,8 +67,10 @@ class BertClassifier(object):
                 import json
                 config_dict = json.load(reader)
                 config = AttributeDict(config_dict)
+            self.quantize = True
         else:
             config = Config.from_json(config_path, len(self.tokenizer), max_pos, bert_layer_num)
+            self.quantize = False
         print(config)
         self.max_pos = config.max_position_embeddings
         self.task = task
@@ -181,7 +183,7 @@ class BertClassifier(object):
 
         if not is_model_laoded and not self.pretrain:
             if pretrain_path is not None:
-                self.helper.load_model(model=self.model.bert, model_path=pretrain_path, strict=not quantize)
+                self.helper.load_model(model=self.model.bert, model_path=pretrain_path, strict=not self.quantize)
                 print('pretain model loaded: ' + pretrain_path)
                 self.pretrain = True
             elif tf_pretrain_path is not None:

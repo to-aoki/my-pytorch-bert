@@ -83,13 +83,13 @@ class Helper(object):
                 load(model, model_file, self.device, optimizer)
         global_step = get_step(optimizer)
         print('Optimizer start steps : {:d}'.format(global_step))
-        dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
+        data_loader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
 
         for e in range(epochs):
             total_loss = 0.0
             total_steps = 0
             iter_bar = tqdm(
-                dataloader, desc="E-{:0=2} : XX.XXXX avg loss ".format(e), position=0, mininterval=self.cli_interval)
+                data_loader, desc="E-{:0=2} : XX.XXXX avg loss ".format(e), position=0, mininterval=self.cli_interval)
             for step, batch in enumerate(iter_bar):
                 optimizer.zero_grad()
 
@@ -165,7 +165,7 @@ class Helper(object):
             load(model, model_file, self.device)
             print('loaded ; ' + str(model_file))
 
-        dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
+        data_loader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
         scores = []
         for e in range(epochs):
             global_step = 0
@@ -173,7 +173,7 @@ class Helper(object):
             total_steps = 0
             examples = []
             iter_bar = tqdm(
-                dataloader, desc="E-{:0=2} : XX.XXXX avg loss ".format(e), position=0, mininterval=self.cli_interval)
+                data_loader, desc="E-{:0=2} : XX.XXXX avg loss ".format(e), position=0, mininterval=self.cli_interval)
             for step, batch in enumerate(iter_bar):
                 batch = tuple(t.to(self.device) for t in batch)
                 with torch.no_grad():
@@ -230,10 +230,10 @@ class Helper(object):
         if sampler is None:
             sampler = SequentialSampler(dataset)
 
-        dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
+        data_loader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
 
         predicts = []
-        for step, batch in enumerate(dataloader):
+        for step, batch in enumerate(data_loader):
             batch = tuple(t.to(self.device) for t in batch)
             with torch.no_grad():
                 predict = process(batch, model, step)
