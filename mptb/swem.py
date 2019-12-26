@@ -33,13 +33,16 @@ class BertSWEM(object):
         sp_model_path=None,
         bert_model_path=None,
         device='cpu',
-        model_name='bert'
+        model_name='bert',
+        encoder_json_path=None,
+        vocab_bpe_path=None
     ):
         if vocab_path is None or bert_model_path is None:
             raise ValueError('Require vocab_path and bert_model_path')
 
         self.tokenizer = get_tokenizer(
-            vocab_path=vocab_path, sp_model_path=sp_model_path, name=tokenizer_name)
+            vocab_path=vocab_path, sp_model_path=sp_model_path, name=tokenizer_name,
+            encoder_json_path=encoder_json_path, vocab_bpe_path=vocab_bpe_path)
 
         config = Config.from_json(config_path, len(self.tokenizer), max_pos)
         print(config)

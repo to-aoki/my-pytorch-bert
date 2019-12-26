@@ -132,7 +132,7 @@ class SelfAttention(nn.Module):
         key_layer = self.transpose_for_scores(mixed_key_layer)
         value_layer = self.transpose_for_scores(mixed_value_layer)
 
-        # Take the dot proattn_dataduct between "query" and "key" to get the raw attention scores.
+        # Take the dot product between "query" and "key" to get the raw attention scores.
         attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
         attention_scores = attention_scores / math.sqrt(self.attention_head_size)
         # Apply the attention mask is (precomputed for all layers in BertModel forward() function)
@@ -219,6 +219,8 @@ class Encoder(nn.Module):
         if self.attn_monitor:
             self.attn_data_list = []
         all_hidden_states = []
+
+        # Hopping
         for i in range(self.num_hidden_layers):
             layer_module = self.blocks_layer[i]
             hidden_states = layer_module(hidden_states, attention_mask)

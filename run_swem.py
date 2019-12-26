@@ -29,7 +29,9 @@ def swem(
     text_b=None,
     layer='-1',
     strategy='REDUCE_MEAN',
-    model_name='bert'
+    model_name='bert',
+    encoder_json_path=None,
+    vocab_bpe_path=None
 ):
     swem = BertSWEM(
         config_path=config_path,
@@ -39,7 +41,9 @@ def swem(
         tokenizer_name=tokenizer_name,
         bert_model_path=bert_model_path,
         device=device,
-        model_name=model_name
+        model_name=model_name,
+        encoder_json_path=encoder_json_path,
+        vocab_bpe_path=vocab_bpe_path
     )
     text_a_vector = swem.embedding_vector(text_a, pooling_layer=layer, pooling_strategy=strategy)
     print(text_a, text_a_vector)
@@ -76,9 +80,12 @@ if __name__ == '__main__':
                         help='Use SWEM operation (REDUCE_MEAN, REDUCE_MAX, REDUCE_MEAN_MAX, CLS_TOKEN, HIER)')
     parser.add_argument('--model_name', nargs='?', type=str, default='bert',
                         help='Select from the following name groups model. (bert, proj, albert)')
-
+    parser.add_argument('--encoder_json_path', help='GPT2 encoder JSON file path.', nargs='?', type=str)
+    parser.add_argument('--vocab_bpe_path', help='GPT2 encoder bpe file path.', nargs='?', type=str)
     args = parser.parse_args()
     swem(config_path=args.config_path, max_pos=args.max_pos,
          vocab_path=args.vocab_path, sp_model_path=args.sp_model_path, tokenizer_name=args.tokenizer,
          bert_model_path=args.model_path, device=args.device,
-         text_a=args.text, text_b=args.compare, layer=args.layer, strategy=args.strategy, albert=args.model_name)
+         text_a=args.text, text_b=args.compare, layer=args.layer, strategy=args.strategy, model_name=args.model_name,
+         encoder_json_path=args.encoder_json_path, vocab_bpe_path=args.vocab_bpe_path
+    )
