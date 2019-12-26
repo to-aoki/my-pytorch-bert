@@ -100,6 +100,7 @@ class BertPretrainier(object):
         self.model_path = model_path
         self.bert_model_path = bert_model_path
         self.learned = False
+        self.window_loss = 0
         super().__init__()
 
     def get_dataset(
@@ -243,8 +244,20 @@ class BertPretrainier(object):
                 auxiliary_loss = criterion_ns(auxiliary_logits.view(-1, 2), next_sentence_labels.view(-1))
             return masked_lm_loss + auxiliary_loss
 
-        def adjustment_every_step(model, dataset, loss, total_steps, global_step, optimizer, batch_size):
+        def adjustment_every_step(
+                model, dataset, loss, total_steps, global_step, optimizer, batch_size, window_loss, window_best):
+            window_loss += loss
             if per_save_steps > 0 and total_steps > 0 and total_steps % per_save_steps == 0:
+                if window_best == 0.0:
+                    window_best = window_loss
+                elif window_best > window_loss:
+                    window_best = window_loss
+                    output_model_file = os.path.join(save_dir, model.__class__.__name__ + "_best.pt")
+                    if self.helper.num_gpu > 1:
+                        save(model.module, output_model_file, optimizer)
+                    else:
+                        save(model, output_model_file, optimizer)
+                window_loss = 0.0
                 output_model_file = os.path.join(save_dir, model.__class__.__name__ + "_train_model.pt")
                 if self.helper.num_gpu > 1:
                     save(model.module, output_model_file, optimizer)
@@ -252,6 +265,8 @@ class BertPretrainier(object):
                     save(model, output_model_file, optimizer)
                 if "dump_last_indices" in dir(dataset):
                     dataset.dump_last_indices(total_steps * batch_size)
+
+            return window_loss, window_best
 
         loss = self.helper.train(
             process=process,

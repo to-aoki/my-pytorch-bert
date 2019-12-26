@@ -216,8 +216,9 @@ class BertClassifier(object):
                 loss = criterion(logits.view(-1, input_ids.shape[1]), label_id.view(-1))
             return loss
 
-        def adjustment_every_step(model, dataset, loss, total_steps, global_step, optimizer, batch_size):
-            pass
+        def adjustment_every_step(
+                model, dataset, loss, total_steps, global_step, optimizer, batch_size, window_loss, window_best):
+            return window_loss, window_best
 
         if sampler is None:
             if balance_sample and self.task != 'choice':
