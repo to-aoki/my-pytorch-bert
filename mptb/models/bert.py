@@ -60,6 +60,19 @@ class Config(NamedTuple):
                 del config['hidden_act']
             if 'directionality' in config:    # ?
                 del config['directionality']
+            # ALBERT Specific params
+            if 'num_hidden_groups' in config:
+                del config['num_hidden_groups']
+            if 'net_structure_type' in config:
+                del config['net_structure_type']
+            if 'gap_size' in config:
+                del config['gap_size']
+            if 'num_memory_blocks' in config:
+                del config['num_memory_blocks']
+            if 'inner_group_num' in config:
+                del config['inner_group_num']
+            if 'down_scale_factor' in config:
+                del config['down_scale_factor']
             delete_keys = []
             for key in config.keys():
                 if key.startswith("pooler"):

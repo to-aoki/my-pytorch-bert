@@ -101,7 +101,7 @@ def load_from_pt_roberta_model(model, r):
     # no care pooler
 
 
-def load_from_google_bert_model(model, f):
+def load_from_google_bert_model(model, f, is_albert=False):
 
     s = 'bert/embeddings/'
     d = model.embeddings
@@ -112,25 +112,57 @@ def load_from_google_bert_model(model, f):
     copy_tf_tensor(f, s+'LayerNorm/gamma',       d.layer_norm.weight)
     copy_tf_tensor(f, s+'LayerNorm/beta',        d.layer_norm.bias)
 
-    s = 'bert/encoder/layer_'
-    d = model.encoder.blocks_layer
-    for i in range(len(model.encoder.blocks_layer)):
-        copy_tf_tensor(f, s+str(i)+'/attention/self/query/kernel',      d[i].attention.self_attention.query.weight)
-        copy_tf_tensor(f, s+str(i)+'/attention/self/query/bias',        d[i].attention.self_attention.query.bias)
-        copy_tf_tensor(f, s+str(i)+'/attention/self/key/kernel',        d[i].attention.self_attention.key.weight)
-        copy_tf_tensor(f, s+str(i)+'/attention/self/key/bias',          d[i].attention.self_attention.key.bias)
-        copy_tf_tensor(f, s+str(i)+'/attention/self/value/kernel',      d[i].attention.self_attention.value.weight)
-        copy_tf_tensor(f, s+str(i)+'/attention/self/value/bias',        d[i].attention.self_attention.value.bias)
-        copy_tf_tensor(f, s+str(i)+'/attention/output/dense/kernel',    d[i].attention.output.dense.weight)
-        copy_tf_tensor(f, s+str(i)+'/attention/output/dense/bias',      d[i].attention.output.dense.bias)
-        copy_tf_tensor(f, s+str(i)+'/attention/output/LayerNorm/gamma', d[i].attention.output.layer_norm.weight)
-        copy_tf_tensor(f, s+str(i)+'/attention/output/LayerNorm/beta',  d[i].attention.output.layer_norm.bias)
-        copy_tf_tensor(f, s+str(i)+'/intermediate/dense/kernel',        d[i].pwff.intermediate.weight)
-        copy_tf_tensor(f, s+str(i)+'/intermediate/dense/bias',          d[i].pwff.intermediate.bias)
-        copy_tf_tensor(f, s+str(i)+'/output/dense/kernel',              d[i].pwff.output.weight)
-        copy_tf_tensor(f, s+str(i)+'/output/dense/bias',                d[i].pwff.output.bias)
-        copy_tf_tensor(f, s+str(i)+'/output/LayerNorm/gamma',           d[i].pwff.layer_norm.weight)
-        copy_tf_tensor(f, s+str(i)+'/output/LayerNorm/beta',            d[i].pwff.layer_norm.bias)
+    if is_albert:
+        s = 'bert/encoder/'
+        d = model.encoder
+        copy_tf_tensor(f, s+'embedding_hidden_mapping_in/kernel', d.embedding_hidden_mapping_in.weight)
+        copy_tf_tensor(f, s+'embedding_hidden_mapping_in/bias',   d.embedding_hidden_mapping_in.bias)
+
+    if is_albert:
+        s = 'bert/encoder/transformer/group_0/inner_group_0/'
+        d = model.encoder.blocks_layer
+        copy_tf_tensor(f, s + 'attention_1/self/query/kernel', d.attention.self_attention.query.weight)
+        copy_tf_tensor(f, s + 'attention_1/self/query/bias', d.attention.self_attention.query.bias)
+        copy_tf_tensor(f, s + 'attention_1/self/key/kernel', d.attention.self_attention.key.weight)
+        copy_tf_tensor(f, s + 'attention_1/self/key/bias', d.attention.self_attention.key.bias)
+        copy_tf_tensor(f, s + 'attention_1/self/value/kernel', d.attention.self_attention.value.weight)
+        copy_tf_tensor(f, s + 'attention_1/self/value/bias', d.attention.self_attention.value.bias)
+        copy_tf_tensor(f, s + 'attention_1/output/dense/kernel', d.attention.self_attention.projection.weight)
+        copy_tf_tensor(f, s + 'attention_1/output/dense/bias', d.attention.self_attention.projection.bias)
+        copy_tf_tensor(f, s + 'LayerNorm/gamma', d.attention.self_attention.layer_norm.weight)
+        copy_tf_tensor(f, s + 'LayerNorm/beta', d.attention.self_attention.layer_norm.bias)
+        copy_tf_tensor(f, s + 'ffn_1/intermediate/dense/kernel', d.pwff.intermediate.weight)
+        copy_tf_tensor(f, s + 'ffn_1/intermediate/dense/bias', d.pwff.intermediate.bias)
+        copy_tf_tensor(f, s + 'ffn_1/intermediate/output/dense/kernel', d.pwff.output.weight)
+        copy_tf_tensor(f, s + 'ffn_1/intermediate/output/dense/bias', d.pwff.output.bias)
+        copy_tf_tensor(f, s + 'LayerNorm_1/gamma', d.pwff.layer_norm.weight)
+        copy_tf_tensor(f, s + 'LayerNorm_1/beta', d.pwff.layer_norm.bias)
+
+        s = 'bert/pooler/'
+        d = model.pool
+        copy_tf_tensor(f, s+'dense/kernel', d.weight)
+        copy_tf_tensor(f, s+'dense/bias',   d.bias)
+
+    else:
+        s = 'bert/encoder/layer_'
+        d = model.encoder.blocks_layer
+        for i in range(len(model.encoder.blocks_layer)):
+            copy_tf_tensor(f, s+str(i)+'/attention/self/query/kernel',      d[i].attention.self_attention.query.weight)
+            copy_tf_tensor(f, s+str(i)+'/attention/self/query/bias',        d[i].attention.self_attention.query.bias)
+            copy_tf_tensor(f, s+str(i)+'/attention/self/key/kernel',        d[i].attention.self_attention.key.weight)
+            copy_tf_tensor(f, s+str(i)+'/attention/self/key/bias',          d[i].attention.self_attention.key.bias)
+            copy_tf_tensor(f, s+str(i)+'/attention/self/value/kernel',      d[i].attention.self_attention.value.weight)
+            copy_tf_tensor(f, s+str(i)+'/attention/self/value/bias',        d[i].attention.self_attention.value.bias)
+            copy_tf_tensor(f, s+str(i)+'/attention/output/dense/kernel',    d[i].attention.output.dense.weight)
+            copy_tf_tensor(f, s+str(i)+'/attention/output/dense/bias',      d[i].attention.output.dense.bias)
+            copy_tf_tensor(f, s+str(i)+'/attention/output/LayerNorm/gamma', d[i].attention.output.layer_norm.weight)
+            copy_tf_tensor(f, s+str(i)+'/attention/output/LayerNorm/beta',  d[i].attention.output.layer_norm.bias)
+            copy_tf_tensor(f, s+str(i)+'/intermediate/dense/kernel',        d[i].pwff.intermediate.weight)
+            copy_tf_tensor(f, s+str(i)+'/intermediate/dense/bias',          d[i].pwff.intermediate.bias)
+            copy_tf_tensor(f, s+str(i)+'/output/dense/kernel',              d[i].pwff.output.weight)
+            copy_tf_tensor(f, s+str(i)+'/output/dense/bias',                d[i].pwff.output.bias)
+            copy_tf_tensor(f, s+str(i)+'/output/LayerNorm/gamma',           d[i].pwff.layer_norm.weight)
+            copy_tf_tensor(f, s+str(i)+'/output/LayerNorm/beta',            d[i].pwff.layer_norm.bias)
 
     s = 'bert/pooler/'
     d = model.pool
@@ -356,7 +388,7 @@ def load(model, filename, device='cpu', optimizer=None, strict=True):
     if 'model' in loading_dict:
         model.load_state_dict(loading_dict['model'], strict=strict)
     else:
-        model.load_state_dict(loading_dict, strict=strict)
+        model.load_state_dict(loading_dict, strict=False)
     try:
         if optimizer is not None and 'optimizer' in loading_dict:
             optimizer.load_state_dict(loading_dict['optimizer'])

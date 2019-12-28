@@ -76,6 +76,7 @@ class AlbertSelfAttention(nn.Module):
         self.query = nn.Linear(config.hidden_size, self.all_head_size)
         self.key = nn.Linear(config.hidden_size, self.all_head_size)
         self.value = nn.Linear(config.hidden_size, self.all_head_size)
+
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
         self.attn_data = {}  # for bertviz
         self.enable_monitor = False
@@ -134,10 +135,14 @@ class AlbertSelfAttention(nn.Module):
         return context_layer
 
 
-class AlbertAttention(Attention):
+class AlbertAttention(nn.Module):
     def __init__(self, config):
-        super(AlbertAttention, self).__init__(config)
+        super().__init__()
         self.self_attention = AlbertSelfAttention(config)
+
+    def forward(self, input_tensor, attention_mask):
+        self_attention_output = self.self_attention(input_tensor, attention_mask)
+        return self_attention_output
 
 
 class AlbertTransformerBlock(TransformerBlock):

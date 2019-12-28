@@ -17,17 +17,22 @@
 
 import torch
 from mptb.models.bert import BertModel, Config
+from mptb.models.albert import AlbertModel
 from mptb.utils import load_from_google_bert_model
 
 
 def load_tf_bert(
     config_path='config/bert_config.json',
     tfmodel_path="multi_cased_L-12_H-768_A-12/bert_model.ckpt",
-    output_path="pretrain/multi_caused_L-12_H-768_A-12.pt"
+    output_path="pretrain/multi_caused_L-12_H-768_A-12.pt",
+    is_albert=False
 ):
     config = Config.from_json(config_path)
-    model = BertModel(config)
-    load_from_google_bert_model(model, tfmodel_path)
+    if is_albert:
+        model = AlbertModel(config)
+    else:
+        model = BertModel(config)
+    load_from_google_bert_model(model, tfmodel_path, is_albert)
     torch.save(model.state_dict(), output_path)
 
 
@@ -41,5 +46,6 @@ if __name__ == '__main__':
                         type=str)
     parser.add_argument('--output_path', help='Output model path.', required=True,
                         type=str)
+    parser.add_argument('--albert', action='store_true', help='Use ALBERT model.')
     args = parser.parse_args()
-    load_tf_bert(args.config_path, args.tfmodel_path, args.output_path)
+    load_tf_bert(args.config_path, args.tfmodel_path, args.output_path, args.albert)
