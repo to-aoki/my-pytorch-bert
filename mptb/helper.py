@@ -23,7 +23,7 @@ from .optimization import get_step
 
 class Helper(object):
 
-    def __init__(self, seeds=20151106, device=None, fp16=False, cli_interval=10):
+    def __init__(self, seeds=20151106, device=None, fp16=False, cli_interval=10, use_tb=True):
         super().__init__()
         set_seeds(seeds)
         self.num_gpu = 0
@@ -42,6 +42,12 @@ class Helper(object):
 
         print("device: {} num_gpu: {} fp16: {}".format(self.device, self.num_gpu, self.fp16))
         self.cli_interval = cli_interval
+        if use_tb:
+            try:
+                from torch.utils.tensorboard import SummaryWriter
+                self.writer = SummaryWriter()
+            except ImportError:
+                pass
 
     def load_model(self, model, model_path, optimizer=None, strict=True):
         load(model, model_path, self.device, optimizer, strict)
@@ -65,6 +71,12 @@ class Helper(object):
         max_grad_norm=1.0,
         cpu_param_optimizer=None
     ):
+        if hasattr(self, 'writer'):
+            t1 = torch.LongTensor(1, dataset.max_pos).random_(0, len(dataset.tokenizer))
+            t2 = torch.LongTensor(1, dataset.max_pos).random_(0, 1)
+            t3 = torch.LongTensor(1, dataset.max_pos).random_(0, 1)
+            self.writer.add_graph(model, (t1, t2, t3))
+
         model.to(self.device)
         model.train()
         if self.fp16:
@@ -81,8 +93,8 @@ class Helper(object):
                 load(model.module, model_file, self.device, optimizer)
             else:
                 load(model, model_file, self.device, optimizer)
-        global_step = get_step(optimizer)
-        print('Optimizer start steps : {:d}'.format(global_step))
+        global_steps = get_step(optimizer)
+        print('Optimizer start steps : {:d}'.format(global_steps))
         data_loader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
 
         for e in range(epochs):
@@ -106,6 +118,8 @@ class Helper(object):
 
                 total_steps += 1
                 total_loss += loss.item()
+                if hasattr(self, 'writer'):
+                    self.writer.add_scalar('loss', loss.item(), global_steps)
                 iter_bar.set_description("E-{:0=2} : {:2.4f} avg loss ".format(e, total_loss / total_steps),
                                          refresh=False)
                 if self.fp16:
@@ -129,11 +143,11 @@ class Helper(object):
                 else:
                     optimizer.step()
                 scheduler.step()
-                global_step += 1
+                global_steps += 1
 
                 if adjustment_every_step is not None:
                     window_loss, window_best = adjustment_every_step(
-                        model, dataset, loss.item(), total_steps, global_step,
+                        model, dataset, loss.item(), total_steps, global_steps,
                         optimizer, batch_size, window_loss, window_best)
 
             if per_save_epochs > 0 and (e + 1) % per_save_epochs is 0:
@@ -170,7 +184,7 @@ class Helper(object):
         data_loader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
         scores = []
         for e in range(epochs):
-            global_step = 0
+            global_steps = 0
             total_loss = 0.0
             total_steps = 0
             examples = []
@@ -188,7 +202,7 @@ class Helper(object):
                 total_steps += 1
                 iter_bar.set_description("E-{:0=2} : {:2.4f} avg loss ".format(e, total_loss / total_steps),
                                          refresh=False)
-                global_step += 1
+                global_steps += 1
 
             if examples_reports is not None:
                 examples_reports(examples)

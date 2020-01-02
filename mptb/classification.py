@@ -217,7 +217,7 @@ class BertClassifier(object):
             return loss
 
         def adjustment_every_step(
-                model, dataset, loss, total_steps, global_step, optimizer, batch_size, window_loss, window_best):
+                model, dataset, loss, total_steps, global_steps, optimizer, batch_size, window_loss, window_best):
             return window_loss, window_best
 
         if sampler is None:

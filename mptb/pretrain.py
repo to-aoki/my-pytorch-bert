@@ -245,7 +245,7 @@ class BertPretrainier(object):
             return masked_lm_loss + auxiliary_loss
 
         def adjustment_every_step(
-                model, dataset, loss, total_steps, global_step, optimizer, batch_size, window_loss, window_best):
+                model, dataset, loss, total_steps, global_steps, optimizer, batch_size, window_loss, window_best):
             window_loss += loss
             if per_save_steps > 0 and total_steps > 0 and total_steps % per_save_steps == 0:
                 if window_best == 0.0:
