@@ -72,7 +72,7 @@ class Helper(object):
         cpu_param_optimizer=None
     ):
         if hasattr(self, 'writer'):
-            t1 = torch.LongTensor(1, dataset.max_pos).random_(0, len(dataset.tokenizer))
+            t1 = torch.LongTensor(1, dataset.max_pos).random_(0, 1)
             t2 = torch.LongTensor(1, dataset.max_pos).random_(0, 1)
             t3 = torch.LongTensor(1, dataset.max_pos).random_(0, 1)
             self.writer.add_graph(model, (t1, t2, t3))
