@@ -38,6 +38,7 @@ class ClassDataset(Dataset):
         self.records = []
         self.text_records = []
         self.per_label_records_num = []
+        self.max_pos = max_pos
 
         if len(sentence_a) > 0:
             if len(sentence_b) != len(sentence_a):
