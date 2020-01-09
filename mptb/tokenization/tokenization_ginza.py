@@ -24,7 +24,6 @@ from collections import OrderedDict
 from tqdm import tqdm
 
 CONTROL_TOKENS = ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']
-# https://github.com/megagonlabs/ginza/blob/master/ja_ginza/sudachi_tokenizer.py
 UPOS_TOKENS = ['NOUN', 'PROPN', 'SYM', 'NUM', 'SPACE']
 NER_TOKENS = ['LOC', 'DATE', 'ORG', 'PERSON', 'PRODUCT']
 
@@ -114,14 +113,8 @@ class GinzaTokenizer(object):
 
 def load_vocab(vocab_file):
     """Loads a vocabulary file into a dictionary."""
-    try:
-        import tensorflow as tf
-        with tf.gfile.GFile(vocab_file, "r") as reader:
-            return token_vocab_build(reader)
-
-    except ImportError:
-        with open(vocab_file, "r", encoding='utf-8') as reader:
-            return token_vocab_build(reader)
+    with open(vocab_file, "r", encoding='utf-8') as reader:
+        return token_vocab_build(reader)
 
 
 def token_vocab_build(reader):

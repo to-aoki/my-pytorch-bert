@@ -78,14 +78,8 @@ def printable_text(text):
 
 def load_vocab(vocab_file):
     """Loads a vocabulary file into a dictionary."""
-    try:
-        import tensorflow as tf
-        with tf.io.gfile.GFile(vocab_file, "r") as reader:
-            return token_vocab_build(reader)
-            
-    except ImportError:
-        with open(vocab_file, "r", encoding='utf-8') as reader:
-            return token_vocab_build(reader)
+    with open(vocab_file, "r", encoding='utf-8') as reader:
+        return token_vocab_build(reader)
 
 
 def token_vocab_build(reader):
