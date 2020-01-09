@@ -16,6 +16,7 @@
 # limitations under the License.
 """Sentencepiece training."""
 
+import os
 import json
 import glob
 from typing import NamedTuple
@@ -35,22 +36,45 @@ class Config(NamedTuple):
         return cls(**config)
 
 
-def _get_text_file(text_dir):
-    file_list = glob.glob(f'{text_dir}/*')
+def _get_text_file(text_dir, suffix=''):
+    file_list = glob.glob(f'{text_dir}/*{suffix}')
     files = ",".join(file_list)
     return files
 
 
-def train(text_dir, prefix, vocab_size, ctl_symbols):
-    files = _get_text_file(text_dir)
-    command = f'--input={files} --model_prefix={prefix} --vocab_size={vocab_size} --control_symbols={ctl_symbols} --add_dummy_prefix=False --treat_whitespace_as_suffix=True'
+def train(text_dir, prefix, vocab_size, ctl_symbols, is_bpe=False, suffix='', subword_vocab_path='test_subword.vocab'):
+    files = _get_text_file(text_dir, suffix)
+    if is_bpe:
+        command = f'--input={files} --model_type=bpe --model_prefix={prefix} --vocab_size={vocab_size} ' \
+                  f'--control_symbols={ctl_symbols} --add_dummy_prefix=False --treat_whitespace_as_suffix=False ' \
+                  f'--character_coverage=1.0 --bos_id=-1 eos_id=-1'
+    else:
+        command = f'--input={files} --model_prefix={prefix} --vocab_size={vocab_size} --control_symbols={ctl_symbols} ' \
+                  f'--add_dummy_prefix=False --treat_whitespace_as_suffix=True --bos_id=-1 eos_id=-1'
     sp.SentencePieceTrainer.Train(command)
+    if is_bpe:
+        build_wordpiece_vocab(prefix + '.vocab', subword_vocab_path, ctl_symbols)
 
 
-def main(config_poth="config/test_sp.json"):
+def build_wordpiece_vocab(sp_vocab_file, build_vocab_path, ctl_symbols='[PAD],[CLS],[SEP],[MASK]'):
+    with open(sp_vocab_file) as sp_vocab, open(build_vocab_path, 'w') as wordpiece_vocab:
+        for line in sp_vocab:
+            sp_token, _ = line.rstrip('\n').split('\t')
+            if sp_token == '<unk>':
+                output_token = '[UNK]'
+            elif sp_token in ctl_symbols:
+                output_token = sp_token
+            elif sp_token.startswith('\u2581'):
+                output_token = sp_token[1:]
+            else:
+                output_token = '##' + sp_token
+            wordpiece_vocab.write(output_token + '\n')
+
+
+def main(config_poth="config/test_sp.json", is_bpe=False, suffix='', subword_vocab_path='test_subword.vocab'):
     config = Config.from_json(config_poth)
     print(config)
-    train(config.text_dir, config.prefix, config.vocab_size, config.ctl_symbols)
+    train(config.text_dir, config.prefix, config.vocab_size, config.ctl_symbols, is_bpe, suffix, subword_vocab_path)
 
 
 if __name__ == '__main__':
@@ -58,6 +82,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='SentencePiece training.', usage='%(prog)s [options]')
     parser.add_argument('--config_path', help='JSON file path for defines training.', nargs='?',
                         type=str, default='tests/test_sp.json')
+    parser.add_argument('--bpe', action='store_true', help='BPE training for subword.')
+    parser.add_argument('--subword_vocab_path', type=str, default='tests/test_subword.vocab')
+    parser.add_argument('--suffix',  type=str, default='.txt')
     args = parser.parse_args()
-    main(args.config_path)
+    main(args.config_path, args.bpe, args.suffix, args.subword_vocab_path)
 

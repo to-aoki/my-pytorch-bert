@@ -31,7 +31,16 @@ class SwagDataset(Dataset):
     ):
         super().__init__()
         self.records = []
-
+        bert_unk_id = tokenizer.convert_tokens_to_ids(["[UNK]"])[0]
+        sp_unk_id = tokenizer.convert_tokens_to_ids(["<unk>"])[0]
+        pad_id = tokenizer.convert_tokens_to_ids(["[PAD]"])[0]
+        if pad_id == bert_unk_id:
+            if bert_unk_id != sp_unk_id:
+                import warnings
+                warnings.warn('<unk> included.')
+            pad_token = '<pad>'
+        else:
+            pad_token = '[PAD]'
         start = 1 if header_skip else 0
         with open(dataset_path, "r", encoding=encoding) as f:
             csv_reader = csv.reader(f, delimiter=delimiter)
@@ -43,7 +52,8 @@ class SwagDataset(Dataset):
                 start_ending = line[5]
                 label = int(line[11]) if is_training else None   # False is not test
                 for ending in line[7:11]:
-                    bert_ids = to_bert_ids(max_pos, tokenizer, context_sentence, start_ending + ending)
+                    bert_ids = to_bert_ids(max_pos, tokenizer, context_sentence, start_ending + ending,
+                                           pad_token=pad_token)
                     swag_record[0].append(bert_ids[0])  # input_ids
                     swag_record[1].append(bert_ids[1])  # segment_type
                     swag_record[2].append(bert_ids[2])  # input_masks

@@ -47,7 +47,14 @@ class StackedSentenceDataset(Dataset):
         self.encoding = encoding
 
         # BERT reserved tokens
+        bert_unk_id = self.tokenizer.convert_tokens_to_ids(["[UNK]"])[0]
+        sp_unk_id = self.tokenizer.convert_tokens_to_ids(["<unk>"])[0]
         self.pad_id = self.tokenizer.convert_tokens_to_ids(["[PAD]"])[0]
+        if self.pad_id == bert_unk_id:
+            if bert_unk_id != sp_unk_id:
+                import warnings
+                warnings.warn('<unk> included.')
+            self.pad_id = self.tokenizer.convert_tokens_to_ids(["<pad>"])[0]
         self.cls_id = self.tokenizer.convert_tokens_to_ids(["[CLS]"])[0]
         self.sep_id = self.tokenizer.convert_tokens_to_ids(["[SEP]"])[0]
         self.mask_id = self.tokenizer.convert_tokens_to_ids(["[MASK]"])[0]
