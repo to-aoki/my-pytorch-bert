@@ -233,6 +233,7 @@ def get_tokenizer(
     if preprocessor is None:
         preprocessor = default_preprocessor()
 
+    name = name.lower()
     if sp_model_path is not None and vocab_path is not None:
         if name == 'sp_pos':
             # sentencepiece + UD POS (ginza)
@@ -251,9 +252,11 @@ def get_tokenizer(
             dict_path=vocab_path, encoder_json_path=encoder_json_path, vocab_bpe_path=vocab_bpe_path,
             preprocessor=preprocessor)
     elif vocab_path is not None:
-        name = name.lower()
         if name == 'mecab':
             from mptb.tokenization.tokenization_mecab import FullTokenizer
+            return FullTokenizer(vocab_path, preprocessor=preprocessor)
+        elif name == 'mecab_sub':
+            from mptb.tokenization.tokenization_mecab_subword import FullTokenizer
             return FullTokenizer(vocab_path, preprocessor=preprocessor)
         elif name == 'ginza':
             from mptb.tokenization.tokenization_ginza import FullTokenizer
@@ -273,7 +276,6 @@ def default_preprocessor():
         ToUnicode(),
         Normalize(),
         LowerCase(),
-        ReplaceNumber(),
         ReplaceURI(),
     ])
 

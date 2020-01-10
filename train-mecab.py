@@ -40,7 +40,6 @@ if __name__ == '__main__':
         ToUnicode(),
         Normalize(),
         LowerCase(),
-        ReplaceNumber(),
         ReplaceURI(),
     ])
 
