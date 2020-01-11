@@ -73,8 +73,7 @@ def token_vocab_build(reader):
     vocab_dict = OrderedDict()
     index = 0
     for _, token in enumerate(tqdm(reader)):
-        word = token.strip()
-        vocab_dict[word] = index
+        vocab_dict[token] = index
         index += 1
     return vocab_dict
 
