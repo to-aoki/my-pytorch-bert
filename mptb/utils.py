@@ -255,6 +255,9 @@ def get_tokenizer(
         if name == 'mecab':
             from mptb.tokenization.tokenization_mecab import FullTokenizer
             return FullTokenizer(vocab_path, preprocessor=preprocessor)
+        elif name == 'mecab_sub':
+            from mptb.tokenization.tokenization_mecab_subword import FullTokenizer
+            return FullTokenizer(vocab_path, preprocessor=preprocessor)
         elif name == 'ginza':
             from mptb.tokenization.tokenization_ginza import FullTokenizer
             return FullTokenizer(vocab_path, preprocessor=preprocessor)
@@ -273,7 +276,6 @@ def default_preprocessor():
         ToUnicode(),
         Normalize(),
         LowerCase(),
-        ReplaceNumber(),
         ReplaceURI(),
     ])
 
