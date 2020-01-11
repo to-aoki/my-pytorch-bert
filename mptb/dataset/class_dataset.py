@@ -40,13 +40,9 @@ class ClassDataset(Dataset):
         self.per_label_records_num = []
         self.max_pos = max_pos
 
-        bert_unk_id = tokenizer.convert_tokens_to_ids(["[UNK]"])[0]
-        sp_unk_id = tokenizer.convert_tokens_to_ids(["<unk>"])[0]
+        unk_id = tokenizer.convert_tokens_to_ids(["[UNK]"])[0]
         pad_id = tokenizer.convert_tokens_to_ids(["[PAD]"])[0]
-        if pad_id == bert_unk_id:
-            if bert_unk_id != sp_unk_id:
-                import warnings
-                warnings.warn('<unk> included.')
+        if pad_id == unk_id:
             pad_token = '<pad>'
         else:
             pad_token = '[PAD]'
@@ -63,7 +59,7 @@ class ClassDataset(Dataset):
             else:
                 for line_a, line_b in sentence_a, sentence_b:
                     self.records.append(
-                        to_bert_ids(max_pos, tokenizer, line_a, line_b))
+                        to_bert_ids(max_pos, tokenizer, line_a, line_b, pad_token=pad_token))
 
         else:
             start = 1 if header_skip else 0
@@ -78,7 +74,7 @@ class ClassDataset(Dataset):
 
                     if label not in unique_labels:
                         unique_labels.append(label)
-                    bert_ids = to_bert_ids(max_pos, tokenizer, sentence_a, sentence_b)
+                    bert_ids = to_bert_ids(max_pos, tokenizer, sentence_a, sentence_b, pad_token=pad_token)
                     bert_ids.append(label)
                     self.records.append(bert_ids)
 
