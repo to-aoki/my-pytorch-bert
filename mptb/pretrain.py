@@ -73,22 +73,22 @@ class BertPretrainier(object):
 
         self.max_pos = max_pos
         if model == 'mlm' and model_name == 'proj':
-            self.model = ProjectionOnlyMaskedLMTasks(config)
+            self.model = ProjectionOnlyMaskedLMTasks(config, self.tokenizer.pad_idx)
             print('Task: Only MaskedLM/Projection')
         elif model_name == 'proj':
-            self.model = ProjectionAlbertPretrainingTasks(config)
+            self.model = ProjectionAlbertPretrainingTasks(config, self.tokenizer.pad_idx)
             print('Task: With Sentence Order Predict/Projection')
         elif model == 'mlm' and model_name =='albert':
-            self.model = AlbertOnlyMaskedLMTasks(config)
+            self.model = AlbertOnlyMaskedLMTasks(config, self.tokenizer.pad_idx)
             print('Task: Only MaskedLM/ALBERT')
         elif model_name == 'albert':
-            self.model = AlbertPretrainingTasks(config)
+            self.model = AlbertPretrainingTasks(config, self.tokenizer.pad_idx)
             print('Task: With Sentence Order Predict/ALBERT')
         elif model == 'mlm':
-            self.model = OnlyMaskedLMTasks(config)
+            self.model = OnlyMaskedLMTasks(config, self.tokenizer.pad_idx)
             print('Task: Only MaskedLM')
         else:
-            self.model = BertPretrainingTasks(config)
+            self.model = BertPretrainingTasks(config, self.tokenizer.pad_idx)
             print('Task: With Next Sentence Predict')
         self.model_name = model
         self.is_tpu = False

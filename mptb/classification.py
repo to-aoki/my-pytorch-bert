@@ -86,9 +86,12 @@ class BertClassifier(object):
                 if quantize:
                     print('quantized classification model')
                     from mptb.models.quantized_bert import QuantizedBertForSequenceClassification
-                    self.model = QuantizedBertForSequenceClassification(config, num_labels=self.dataset.label_num())
+                    self.model = QuantizedBertForSequenceClassification(
+                        config, num_labels=self.dataset.label_num(), pad_idx=self.tokenizer.pad_idx)
                 else:
-                    self.model = Classification(config, num_labels=self.dataset.label_num(), model_name=model_name)
+                    self.model = Classification(
+                        config, num_labels=self.dataset.label_num(),
+                        model_name=model_name, pad_idx=self.tokenizer.pad_idx)
 
         self.pretrain = False
         self.helper = Helper(device=device, fp16=fp16)
@@ -99,7 +102,7 @@ class BertClassifier(object):
             self.pretrain = True
         if not hasattr(self, 'pretrain') and tf_pretrain_path is not None:
             load_from_google_bert_model(self.model.bert, tf_pretrain_path)
-            print('pretain model loaded: ' + tf_pretrain_path)
+            print('pretain tf-model loaded: ' + tf_pretrain_path)
             self.pretrain = True
 
         if model_path is not None and model_path != '':

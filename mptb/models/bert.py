@@ -85,9 +85,9 @@ class Config(NamedTuple):
 class Embeddings(nn.Module):
     """Construct the embeddings from word, position and token_type embeddings."""
 
-    def __init__(self, config):
+    def __init__(self, config, pad_idx):
         super().__init__()
-        self.word_embeddings = nn.Embedding(config.vocab_size, config.hidden_size, padding_idx=0)
+        self.word_embeddings = nn.Embedding(config.vocab_size, config.hidden_size, padding_idx=pad_idx)
         if config.type_vocab_size > 0:
             self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size)
         self.position_embeddings = nn.Embedding(config.max_position_embeddings, config.hidden_size)
@@ -131,6 +131,7 @@ class SelfAttention(nn.Module):
         self.enable_monitor = False
 
     def transpose_for_scores(self, x):
+        # batch_size, seq_len, hidden_size -> batch_size, head_size, seq_len, hidden_size / head_size]
         new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
         x = x.view(*new_x_shape)
         return x.transpose(2, 1)
@@ -249,10 +250,10 @@ class Encoder(nn.Module):
 
 class BertModel(nn.Module):
     """BERT model ("Bidirectional Embedding Representations from a Transformer")."""
-    def __init__(self, config):
+    def __init__(self, config, pad_idx=0):
         super().__init__()
         self.initializer_range = config.initializer_range
-        self.embeddings = Embeddings(config)
+        self.embeddings = Embeddings(config, pad_idx)
         self.encoder = Encoder(config)
         self.pool = nn.Linear(config.hidden_size, config.hidden_size)
         self.apply(self.init_bert_weights)

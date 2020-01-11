@@ -111,9 +111,11 @@ class FullTokenizer(object):
         self.max_chars_per_word = max_chars_per_word
         self.unk_id = 0
         for k, v in self.vocab.items():
-            if v in control_tokens:
-                if v == '[UNK]':
-                    self.unk_id = k
+            if k == '[PAD]':
+                self.pad_idx = v
+            if k == '[UNK]':
+                self.unk_id = v
+            if k in control_tokens:
                 self.control_len += 1
             self.inv_vocab[v] = k
 

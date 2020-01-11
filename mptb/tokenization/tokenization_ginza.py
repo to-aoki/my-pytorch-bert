@@ -142,8 +142,10 @@ class FullTokenizer(object):
         for k, v in self.vocab.items():
             if k == control_tokens[0]:
                 self.control_start = v
+            if k == '[PAD]':
+                self.pad_idx = v
             if k == '[UNK]':
-                self.unk_id = v
+                self.unk_idx = v
             self.inv_vocab[v] = k
         self.upos_tokens = upos_tokens
         self.ner_tokens = ner_tokens
@@ -184,7 +186,7 @@ class FullTokenizer(object):
                         break
                 if found:
                     continue
-                output.append(self.unk_id)
+                output.append(self.unk_idx)
         return output
 
     def convert_ids_to_tokens(self, ids):

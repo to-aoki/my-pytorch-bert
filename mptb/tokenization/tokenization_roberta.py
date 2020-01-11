@@ -225,6 +225,7 @@ class FullTokenizer(object):
         self.roberta_dict = RobertaDictionary.load(dict_path)
         self.gpt2_get_encoder = get_encoder(encoder_json_path, vocab_bpe_path)
         self.preprocessor = preprocessor
+        self.pad_idx = self.roberta_dict.pad_index
 
     def tokenize(self, text):
         text = self.preprocessor(text) if self.preprocessor else text

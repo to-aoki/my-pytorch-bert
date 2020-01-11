@@ -133,7 +133,9 @@ class FullTokenizer(object):
         self.inv_vocab = {}
         self.control_len = 0
         for k, v in self.vocab.items():
-            if v in control_tokens:
+            if k == '[PAD]':
+                self.pad_idx = v
+            if k in control_tokens:
                 self.control_len += 1
             self.inv_vocab[v] = k
 

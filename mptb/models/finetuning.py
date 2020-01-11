@@ -27,15 +27,15 @@ from mptb.models.albert import AlbertModel
 class Classification(nn.Module):
     """Bert fine-tuning classification"""
 
-    def __init__(self, config, num_labels, model_name='bert'):
+    def __init__(self, config, num_labels, model_name='bert', pad_idx=0):
         super().__init__()
 
         if model_name == 'proj':
-            self.bert = EmbedProjectionAlbertModel(config)
+            self.bert = EmbedProjectionAlbertModel(config, pad_idx)
         elif model_name == 'albert':
-            self.bert = AlbertModel(config)
+            self.bert = AlbertModel(config, pad_idx)
         else:
-            self.bert = BertModel(config)
+            self.bert = BertModel(config, pad_idx)
 
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.classifier = nn.Linear(config.hidden_size, num_labels)
@@ -52,15 +52,15 @@ class Classification(nn.Module):
 class TokenClassification(nn.Module):
     """Bert fine-tuning Token classification"""
 
-    def __init__(self, config, num_labels, model_name='bert'):
+    def __init__(self, config, num_labels, model_name='bert', pad_idx=0):
         super().__init__()
         self.num_labels = num_labels
         if model_name == 'proj':
-            self.bert = EmbedProjectionAlbertModel(config)
+            self.bert = EmbedProjectionAlbertModel(config, pad_idx)
         elif model_name == 'albert':
-            self.bert = AlbertModel(config)
+            self.bert = AlbertModel(config, pad_idx)
         else:
-            self.bert = BertModel(config)
+            self.bert = BertModel(config, pad_idx)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.classifier = nn.Linear(config.hidden_size, num_labels)
         self.classifier.weight.data = torch.fmod(
@@ -75,14 +75,14 @@ class TokenClassification(nn.Module):
 class MultipleChoice(nn.Module):
     """Bert fine-tuning multiple choice"""
 
-    def __init__(self, config, model_name='bert'):
+    def __init__(self, config, model_name='bert', pad_idx=0):
         super().__init__()
         if model_name == 'proj':
-            self.bert = EmbedProjectionAlbertModel(config)
+            self.bert = EmbedProjectionAlbertModel(config, pad_idx)
         elif model_name == 'albert':
-            self.bert = AlbertModel(config)
+            self.bert = AlbertModel(config, pad_idx)
         else:
-            self.bert = BertModel(config)
+            self.bert = BertModel(config, pad_idx)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.classifier = nn.Linear(config.hidden_size, 1)
         self.classifier.weight.data = torch.fmod(
@@ -106,15 +106,15 @@ class MultipleChoice(nn.Module):
 class QuestionRespondent(nn.Module):
     """Bert fine-tuning Question respondent"""
 
-    def __init__(self, config, num_labels, model_name='bert'):
+    def __init__(self, config, num_labels, model_name='bert', pad_idx=0):
         super().__init__()
         self.num_labels = num_labels
         if model_name == 'proj':
-            self.bert = EmbedProjectionAlbertModel(config)
+            self.bert = EmbedProjectionAlbertModel(config, pad_idx)
         elif model_name == 'albert':
-            self.bert = AlbertModel(config)
+            self.bert = AlbertModel(config, pad_idx)
         else:
-            self.bert = BertModel(config)
+            self.bert = BertModel(config, pad_idx)
         self.qa_outputs = nn.Linear(config.hidden_size, num_labels)
         self.qa_outputs.weight.data = torch.fmod(
             torch.randn(self.classifier.weight.size()), config.initializer_range)

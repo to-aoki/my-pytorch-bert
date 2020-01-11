@@ -26,9 +26,9 @@ from .bert import BertModel
 class OnlyMaskedLMTasks(nn.Module):
     """Bert Pre-training Tasks"""
 
-    def __init__(self, config):
+    def __init__(self, config, pad_idx=0):
         super().__init__()
-        self.bert = BertModel(config)
+        self.bert = BertModel(config, pad_idx)
         self.masked_lm = MaskedLM(config, self.bert.embeddings.word_embeddings.weight.size(0))
 
     def forward(self, input_ids, segment_ids, input_mask):
@@ -40,9 +40,9 @@ class OnlyMaskedLMTasks(nn.Module):
 class BertPretrainingTasks(nn.Module):
     """Bert Pre-training Tasks"""
 
-    def __init__(self, config):
+    def __init__(self, config, pad_idx=0):
         super().__init__()
-        self.bert = BertModel(config)
+        self.bert = BertModel(config, pad_idx)
         self.masked_lm = MaskedLM(config, self.bert.embeddings.word_embeddings.weight.size(0))
         self.next_sentence_prediction = NextSentencePrediction(config)
 

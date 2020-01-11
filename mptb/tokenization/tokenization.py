@@ -173,7 +173,10 @@ class FullTokenizer(object):
   def __init__(self, vocab_file, preprocessor=None):
     self.vocab = load_vocab(vocab_file)
     self.inv_vocab = {}
+    self.pad_idx = 0
     for k, v in self.vocab.items():
+      if k == '[PAD]':
+        self.pad_idx = v
       if k == '[MASK]':  # Control character [MASK] Last?
         self.control_len = v+1
       self.inv_vocab[v] = k
