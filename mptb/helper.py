@@ -72,10 +72,13 @@ class Helper(object):
         cpu_param_optimizer=None
     ):
         if hasattr(self, 'writer'):
-            t1 = torch.LongTensor(1, dataset.max_pos).random_(0, 1)
-            t2 = torch.LongTensor(1, dataset.max_pos).random_(0, 1)
-            t3 = torch.LongTensor(1, dataset.max_pos).random_(0, 1)
-            self.writer.add_graph(model, (t1, t2, t3))
+            t1 = torch.LongTensor(1, dataset.max_pos).zero_()
+            t2 = torch.LongTensor(1, dataset.max_pos).zero_()
+            t3 = torch.LongTensor(1, dataset.max_pos).zero_()
+            if self.num_gpu > 1 and hasattr(model, 'module'):
+                self.writer.add_graph(model.module, (t1, t2, t3))
+            else:
+                self.writer.add_graph(model, (t1, t2, t3))
 
         model.to(self.device)
         model.train()
