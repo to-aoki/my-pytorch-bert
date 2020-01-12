@@ -34,7 +34,7 @@ def create_vocab(create_file_path,
     with open(create_file_path, "w", encoding='utf-8', newline='\n') as f:
         nlp = spacy.load(lang)
         num_tokens = vocab_size - (len(control_tokens) + len(upos_tokens) + len(ner_tokens))
-        skiped = []
+        skipped = []
         for _, vector in enumerate(tqdm(list(nlp.vocab.vectors))):
             word = nlp.vocab.strings[vector]
             doc = nlp(word)
@@ -55,7 +55,7 @@ def create_vocab(create_file_path,
                             found = True
                             break
             if found:
-                skiped.append({'word': word, 'vector': vector, 'ner': ner, 'pos': pos})
+                skipped.append({'word': word, 'vector': vector, 'ner': ner, 'pos': pos})
             else:
                 f.write(word + '\t' + str(vector) + '\t' + ner + '\t' + pos + '\n')
                 num_tokens -= 1
@@ -63,7 +63,7 @@ def create_vocab(create_file_path,
                     break
 
         if num_tokens != 0:
-            for skip in skiped:
+            for skip in skipped:
                 if skip['pos'] == 'SPACE':
                     continue
                 f.write(skip['word'] + '\t' + str(skip['vector']) + '\t' + skip['ner'] + '\t' + skip['pos'] + '\n')
@@ -101,12 +101,10 @@ class GinzaTokenizer(object):
         tokens = []
         doc = self.nlp(text.rstrip())
         for token in doc:
+            word = token.orth_.strip()
             if token.has_vector:
-                word = token.orth_.strip()
                 if self.lemmatize:
                     word = token.lemma_
-            else:
-                word = '[UNK]'
             tokens.append(word)
         return tokens
 
