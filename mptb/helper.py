@@ -23,7 +23,8 @@ from .optimization import get_step
 
 class Helper(object):
 
-    def __init__(self, seeds=20151106, device=None, fp16=False, cli_interval=10, use_tb=True):
+    def __init__(
+            self, seeds=20151106, device=None, fp16=False, cli_interval=10, use_tb=True, sw_log_dir="runs"):
         super().__init__()
         set_seeds(seeds)
         self.num_gpu = 0
@@ -42,10 +43,10 @@ class Helper(object):
 
         print("device: {} num_gpu: {} fp16: {}".format(self.device, self.num_gpu, self.fp16))
         self.cli_interval = cli_interval
-        if use_tb:
+        if use_tb and sw_log_dir is not None and sw_log_dir != '':
             try:
                 from torch.utils.tensorboard import SummaryWriter
-                self.writer = SummaryWriter()
+                self.writer = SummaryWriter(log_dir=sw_log_dir)
             except ImportError:
                 pass
 
@@ -72,10 +73,13 @@ class Helper(object):
         cpu_param_optimizer=None
     ):
         if hasattr(self, 'writer'):
-            t1 = torch.LongTensor(1, dataset.max_pos).random_(0, 1)
-            t2 = torch.LongTensor(1, dataset.max_pos).random_(0, 1)
-            t3 = torch.LongTensor(1, dataset.max_pos).random_(0, 1)
-            self.writer.add_graph(model, (t1, t2, t3))
+            t1 = torch.LongTensor(1, dataset.max_pos).zero_()
+            t2 = torch.LongTensor(1, dataset.max_pos).zero_()
+            t3 = torch.LongTensor(1, dataset.max_pos).zero_()
+            if self.num_gpu > 1 and hasattr(model, 'module'):
+                self.writer.add_graph(model.module, (t1, t2, t3))
+            else:
+                self.writer.add_graph(model, (t1, t2, t3))
 
         model.to(self.device)
         model.train()

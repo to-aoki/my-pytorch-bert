@@ -51,7 +51,8 @@ class BertPretrainier(object):
         max_words_length=4,
         bert_model_path=None,
         model_name='bert',
-        device=None
+        device=None,
+        sw_log_dir='runs'
     ):
 
         if tokenizer is None and vocab_path is not None:
@@ -73,22 +74,22 @@ class BertPretrainier(object):
 
         self.max_pos = max_pos
         if model == 'mlm' and model_name == 'proj':
-            self.model = ProjectionOnlyMaskedLMTasks(config)
+            self.model = ProjectionOnlyMaskedLMTasks(config, self.tokenizer.pad_idx)
             print('Task: Only MaskedLM/Projection')
         elif model_name == 'proj':
-            self.model = ProjectionAlbertPretrainingTasks(config)
+            self.model = ProjectionAlbertPretrainingTasks(config, self.tokenizer.pad_idx)
             print('Task: With Sentence Order Predict/Projection')
         elif model == 'mlm' and model_name =='albert':
-            self.model = AlbertOnlyMaskedLMTasks(config)
+            self.model = AlbertOnlyMaskedLMTasks(config, self.tokenizer.pad_idx)
             print('Task: Only MaskedLM/ALBERT')
         elif model_name == 'albert':
-            self.model = AlbertPretrainingTasks(config)
+            self.model = AlbertPretrainingTasks(config, self.tokenizer.pad_idx)
             print('Task: With Sentence Order Predict/ALBERT')
         elif model == 'mlm':
-            self.model = OnlyMaskedLMTasks(config)
+            self.model = OnlyMaskedLMTasks(config, self.tokenizer.pad_idx)
             print('Task: Only MaskedLM')
         else:
-            self.model = BertPretrainingTasks(config)
+            self.model = BertPretrainingTasks(config, self.tokenizer.pad_idx)
             print('Task: With Next Sentence Predict')
         self.model_name = model
         self.is_tpu = False
@@ -96,7 +97,7 @@ class BertPretrainier(object):
             self.is_tpu = True
             self.helper = None
         else:
-            self.helper = Helper(device=device, fp16=fp16)
+            self.helper = Helper(device=device, fp16=fp16, sw_log_dir=sw_log_dir)
         self.model_path = model_path
         self.bert_model_path = bert_model_path
         self.learned = False

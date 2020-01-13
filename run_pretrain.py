@@ -45,7 +45,8 @@ def bert_pretraining(
     model_name='bert',
     optimizer='bert',
     device=None,
-    optimizer_on_cpu=False
+    optimizer_on_cpu=False,
+    sw_log_dir='runs'
 ):
 
     estimator = BertPretrainier(
@@ -65,7 +66,8 @@ def bert_pretraining(
         max_words_length=max_words_length,
         bert_model_path=bert_model_path,
         model_name=model_name,
-        device=device
+        device=device,
+        sw_log_dir=sw_log_dir
     )
 
     if mode == 'train':
@@ -146,6 +148,7 @@ if __name__ == '__main__':
                         help='Select from the following name groups optimizer. (bert, adamw, lamb)')
     parser.add_argument('--device', nargs='?', type=str, default=None, help='Target Runing device name.')
     parser.add_argument('--optimizer_on_cpu', action='store_true', help='Put optimizer parameters on CPU.')
+    parser.add_argument('--sw_log_dir', help='TensorBoard lgo_dir path.', nargs='?', type=str, default='runs')
     args = parser.parse_args()
     bert_pretraining(args.config_path, args.dataset_path, args.pretensor_dataset_path, args.pretensor_dataset_length,
                      args.pickle_path,
@@ -154,5 +157,5 @@ if __name__ == '__main__':
                      args.epochs, args.per_save_epochs, args.per_save_steps,
                      args.mode, args.tokenizer, args.fp16, args.on_disk, args.task, args.stack,
                      args.max_words_length, args.bert_model_path, args.model_name, args.optimizer, args.device,
-                     args.optimizer_on_cpu)
+                     args.optimizer_on_cpu, args.sw_log_dir)
 

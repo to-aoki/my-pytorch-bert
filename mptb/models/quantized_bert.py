@@ -31,10 +31,10 @@ from nlp_architect.models.transformers.quantized_bert import quantized_linear_se
 
 
 class QuantizedBertEmbeddings(Embeddings):
-    def __init__(self, config, eps=1e-12):
+    def __init__(self, config, eps=1e-12, pad_idx=0):
         super(Embeddings, self).__init__()
         self.word_embeddings = quantized_embedding_setup(
-            config, 'word_embeddings', config.vocab_size, config.hidden_size, padding_idx=0)
+            config, 'word_embeddings', config.vocab_size, config.hidden_size, padding_idx=pad_idx)
         self.position_embeddings = quantized_embedding_setup(
             config, 'position_embeddings', config.max_position_embeddings, config.hidden_size)
         if config.type_vocab_size > 0:
@@ -118,10 +118,10 @@ class QuantizedBertEncoder(Encoder):
 class QuantizedBertModel(BertModel):
     """BERT model ("Bidirectional Embedding Representations from a Transformer")."""
 
-    def __init__(self, config):
+    def __init__(self, config, pad_idx=0):
         super(BertModel, self).__init__()
         self.initializer_range = config.initializer_range
-        self.embeddings = QuantizedBertEmbeddings(config)
+        self.embeddings = QuantizedBertEmbeddings(config, pad_idx)
         self.encoder = QuantizedBertEncoder(config)
         self.pool = quantized_linear_setup(
             config, "pooler", config.hidden_size, config.hidden_size)
@@ -141,11 +141,11 @@ class QuantizedBertModel(BertModel):
 
 class QuantizedBertForSequenceClassification(Classification):
 
-    def __init__(self, config, num_labels):
+    def __init__(self, config, num_labels, pad_idx=0):
         super(Classification, self).__init__()
         # we only want BertForQuestionAnswering init to run to avoid unnecessary
         # initializations
-        self.bert = QuantizedBertModel(config)
+        self.bert = QuantizedBertModel(config, pad_idx)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.classifier = quantized_linear_setup(
             config, "head", config.hidden_size, num_labels)

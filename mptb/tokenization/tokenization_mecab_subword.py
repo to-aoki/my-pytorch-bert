@@ -73,9 +73,7 @@ def token_vocab_build(reader):
     vocab_dict = OrderedDict()
     index = 0
     for _, token in enumerate(tqdm(reader)):
-        word, _ = token.split("\t")
-        word = word.strip()
-        vocab_dict[word] = index
+        vocab_dict[token] = index
         index += 1
     return vocab_dict
 
@@ -91,16 +89,6 @@ def convert_by_vocab(vocab_dict, items, unk_info):
     return output
 
 
-def convert_tokens_to_ids(vocab, tokens):
-    """Id of <unk> is assumed as 0"""
-    return convert_by_vocab(vocab, tokens, unk_info=1)
-
-
-def convert_ids_to_tokens(inv_vocab, ids):
-    """Token of unknown word is assumed as [UNK]"""
-    return convert_by_vocab(inv_vocab, ids, unk_info='[UNK]')
-
-
 class FullTokenizer(object):
     """Runs end-to-end tokenziation."""
 
@@ -113,9 +101,11 @@ class FullTokenizer(object):
         self.max_chars_per_word = max_chars_per_word
         self.unk_id = 0
         for k, v in self.vocab.items():
-            if v in control_tokens:
-                if v == '[UNK]':
-                    self.unk_id = k
+            if k == '[PAD]':
+                self.pad_idx = v
+            if k == '[UNK]':
+                self.unk_id = v
+            if k in control_tokens:
                 self.control_len += 1
             self.inv_vocab[v] = k
 

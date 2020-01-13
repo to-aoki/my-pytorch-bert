@@ -28,9 +28,9 @@ from .pretrain_tasks import NextSentencePrediction
 class ProjectionEmbeddings(nn.Module):
     """Construct the embeddings from word, position and token_type embeddings."""
 
-    def __init__(self, config):
+    def __init__(self, config, pad_idx=0):
         super().__init__()
-        self.word_embeddings = nn.Embedding(config.vocab_size, config.embedding_size, padding_idx=0)
+        self.word_embeddings = nn.Embedding(config.vocab_size, config.embedding_size, padding_idx=pad_idx)
         self.projection = nn.Linear(config.embedding_size, config.hidden_size, bias=False)
 
         if config.type_vocab_size > 0:
@@ -92,8 +92,8 @@ class OneLayerEncoder(nn.Module):
 class EmbedProjectionAlbertModel(BertModel):
     """ A Lite Bert For Self-Supervised Learning Language Representations."""
 
-    def __init__(self, config):
-        super(EmbedProjectionAlbertModel, self).__init__(config)
+    def __init__(self, config, pad_idx=0):
+        super(EmbedProjectionAlbertModel, self).__init__(config, pad_idx)
         self.embeddings = ProjectionEmbeddings(config)
         self.encoder = OneLayerEncoder(config)
         self.apply(self.init_bert_weights)
@@ -102,9 +102,9 @@ class EmbedProjectionAlbertModel(BertModel):
 class ProjectionOnlyMaskedLMTasks(nn.Module):
     """Pre-training Tasks only MaskedLM"""
 
-    def __init__(self, config):
+    def __init__(self, config, pad_idx):
         super().__init__()
-        self.bert = EmbedProjectionAlbertModel(config)
+        self.bert = EmbedProjectionAlbertModel(config, pad_idx)
         self.masked_lm = ProjectionMaskedLM(config, self.bert.embeddings.word_embeddings.weight.size(0))
 
     def forward(self, input_ids, segment_ids, input_mask):
@@ -117,9 +117,9 @@ class ProjectionOnlyMaskedLMTasks(nn.Module):
 class ProjectionAlbertPretrainingTasks(nn.Module):
     """Alert Pre-training Tasks"""
 
-    def __init__(self, config):
+    def __init__(self, config, pad_idx=0):
         super().__init__()
-        self.bert = EmbedProjectionAlbertModel(config)
+        self.bert = EmbedProjectionAlbertModel(config, pad_idx)
         self.masked_lm = ProjectionMaskedLM(config, self.bert.embeddings.word_embeddings.weight.size(0))
         self.next_sentence_prediction = NextSentencePrediction(config)
 

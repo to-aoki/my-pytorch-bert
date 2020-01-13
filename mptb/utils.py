@@ -266,7 +266,7 @@ def get_tokenizer(
             preprocessor.append(ToZenkaku())
             return FullTokenizer(vocab_path, preprocessor=preprocessor)
         else:
-            # google bert tokenizer use
+            # Google BERT tokenizer
             from mptb.tokenization.tokenization import FullTokenizer
             return FullTokenizer(vocab_path, preprocessor=preprocessor)
 
@@ -280,15 +280,15 @@ def default_preprocessor():
     ])
 
 
-def japanese_stopwords():
-    slothlib_stopwords = []
-    with open('dict/slothlib_include_Japanese.txt', "r", encoding='UTF-8') as reader:
+def japanese_stopwords(dict_path='dict/slothlib_include_Japanese.txt'):
+    stopwords = []
+    with open(dict_path, "r", encoding='UTF-8') as reader:
         for line in reader:
             line = line.strip()
             if line == '':
                 continue
-            slothlib_stopwords.append(line)
-    return slothlib_stopwords
+            stopwords.append(line)
+    return stopwords
 
 
 def make_balanced_classes_weights(per_label_records_num):

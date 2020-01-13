@@ -50,6 +50,7 @@ def classification(
     optimizer='bert',
     encoder_json_path=None,
     vocab_bpe_path=None,
+    sw_log_dir='runs'
 ):
 
     if under_sampling_cycle:
@@ -74,6 +75,7 @@ def classification(
             model_name=model_name,
             encoder_json_path=encoder_json_path,
             vocab_bpe_path=vocab_bpe_path,
+            sw_log_dir=sw_log_dir
         )
 
         estimator.train(
@@ -189,6 +191,7 @@ if __name__ == '__main__':
                         )
     parser.add_argument('--encoder_json_path', help='GPT2 encoder JSON file path.', nargs='?', type=str)
     parser.add_argument('--vocab_bpe_path', help='GPT2 encoder bpe file path.', nargs='?', type=str)
+    parser.add_argument('--sw_log_dir', help='TensorBoard lgo_dir path.', nargs='?', type=str, default='runs')
     args = parser.parse_args()
     classification(
         config_path=args.config_path,
@@ -223,4 +226,5 @@ if __name__ == '__main__':
         optimizer=args.optimizer,
         encoder_json_path=args.encoder_json_path,
         vocab_bpe_path=args.vocab_bpe_path,
+        sw_log_dir=args.sw_log_dir
     )

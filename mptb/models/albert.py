@@ -35,9 +35,9 @@ def gelu(x):
 class AlbertEmbeddings(nn.Module):
     """Construct the embeddings from word, position and token_type embeddings."""
 
-    def __init__(self, config):
+    def __init__(self, config, pad_idx=0):
         super().__init__()
-        self.word_embeddings = nn.Embedding(config.vocab_size, config.embedding_size, padding_idx=0)
+        self.word_embeddings = nn.Embedding(config.vocab_size, config.embedding_size, padding_idx=pad_idx)
 
         if config.type_vocab_size > 0:
             self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.embedding_size)
@@ -188,9 +188,9 @@ class AlbertEncoder(nn.Module):
 class AlbertModel(BertModel):
     """ A Lite Bert For Self-Supervised Learning Language Representations."""
 
-    def __init__(self, config):
+    def __init__(self, config, pad_idx=0):
         super(AlbertModel, self).__init__(config)
-        self.embeddings = AlbertEmbeddings(config)
+        self.embeddings = AlbertEmbeddings(config, pad_idx)
         self.encoder = AlbertEncoder(config)
         self.apply(self.init_bert_weights)
 
@@ -198,18 +198,18 @@ class AlbertModel(BertModel):
 class AlbertOnlyMaskedLMTasks(OnlyMaskedLMTasks):
     """Bert Pre-training Tasks"""
 
-    def __init__(self, config):
+    def __init__(self, config, pad_idx=0):
         super(AlbertOnlyMaskedLMTasks, self).__init__(config)
-        self.bert = AlbertModel(config)
+        self.bert = AlbertModel(config, pad_idx)
         self.masked_lm = AlbertMaskedLM(config, self.bert.embeddings.word_embeddings.weight.size(0))
 
 
 class AlbertPretrainingTasks(BertPretrainingTasks):
     """Bert Pre-training Tasks"""
 
-    def __init__(self, config):
+    def __init__(self, config, pad_idx=0):
         super(AlbertPretrainingTasks, self).__init__(config)
-        self.bert = AlbertModel(config)
+        self.bert = AlbertModel(config, pad_idx)
         self.masked_lm = AlbertMaskedLM(config, self.bert.embeddings.word_embeddings.weight.size(0))
         self.next_sentence_prediction = NextSentencePrediction(config)
 

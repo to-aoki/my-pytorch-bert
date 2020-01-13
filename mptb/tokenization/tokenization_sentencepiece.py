@@ -130,8 +130,13 @@ class FullTokenizer(object):
         self.vocab, self.vocab_score = load_vocab(vocab_file)
         assert(0 < len(self.vocab))
         self.inv_vocab = {}
-        self.control_len = 1  # <unk>
+        self.control_len = 0
         for k, v in self.vocab.items():
+            if k == '[UNK]' or k == '<unk>':
+                self.unk_idx = v
+                self.unk_token = k
+            if k == '[PAD]':
+                self.pad_idx = v
             if self.tokenizer.tokenizer.is_control(v):
                 self.control_len += 1  # Control characters are focused at the top?
             self.inv_vocab[v] = k
@@ -142,11 +147,11 @@ class FullTokenizer(object):
 
     def convert_tokens_to_ids(self, tokens):
         """Id of <unk> is assumed as 0 accroding to sentencepiece"""
-        return convert_by_vocab(self.vocab, tokens, unk_info=0)
+        return convert_by_vocab(self.vocab, tokens, unk_info=self.unk_idx)
 
     def convert_ids_to_tokens(self, ids):
         """Token of unknown word is assumed as <unk> according to sentencepiece"""
-        return convert_by_vocab(self.inv_vocab, ids, unk_info="<unk>")
+        return convert_by_vocab(self.inv_vocab, ids, unk_info=self.unk_token)
 
     # add for get random word
     def get_random_token_id(self):

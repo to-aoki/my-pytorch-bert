@@ -47,9 +47,10 @@ def train(text_dir, prefix, vocab_size, ctl_symbols, is_bpe=False, suffix='', su
     if is_bpe:
         command = f'--input={files} --model_type=bpe --model_prefix={prefix} --vocab_size={vocab_size} ' \
                   f'--control_symbols={ctl_symbols} --add_dummy_prefix=False --treat_whitespace_as_suffix=False ' \
-                  f'--character_coverage=1.0 --bos_id=-1 eos_id=-1'
+                  f'--character_coverage=1.0 --normalization_rule_name=identity ' \
+                  f'--pad_id=0 --unk_id=1 --bos_id=-1 eos_id=-1'
     else:
-        command = f'--input={files} --model_prefix={prefix} --vocab_size={vocab_size} --control_symbols={ctl_symbols} ' \
+        command = f'--input={files} --model_prefix={prefix} --vocab_size={vocab_size} --control_symbols={ctl_symbols} '\
                   f'--add_dummy_prefix=False --treat_whitespace_as_suffix=True --bos_id=-1 eos_id=-1'
     sp.SentencePieceTrainer.Train(command)
     if is_bpe:
@@ -62,6 +63,8 @@ def build_wordpiece_vocab(sp_vocab_file, build_vocab_path, ctl_symbols='[PAD],[C
             sp_token, _ = line.rstrip('\n').split('\t')
             if sp_token == '<unk>':
                 output_token = '[UNK]'
+            elif sp_token == '<pad>':
+                output_token = '[PAD]'
             elif sp_token in ctl_symbols:
                 output_token = sp_token
             elif sp_token.startswith('\u2581'):

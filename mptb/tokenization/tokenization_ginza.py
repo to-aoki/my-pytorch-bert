@@ -34,7 +34,7 @@ def create_vocab(create_file_path,
     with open(create_file_path, "w", encoding='utf-8', newline='\n') as f:
         nlp = spacy.load(lang)
         num_tokens = vocab_size - (len(control_tokens) + len(upos_tokens) + len(ner_tokens))
-        skiped = []
+        skipped = []
         for _, vector in enumerate(tqdm(list(nlp.vocab.vectors))):
             word = nlp.vocab.strings[vector]
             doc = nlp(word)
@@ -55,7 +55,7 @@ def create_vocab(create_file_path,
                             found = True
                             break
             if found:
-                skiped.append({'word': word, 'vector': vector, 'ner': ner, 'pos': pos})
+                skipped.append({'word': word, 'vector': vector, 'ner': ner, 'pos': pos})
             else:
                 f.write(word + '\t' + str(vector) + '\t' + ner + '\t' + pos + '\n')
                 num_tokens -= 1
@@ -63,7 +63,7 @@ def create_vocab(create_file_path,
                     break
 
         if num_tokens != 0:
-            for skip in skiped:
+            for skip in skipped:
                 if skip['pos'] == 'SPACE':
                     continue
                 f.write(skip['word'] + '\t' + str(skip['vector']) + '\t' + skip['ner'] + '\t' + skip['pos'] + '\n')
@@ -101,12 +101,10 @@ class GinzaTokenizer(object):
         tokens = []
         doc = self.nlp(text.rstrip())
         for token in doc:
+            word = token.orth_.strip()
             if token.has_vector:
-                word = token.orth_.strip()
                 if self.lemmatize:
                     word = token.lemma_
-            else:
-                word = '[UNK]'
             tokens.append(word)
         return tokens
 
@@ -131,9 +129,7 @@ def token_vocab_build(reader):
 class FullTokenizer(object):
     """Runs end-to-end tokenziation."""
 
-    def __init__(self, vocab_file, preprocessor=None,
-                 control_tokens=CONTROL_TOKENS,
-                 upos_tokens=UPOS_TOKENS, ner_tokens=NER_TOKENS):
+    def __init__(self, vocab_file, preprocessor=None, control_tokens=CONTROL_TOKENS):
         self.tokenizer = GinzaTokenizer(preprocessor=preprocessor)
         self.vocab = load_vocab(vocab_file)
         assert (0 < len(self.vocab))
@@ -142,11 +138,11 @@ class FullTokenizer(object):
         for k, v in self.vocab.items():
             if k == control_tokens[0]:
                 self.control_start = v
+            if k == '[PAD]':
+                self.pad_idx = v
             if k == '[UNK]':
-                self.unk_id = v
+                self.unk_idx = v
             self.inv_vocab[v] = k
-        self.upos_tokens = upos_tokens
-        self.ner_tokens = ner_tokens
 
     def tokenize(self, text):
         split_tokens = self.tokenizer.tokenize(text)
@@ -184,7 +180,7 @@ class FullTokenizer(object):
                         break
                 if found:
                     continue
-                output.append(self.unk_id)
+                output.append(self.unk_idx)
         return output
 
     def convert_ids_to_tokens(self, ids):
