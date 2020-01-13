@@ -43,7 +43,7 @@ class Helper(object):
 
         print("device: {} num_gpu: {} fp16: {}".format(self.device, self.num_gpu, self.fp16))
         self.cli_interval = cli_interval
-        if use_tb:
+        if use_tb and sw_log_dir is not None and sw_log_dir != '':
             try:
                 from torch.utils.tensorboard import SummaryWriter
                 self.writer = SummaryWriter(log_dir=sw_log_dir)
