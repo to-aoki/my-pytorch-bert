@@ -129,9 +129,7 @@ def token_vocab_build(reader):
 class FullTokenizer(object):
     """Runs end-to-end tokenziation."""
 
-    def __init__(self, vocab_file, preprocessor=None,
-                 control_tokens=CONTROL_TOKENS,
-                 upos_tokens=UPOS_TOKENS, ner_tokens=NER_TOKENS):
+    def __init__(self, vocab_file, preprocessor=None, control_tokens=CONTROL_TOKENS):
         self.tokenizer = GinzaTokenizer(preprocessor=preprocessor)
         self.vocab = load_vocab(vocab_file)
         assert (0 < len(self.vocab))
@@ -145,8 +143,6 @@ class FullTokenizer(object):
             if k == '[UNK]':
                 self.unk_idx = v
             self.inv_vocab[v] = k
-        self.upos_tokens = upos_tokens
-        self.ner_tokens = ner_tokens
 
     def tokenize(self, text):
         split_tokens = self.tokenizer.tokenize(text)
