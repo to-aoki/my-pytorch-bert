@@ -51,7 +51,8 @@ class BertPretrainier(object):
         max_words_length=4,
         bert_model_path=None,
         model_name='bert',
-        device=None
+        device=None,
+        sw_log_dir='runs'
     ):
 
         if tokenizer is None and vocab_path is not None:
@@ -96,7 +97,7 @@ class BertPretrainier(object):
             self.is_tpu = True
             self.helper = None
         else:
-            self.helper = Helper(device=device, fp16=fp16)
+            self.helper = Helper(device=device, fp16=fp16, sw_log_dir=sw_log_dir)
         self.model_path = model_path
         self.bert_model_path = bert_model_path
         self.learned = False

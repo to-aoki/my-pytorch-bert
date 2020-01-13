@@ -23,7 +23,8 @@ from .optimization import get_step
 
 class Helper(object):
 
-    def __init__(self, seeds=20151106, device=None, fp16=False, cli_interval=10, use_tb=True):
+    def __init__(
+            self, seeds=20151106, device=None, fp16=False, cli_interval=10, use_tb=True, sw_log_dir="runs"):
         super().__init__()
         set_seeds(seeds)
         self.num_gpu = 0
@@ -45,7 +46,7 @@ class Helper(object):
         if use_tb:
             try:
                 from torch.utils.tensorboard import SummaryWriter
-                self.writer = SummaryWriter()
+                self.writer = SummaryWriter(log_dir=sw_log_dir)
             except ImportError:
                 pass
 

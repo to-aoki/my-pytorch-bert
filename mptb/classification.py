@@ -54,6 +54,7 @@ class BertClassifier(object):
         model_name='bert',
         encoder_json_path=None,
         vocab_bpe_path=None,
+        sw_log_dir='runs'
     ):
         if tokenizer is None:
             self.tokenizer = get_tokenizer(
@@ -94,7 +95,7 @@ class BertClassifier(object):
                         model_name=model_name, pad_idx=self.tokenizer.pad_idx)
 
         self.pretrain = False
-        self.helper = Helper(device=device, fp16=fp16)
+        self.helper = Helper(device=device, fp16=fp16, sw_log_dir=sw_log_dir)
 
         if model_path is None and pretrain_path is not None:
             self.helper.load_model(model=self.model.bert, model_path=pretrain_path, strict=not quantize)
