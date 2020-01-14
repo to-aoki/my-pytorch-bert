@@ -108,7 +108,7 @@ class FullTokenizer(object):
     def __init__(
         self, model_file, vocab_file,
          preprocessor=None,
-         meacb_args='-d /usr/lib/x86_64-linux-gnu/mecab/dic/mecab-ipadic-neologd',
+         mecab_args='-d /usr/lib/x86_64-linux-gnu/mecab/dic/mecab-ipadic-neologd',
     ):
         self.tokenizer = SentencePieceTokenizer(model_file, preprocessor=preprocessor)
         self.vocab, self.vocab_score = load_vocab(vocab_file)
@@ -125,7 +125,7 @@ class FullTokenizer(object):
                 self.control_len += 1  # Control characters are focused at the top?
             self.inv_vocab[v] = k
 
-        self.tagger = MeCab.Tagger(meacb_args)
+        self.tagger = MeCab.Tagger(mecab_args)
         self.tagger.parse('')
 
     def tokenize(self, text):
