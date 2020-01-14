@@ -88,26 +88,30 @@ class Embeddings(nn.Module):
     def __init__(self, config, pad_idx):
         super().__init__()
         self.word_embeddings = nn.Embedding(config.vocab_size, config.hidden_size, padding_idx=pad_idx)
+        self.position_embeddings = nn.Embedding(config.max_position_embeddings, config.hidden_size)
         if config.type_vocab_size > 0:
             self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size)
-        self.position_embeddings = nn.Embedding(config.max_position_embeddings, config.hidden_size)
 
         self.layer_norm = LayerNorm(config.hidden_size)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
     def forward(self, input_ids, token_type_ids=None, position_ids=None):
 
+        # convert word-ids to vector
+        embeddings = self.word_embeddings(input_ids)
+
         if position_ids is None:
+            # positional embeddings [0,1,2...]
             max_position_embeddings = input_ids.size(1)
             position_ids = torch.arange(max_position_embeddings, dtype=torch.long, device=input_ids.device)
             position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
+        embeddings += self.position_embeddings(position_ids)
 
-        embeddings = self.word_embeddings(input_ids)
         if hasattr(self, 'token_type_embeddings'):
             if token_type_ids is None:
+                # one sentence
                 token_type_ids = torch.zeros_like(input_ids)
             embeddings += self.token_type_embeddings(token_type_ids)
-        embeddings += self.position_embeddings(position_ids)
 
         return self.dropout(self.layer_norm(embeddings))
 
@@ -119,6 +123,7 @@ class SelfAttention(nn.Module):
             raise ValueError(
                 "The hidden size (%d) is not a multiple of the number of attention "
                 "heads (%d)" % (config.hidden_size, config.num_attention_heads))
+
         self.num_attention_heads = config.num_attention_heads
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
         self.all_head_size = self.num_attention_heads * self.attention_head_size
@@ -138,18 +143,21 @@ class SelfAttention(nn.Module):
 
     def forward(self, hidden_states, attention_mask):
         self.attn_data = {}  # for bertviz
+
         mixed_query_layer = self.query(hidden_states).contiguous()
         mixed_key_layer = self.key(hidden_states)
         mixed_value_layer = self.value(hidden_states)
 
+        # convert for multi-head attention
         query_layer = self.transpose_for_scores(mixed_query_layer)
         key_layer = self.transpose_for_scores(mixed_key_layer)
         value_layer = self.transpose_for_scores(mixed_value_layer)
 
-        # Take the dot product between "query" and "key" to get the raw attention scores.
+        # Take the dot product between "query" and "key" to get the raw attention scores(similarity).
         attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
         attention_scores = attention_scores / math.sqrt(self.attention_head_size)
-        # Apply the attention mask is (precomputed for all layers in BertModel forward() function)
+
+        # Apply the attention mask is (precomputed for all layers in BertModel forward() function) (0 or -10000 values)
         attention_scores = attention_scores + attention_mask
 
         # Normalize the attention scores to probabilities.
@@ -159,9 +167,10 @@ class SelfAttention(nn.Module):
         # seem a bit unusual, but is taken from the original Transformer paper.
         attention_probs = self.dropout(attention_probs)
 
+        # attention map
         context_layer = torch.matmul(attention_probs, value_layer)
-        context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
 
+        context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
         new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,)
         context_layer = context_layer.view(*new_context_layer_shape)
 
@@ -294,6 +303,8 @@ class BertModel(nn.Module):
 
         embedding_output = self.embeddings(input_ids, token_type_ids, position_ids)
         hidden_states = self.encoder(embedding_output, extended_attention_mask, layer=layer)
+
+        # 1st token feature convert
         pooled_output = torch.tanh(self.pool(hidden_states[:, 0]))
 
         return hidden_states, pooled_output
