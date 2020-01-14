@@ -98,7 +98,7 @@ class BertClassifier(object):
         self.helper = Helper(device=device, fp16=fp16, sw_log_dir=sw_log_dir)
 
         if model_path is None and pretrain_path is not None:
-            self.helper.load_model(model=self.model.bert, model_path=pretrain_path, strict=not quantize)
+            self.helper.load_model(model=self.model.bert, model_path=pretrain_path, strict=(not quantize))
             print('pretain model loaded: ' + pretrain_path)
             self.pretrain = True
         if not hasattr(self, 'pretrain') and tf_pretrain_path is not None:
@@ -187,7 +187,7 @@ class BertClassifier(object):
 
         if not is_model_laoded and not self.pretrain:
             if pretrain_path is not None:
-                self.helper.load_model(model=self.model.bert, model_path=pretrain_path, strict=not self.quantize)
+                self.helper.load_model(model=self.model.bert, model_path=pretrain_path, strict=(not self.quantize))
                 print('pretain model loaded: ' + pretrain_path)
                 self.pretrain = True
             elif tf_pretrain_path is not None:
