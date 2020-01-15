@@ -344,7 +344,8 @@ class StackedSentenceDataset(Dataset):
             else:
                 tokens_b = []
 
-            label_ids = tokens_a + tokens_b
+            lm_label_ids = [-1] * len(tokens_a + tokens_b)
+
             bert_token_ids = copy.copy(tokens_a)
             bert_token_ids.extend(copy.copy(tokens_b))
             # Add next sentence segment
@@ -355,6 +356,8 @@ class StackedSentenceDataset(Dataset):
             truncate_seq_pair(label_ids, [], target_max_pos)
             # Add Special Tokens
             label_ids = [self.cls_id] + label_ids + [self.sep_id]
+            lm_label_ids = [-1] * len(label_ids)
+
             bert_token_ids = copy.copy(label_ids)
             segment_ids = [0] * len(label_ids)
             is_random_next = 0
@@ -378,12 +381,19 @@ class StackedSentenceDataset(Dataset):
                 for pos in words:
                     masked += 1
                     if random() < 0.8:  # 80%
+                        # masked
+                        lm_label_ids[pos] = bert_token_ids[pos]
                         bert_token_ids[pos] = self.mask_id
                     elif random() < 0.5:  # 10%
+                        # random token
+                        lm_label_ids[pos] = bert_token_ids[pos]
                         bert_token_ids[pos] = self.get_random_token_id()
-                    # 10% not mask and not modify
+                    else:
+                        # 10% not mask and not modify
+                        lm_label_ids[pos] = bert_token_ids[pos]
                     if masked == mask_prediction:
                         break
+
                 if masked == mask_prediction:
                     break
 
@@ -396,9 +406,9 @@ class StackedSentenceDataset(Dataset):
             segment_ids.extend([0] * num_zero_pad)
         input_mask.extend([0] * num_zero_pad)
         input_ids.extend([self.pad_id] * num_zero_pad)
-        label_ids.extend([self.pad_id] * num_zero_pad)
+        lm_label_ids.extend([-1] * num_zero_pad)
 
-        return [input_ids, segment_ids, input_mask, is_random_next, label_ids]
+        return [input_ids, segment_ids, input_mask, is_random_next, lm_label_ids]
 
     def get_random_token_id(self):
         return self.tokenizer.get_random_token_id()
@@ -645,6 +655,8 @@ class NextSentencePredictionDataset(Dataset):
         # Add next sentence segment
         segment_ids = [0] * len(tokens_a_ids) + [1] * len(tokens_b_ids)
 
+        lm_label_ids = [-1] * len(tokens_a_ids) + [-1] * len(tokens_b_ids)
+
         # mask prediction calc
         mask_prediction = int(round(len(tokens) * masked_lm_prob))
 
@@ -653,23 +665,28 @@ class NextSentencePredictionDataset(Dataset):
         shuffle(mask_candidate_pos)
         for pos in mask_candidate_pos[:mask_prediction]:
             if random() < 0.8:    # 80%
+                # masked
+                lm_label_ids[pos] = tokens[pos]
                 tokens[pos] = self.mask_id
             elif random() < 0.5:  # 10%
+                # random token
+                lm_label_ids[pos] = tokens[pos]
                 tokens[pos] = self.get_random_token_id()
-            # 10% not mask and not modify
+            else:
+                # 10% not mask and not modify
+                lm_label_ids[pos] = tokens[pos]
 
         input_ids = tokens
-        input_mask = [1]*len(input_ids)
-        label_ids = tokens_a_ids+tokens_b_ids
+        input_mask = [1] * len(input_ids)
 
         # zero padding
         num_zero_pad = max_pos - len(input_ids)
-        input_ids.extend([self.pad_id]*num_zero_pad)
-        segment_ids.extend([0]*num_zero_pad)
-        input_mask.extend([0]*num_zero_pad)
-        label_ids.extend([self.pad_id]*num_zero_pad)
+        input_ids.extend([self.pad_id] * num_zero_pad)
+        segment_ids.extend([0] * num_zero_pad)
+        input_mask.extend([0] * num_zero_pad)
+        lm_label_ids.extend([-1] * num_zero_pad)
 
-        return [input_ids,  segment_ids, input_mask, is_next_label, label_ids]
+        return [input_ids,  segment_ids, input_mask, is_next_label, lm_label_ids]
 
     def __str__(self):
         name, _ = os.path.splitext(os.path.basename(self.dataset_path))
