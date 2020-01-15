@@ -39,8 +39,7 @@ if __name__ == '__main__':
     preprocessor = Pipeline([
         ToUnicode(),
         Normalize(),
-        LowerCase(),
-        ReplaceURI(),
+        LowerCase()
     ])
 
     tokenizer = MeCabTokenizer(preprocessor=preprocessor)
@@ -54,6 +53,9 @@ if __name__ == '__main__':
                         writer.write(split[1].strip() + '\t' + ' '.join(tokenizer.tokenize(split[0])).strip() + '\n')
                 else:
                     for line in reader:
+                        line = line.strip('\n')
+                        if line == '':
+                            continue
                         writer.write(' '.join(tokenizer.tokenize(line)).strip() + '\n')
     else:
         with open(args.file_path, "r", encoding='utf-8') as reader:

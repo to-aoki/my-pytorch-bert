@@ -73,7 +73,8 @@ def token_vocab_build(reader):
     vocab_dict = OrderedDict()
     index = 0
     for _, token in enumerate(tqdm(reader)):
-        vocab_dict[token] = index
+        word = token.rstrip('\n')
+        vocab_dict[word] = index
         index += 1
     return vocab_dict
 
@@ -126,19 +127,15 @@ class FullTokenizer(object):
                 end = len(chars)
                 correct_subword = None
                 while start < end:
-                    word = "".join(chars[start:end])
+                    word = ''.join(chars[start:end])
                     if start > 0:
                         subword = "##" + word
                     else:
                         subword = word
+
                     if subword in self.vocab:
                         correct_subword = subword
                         break
-                    else:
-                        pos_token = self.tokenizer.pos(word)
-                        if pos_token in self.vocab:
-                            correct_subword = pos_token
-                            break
                     end -= 1
 
                 if correct_subword is None:
@@ -149,7 +146,11 @@ class FullTokenizer(object):
                 start = end
 
             if not_found:
-                output_tokens.append('[UNK]')
+                pos_token = self.tokenizer.pos(token)
+                if pos_token in self.vocab:
+                    output_tokens.append(pos_token)
+                else:
+                    output_tokens.append('[UNK]')
             else:
                 output_tokens.extend(sub_tokens)
         return output_tokens

@@ -60,7 +60,7 @@ def train(text_dir, prefix, vocab_size, ctl_symbols, is_bpe=False, suffix='', su
 def build_wordpiece_vocab(sp_vocab_file, build_vocab_path, ctl_symbols='[PAD],[CLS],[SEP],[MASK]'):
     with open(sp_vocab_file) as sp_vocab, open(build_vocab_path, 'w') as wordpiece_vocab:
         for line in sp_vocab:
-            sp_token, _ = line.rstrip('\n').split('\t')
+            sp_token, _ = line.split('\t')
             if sp_token == '<unk>':
                 output_token = '[UNK]'
             elif sp_token == '<pad>':
