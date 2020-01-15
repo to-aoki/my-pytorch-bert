@@ -30,21 +30,22 @@ def extract_model(
     mlm=False,
     parallel=False,
     model_name='bert',
+    pad_idx=0
 ):
 
     config = Config.from_json(config_path)
     if mlm and model_name == 'proj':
-        model = ProjectionOnlyMaskedLMTasks(config)
+        model = ProjectionOnlyMaskedLMTasks(config, pad_idx=pad_idx)
     elif model_name == 'proj':
-        model = ProjectionAlbertPretrainingTasks(config)
+        model = ProjectionAlbertPretrainingTasks(config, pad_idx=pad_idx)
     elif mlm and model_name == 'albert':
-        model = AlbertOnlyMaskedLMTasks(config)
+        model = AlbertOnlyMaskedLMTasks(config, pad_idx=pad_idx)
     elif model_name == 'albert':
-        model = AlbertPretrainingTasks(config)
+        model = AlbertPretrainingTasks(config, pad_idx=pad_idx)
     elif mlm:
-        model = OnlyMaskedLMTasks(config)
+        model = OnlyMaskedLMTasks(config, pad_idx=pad_idx)
     else:
-        model = BertPretrainingTasks(config)
+        model = BertPretrainingTasks(config, pad_idx=pad_idx)
 
     load(model, model_path, 'cpu', strict=load_strict)
     if parallel:
@@ -75,8 +76,10 @@ if __name__ == '__main__':
                         help=
                         'Select from the following name groups model. (bert, proj, albert)'
                         )
+    parser.add_argument('--pad_idx',  help='[PAD] vocab index', nargs='?',
+                        type=int, default=0)
     args = parser.parse_args()
     extract_model(config_path=args.config_path, model_path=args.model_path,
                   load_strict=not args.loose,
                   output_path=args.output_path, only_bert=args.only_bert,
-                  parallel=args.parallel, mlm=args.mlm, model_name=args.model_name)
+                  parallel=args.parallel, mlm=args.mlm, model_name=args.model_name, pad_idx=args.pad_idx)
