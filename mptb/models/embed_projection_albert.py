@@ -102,7 +102,7 @@ class EmbedProjectionAlbertModel(BertModel):
 class ProjectionOnlyMaskedLMTasks(nn.Module):
     """Pre-training Tasks only MaskedLM"""
 
-    def __init__(self, config, pad_idx):
+    def __init__(self, config, pad_idx=0):
         super().__init__()
         self.bert = EmbedProjectionAlbertModel(config, pad_idx)
         self.masked_lm = ProjectionMaskedLM(config, self.bert.embeddings.word_embeddings.weight.size(0))
