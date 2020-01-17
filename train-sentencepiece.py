@@ -46,7 +46,7 @@ def train(text_dir, prefix, vocab_size, ctl_symbols, is_bpe=False, suffix='', su
     files = _get_text_file(text_dir, suffix)
     if is_bpe:
         command = f'--input={files} --model_type=bpe --model_prefix={prefix} --vocab_size={vocab_size} ' \
-                  f'--control_symbols={ctl_symbols} --add_dummy_prefix=False --treat_whitespace_as_suffix=False ' \
+                  f'--control_symbols={ctl_symbols}  ' \
                   f'--character_coverage=1.0 --normalization_rule_name=identity ' \
                   f'--pad_id=0 --unk_id=1 --bos_id=-1 eos_id=-1'
     else:
@@ -58,14 +58,16 @@ def train(text_dir, prefix, vocab_size, ctl_symbols, is_bpe=False, suffix='', su
 
 
 def build_wordpiece_vocab(sp_vocab_file, build_vocab_path, ctl_symbols='[PAD],[CLS],[SEP],[MASK]'):
-    with open(sp_vocab_file) as sp_vocab, open(build_vocab_path, 'w') as wordpiece_vocab:
+    with open(sp_vocab_file) as sp_vocab, \
+            open(build_vocab_path, 'w') as wordpiece_vocab:
+        reserved = ctl_symbols.split(',')
         for line in sp_vocab:
             sp_token, _ = line.split('\t')
             if sp_token == '<unk>':
                 output_token = '[UNK]'
             elif sp_token == '<pad>':
                 output_token = '[PAD]'
-            elif sp_token in ctl_symbols:
+            elif sp_token in reserved:
                 output_token = sp_token
             elif sp_token.startswith('\u2581'):
                 output_token = sp_token[1:]
