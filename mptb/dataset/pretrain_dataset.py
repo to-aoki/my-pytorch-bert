@@ -87,9 +87,8 @@ class StackedSentenceDataset(Dataset):
         if self.lazy:
             self.indices = []
             with open(dataset_path, "r", encoding=encoding) as reader:
-                for line in tqdm(reader, desc="Loading Dataset"):
-                    if line.strip() != "":
-                        self.indices.append(1)
+                for _ in tqdm(reader, desc="Loading Dataset"):
+                    self.indices.append(1)
             self.file = open(dataset_path, "rb")
             self.last_indices_path = dataset_path + '.index'
             self.read_counts = 0
