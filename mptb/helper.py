@@ -98,6 +98,7 @@ class Helper(object):
             else:
                 load(model, model_file, self.device, optimizer)
         global_steps = get_step(optimizer)
+        global_losses = .0
         print('Optimizer start steps : {:d}'.format(global_steps))
         data_loader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
 
@@ -161,7 +162,12 @@ class Helper(object):
             if adjustment_every_epoch is not None:
                 adjustment_every_epoch(model, dataset, total_loss, total_steps, optimizer)
 
-        return total_loss / total_steps
+            global_losses = global_losses + total_loss / total_steps
+
+        if global_steps == 0:
+            return .0
+
+        return global_losses / global_steps
 
     def evaluate(
         self,

@@ -289,10 +289,7 @@ class BertPretrainier(object):
 
         if is_save_after_training:
             output_model_path = os.path.join(save_dir, "bert.pt")
-            if self.helper.num_gpu > 1:
-                save(self.model.module.bert, output_model_path)
-            else:
-                save(self.model.bert, output_model_path)
+            save(self.model.bert, output_model_path)
         return loss
 
     def evaluate(
