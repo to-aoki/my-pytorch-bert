@@ -162,7 +162,8 @@ class Helper(object):
             if adjustment_every_epoch is not None:
                 adjustment_every_epoch(model, dataset, total_loss, total_steps, optimizer)
 
-            global_losses = global_losses + total_loss / total_steps
+            if total_steps > 0:
+                global_losses = global_losses + total_loss / total_steps
 
         if global_steps == 0:
             return .0
