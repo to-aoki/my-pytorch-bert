@@ -175,6 +175,10 @@ class FullTokenizer(object):
     self.inv_vocab = {}
     self.pad_idx = 0
     for k, v in self.vocab.items():
+      if k == '[UNK]':
+        self.unk_idx = v
+      if  k == '<unk>':
+        self.unk_idx = v
       if k == '[PAD]':
         self.pad_idx = v
       if k == '[MASK]':  # Control character [MASK] Last?
@@ -323,7 +327,7 @@ class BasicTokenizer(object):
 class WordpieceTokenizer(object):
   """Runs WordPiece tokenziation."""
 
-  def __init__(self, vocab, unk_token="[UNK]", max_input_chars_per_word=200):
+  def __init__(self, vocab, unk_token="<unk>", max_input_chars_per_word=200):
     self.vocab = vocab
     self.unk_token = unk_token
     self.max_input_chars_per_word = max_input_chars_per_word
