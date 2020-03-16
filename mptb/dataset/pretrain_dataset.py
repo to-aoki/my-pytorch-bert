@@ -345,7 +345,7 @@ class StackedSentenceDataset(Dataset):
             else:
                 tokens_b = []
 
-            lm_label_ids = [-1] * len(tokens_a + tokens_b)
+            lm_label_ids = [self.pad_id] * len(tokens_a + tokens_b)
 
             bert_token_ids = copy.copy(tokens_a)
             bert_token_ids.extend(copy.copy(tokens_b))
