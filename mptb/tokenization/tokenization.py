@@ -177,6 +177,8 @@ class FullTokenizer(object):
     for k, v in self.vocab.items():
       if k == '[UNK]':
         self.unk_idx = v
+      if  k == '<unk>':
+        self.unk_idx = v
       if k == '[PAD]':
         self.pad_idx = v
       if k == '[MASK]':  # Control character [MASK] Last?
